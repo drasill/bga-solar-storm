@@ -9,10 +9,10 @@
 -- See http://en.boardgamearena.com/#!doc/Studio for more information.
 -->
 
-<div class="playmat">
-
+<div class="ss-playarea">
+	<div class="ss-playmat"></div>
+	<div class="ss-rooms"></div>
 </div>
-
 
 <script type="text/javascript">
 

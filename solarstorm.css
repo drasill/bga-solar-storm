@@ -64,11 +64,169 @@
     }
 */
 
-.playmat {
+.ss-playarea {
 	position: relative;
 	height: 0;
 	padding-bottom: 60%;
+	box-sizing: border-box;
+}
+.ss-playarea * {
+	box-sizing: border-box;
+}
+
+.ss-playmat {
+	position: absolute;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	right: 0;
 	background-image: url(img/playmat.jpg);
 	background-repeat: no-repeat;
 	background-size: contain;
+}
+
+.ss-rooms {
+	position: absolute;
+	top: 22.4%;
+	left: 27.3%;
+	width: 45.5%;
+	height: 54.7%;
+}
+
+.ss-room {
+	position: absolute;
+	width: 32%;
+	height: 32%;
+	background-image: url('img/rooms.png');
+	background-size: 300%;
+	border-radius: 4%;
+	box-shadow: rgba(0, 0, 0, 0.7) 3px 3px 5px;
+}
+
+.ss-room:hover {
+	filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.5)) drop-shadow(-2px -2px 2px rgba(0,0,0,0.5));
+}
+
+.ss-room--pos-0 {
+	top: 0%;
+	left: 0%;
+}
+.ss-room--pos-1 {
+	top: 0%;
+	left: 34%;
+}
+.ss-room--pos-2 {
+	top: 0%;
+	left: 68%;
+}
+.ss-room--pos-3 {
+	top: 34%;
+	left: 0%;
+}
+.ss-room--pos-4 {
+	top: 34%;
+	left: 34%;
+}
+.ss-room--pos-5 {
+	top: 34%;
+	left: 68%;
+}
+.ss-room--pos-6 {
+	top: 68%;
+	left: 0%;
+}
+.ss-room--pos-7 {
+	top: 68%;
+	left: 34%;
+}
+.ss-room--pos-8 {
+	top: 68%;
+	left: 68%;
+}
+
+.ss-room--0 {
+	background-position: 0% 0%;
+}
+.ss-room--1 {
+	background-position: 100% 0%;
+}
+.ss-room--2 {
+	background-position: 200% 0%;
+}
+.ss-room--3 {
+	background-position: 0% 100%;
+}
+.ss-room--4 {
+	background-position: 100% 100%;
+}
+.ss-room--5 {
+	background-position: 200% 100%;
+}
+.ss-room--6 {
+	background-position: 0% 200%;
+}
+.ss-room--7 {
+	background-position: 100% 200%;
+}
+.ss-room--8 {
+	background-position: 200% 200%;
+}
+
+.ss-room__damage {
+	position: absolute;
+	width: 10%;
+	height: 14%;
+	left: 90%;
+	background-image: url('img/damage-cube.png');
+	background-size: contain;
+	background-repeat: no-repeat;
+	transition: all 1.3s ease-out;
+}
+.ss-room__damage--0 {
+	top: 19%;
+}
+.ss-room__damage--1 {
+	top: 37%;
+}
+.ss-room__damage--2 {
+	top: 54%;
+}
+
+.ss-room--damaged-1 .ss-room__damage--0 {
+	top: 0;
+	left: 0;
+	opacity: 0;
+}
+.ss-room--damaged-2 .ss-room__damage--0,
+.ss-room--damaged-2 .ss-room__damage--1 {
+	top: 0;
+	left: 0;
+	opacity: 0;
+}
+.ss-room--damaged-3 .ss-room__damage--0,
+.ss-room--damaged-3 .ss-room__damage--1,
+.ss-room--damaged-3 .ss-room__damage--2 {
+	top: 0;
+	left: 0;
+	opacity: 0;
+}
+
+.ss-room__diverted-token {
+	position: absolute;
+	top: 25%;
+	bottom: 35%;
+	left: 35%;
+	right: 35%;
+	background-image: url('img/diverted-token.png');
+	background-position: 50% 50%;
+	background-size: contain;
+	background-repeat: no-repeat;
+	display: none;
+}
+.ss-room__diverted-token--visible {
+	display: block;
+}
+
+.ss-room__diverted-token:hover {
+	filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.5)) drop-shadow(-2px -2px 2px rgba(0,0,0,0.5));
 }

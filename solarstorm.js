@@ -10,76 +10,71 @@
  * solarstorm.js
  *
  * SolarStorm user interface script
- * 
+ *
  * In this file, you are describing the logic of your user interface, in Javascript language.
  *
  */
 
 define([
-    "dojo","dojo/_base/declare",
-    "ebg/core/gamegui",
-    "ebg/counter"
-],
-function (dojo, declare) {
-    return declare("bgagame.solarstorm", ebg.core.gamegui, {
-        constructor: function(){
-            console.log('solarstorm constructor');
-              
-            // Here, you can init the global variables of your user interface
-            // Example:
-            // this.myGlobalValue = 0;
+	'dojo',
+	'dojo/_base/declare',
+	'ebg/core/gamegui',
+	'ebg/counter'
+], function(dojo, declare) {
+	return declare('bgagame.solarstorm', ebg.core.gamegui, {
+		constructor: function() {
+			this.rooms = new SSRooms()
+		},
 
-        },
-        
-        /*
-            setup:
-            
-            This method must set up the game user interface according to current game situation specified
-            in parameters.
-            
-            The method is called each time the game interface is displayed to a player, ie:
-            _ when the game starts
-            _ when a player refreshes the game page (F5)
-            
-            "gamedatas" argument contains all datas retrieved by your "getAllDatas" PHP method.
-        */
-        
-        setup: function( gamedatas )
-        {
-            console.log( "Starting game setup" );
-            
-            // Setting up player boards
-            for( var player_id in gamedatas.players )
-            {
-                var player = gamedatas.players[player_id];
-                         
-                // TODO: Setting up players boards if needed
-            }
-            
-            // TODO: Set up your game interface here, according to "gamedatas"
-            
- 
-            // Setup game notifications to handle (see "setupNotifications" method below)
-            this.setupNotifications();
+		setup: function(gamedatas) {
+			// Setting up player boards
+			for (var player_id in gamedatas.players) {
+				var player = gamedatas.players[player_id]
+			}
+			this.initializeRooms(gamedatas.rooms)
+			this.setupNotifications()
 
-            console.log( "Ending game setup" );
-        },
-       
+			document
+				.getElementsByClassName('ss-playarea')[0]
+				.addEventListener('click', this.onPlayAreaClick.bind(this))
+		},
 
-        ///////////////////////////////////////////////////
-        //// Game & client states
-        
-        // onEnteringState: this method is called each time we are entering into a new game state.
-        //                  You can use this method to perform some user interface changes at this moment.
-        //
-        onEnteringState: function( stateName, args )
-        {
-            console.log( 'Entering state: '+stateName );
-            
-            switch( stateName )
-            {
-            
-            /* Example:
+		initializeRooms(roomsData) {
+			roomsData.forEach(roomData => {
+				const room = new SSRoom(
+					+roomData.room,
+					+roomData.position,
+					+roomData.damage,
+					roomData.diverted == '1'
+				)
+				this.rooms.addRoom(room)
+			})
+		},
+
+		onPlayAreaClick(evt) {
+			console.log(evt)
+			const el = evt.target
+
+			// DEBUG test
+			if (el.classList.contains('ss-room')) {
+				const room = this.rooms.getRoomForEl(el)
+				room.setDamage((room.damage + 1) % 4)
+				room.setDiverted(!room.diverted)
+				dojo.stopEvent(evt)
+			}
+		},
+
+		///////////////////////////////////////////////////
+		//// Game & client states
+
+		// onEnteringState: this method is called each time we are entering into a new game state.
+		//                  You can use this method to perform some user interface changes at this moment.
+		//
+		onEnteringState: function(stateName, args) {
+			console.log('Entering state: ' + stateName)
+
+			switch (stateName) {
+				/* Example:
             
             case 'myGameState':
             
@@ -88,24 +83,20 @@ function (dojo, declare) {
                 
                 break;
            */
-           
-           
-            case 'dummmy':
-                break;
-            }
-        },
 
-        // onLeavingState: this method is called each time we are leaving a game state.
-        //                 You can use this method to perform some user interface changes at this moment.
-        //
-        onLeavingState: function( stateName )
-        {
-            console.log( 'Leaving state: '+stateName );
-            
-            switch( stateName )
-            {
-            
-            /* Example:
+				case 'dummmy':
+					break
+			}
+		},
+
+		// onLeavingState: this method is called each time we are leaving a game state.
+		//                 You can use this method to perform some user interface changes at this moment.
+		//
+		onLeavingState: function(stateName) {
+			console.log('Leaving state: ' + stateName)
+
+			switch (stateName) {
+				/* Example:
             
             case 'myGameState':
             
@@ -114,25 +105,22 @@ function (dojo, declare) {
                 
                 break;
            */
-           
-           
-            case 'dummmy':
-                break;
-            }               
-        }, 
 
-        // onUpdateActionButtons: in this method you can manage "action buttons" that are displayed in the
-        //                        action status bar (ie: the HTML links in the status bar).
-        //        
-        onUpdateActionButtons: function( stateName, args )
-        {
-            console.log( 'onUpdateActionButtons: '+stateName );
-                      
-            if( this.isCurrentPlayerActive() )
-            {            
-                switch( stateName )
-                {
-/*               
+				case 'dummmy':
+					break
+			}
+		},
+
+		// onUpdateActionButtons: in this method you can manage "action buttons" that are displayed in the
+		//                        action status bar (ie: the HTML links in the status bar).
+		//
+		onUpdateActionButtons: function(stateName, args) {
+			console.log('onUpdateActionButtons: ' + stateName)
+
+			if (this.isCurrentPlayerActive()) {
+				switch (
+					stateName
+					/*               
                  Example:
  
                  case 'myGameState':
@@ -144,25 +132,25 @@ function (dojo, declare) {
                     this.addActionButton( 'button_3_id', _('Button 3 label'), 'onMyMethodToCall3' ); 
                     break;
 */
-                }
-            }
-        },        
+				) {
+				}
+			}
+		},
 
-        ///////////////////////////////////////////////////
-        //// Utility methods
-        
-        /*
+		///////////////////////////////////////////////////
+		//// Utility methods
+
+		/*
         
             Here, you can defines some utility methods that you can use everywhere in your javascript
             script.
         
         */
 
+		///////////////////////////////////////////////////
+		//// Player's action
 
-        ///////////////////////////////////////////////////
-        //// Player's action
-        
-        /*
+		/*
         
             Here, you are defining methods to handle player's action (ex: results of mouse click on 
             game objects).
@@ -172,8 +160,8 @@ function (dojo, declare) {
             _ make a call to the game server
         
         */
-        
-        /* Example:
+
+		/* Example:
         
         onMyMethodToCall1: function( evt )
         {
@@ -207,11 +195,10 @@ function (dojo, declare) {
         
         */
 
-        
-        ///////////////////////////////////////////////////
-        //// Reaction to cometD notifications
+		///////////////////////////////////////////////////
+		//// Reaction to cometD notifications
 
-        /*
+		/*
             setupNotifications:
             
             In this method, you associate each of your game notifications with your local method to handle it.
@@ -220,26 +207,25 @@ function (dojo, declare) {
                   your solarstorm.game.php file.
         
         */
-        setupNotifications: function()
-        {
-            console.log( 'notifications subscriptions setup' );
-            
-            // TODO: here, associate your game notifications with local methods
-            
-            // Example 1: standard notification handling
-            // dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
-            
-            // Example 2: standard notification handling + tell the user interface to wait
-            //            during 3 seconds after calling the method in order to let the players
-            //            see what is happening in the game.
-            // dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
-            // this.notifqueue.setSynchronous( 'cardPlayed', 3000 );
-            // 
-        },  
-        
-        // TODO: from this point and below, you can write your game notifications handling methods
-        
-        /*
+		setupNotifications: function() {
+			console.log('notifications subscriptions setup')
+
+			// TODO: here, associate your game notifications with local methods
+
+			// Example 1: standard notification handling
+			// dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
+
+			// Example 2: standard notification handling + tell the user interface to wait
+			//            during 3 seconds after calling the method in order to let the players
+			//            see what is happening in the game.
+			// dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
+			// this.notifqueue.setSynchronous( 'cardPlayed', 3000 );
+			//
+		}
+
+		// TODO: from this point and below, you can write your game notifications handling methods
+
+		/*
         Example:
         
         notif_cardPlayed: function( notif )
@@ -253,5 +239,88 @@ function (dojo, declare) {
         },    
         
         */
-   });             
-});
+	})
+})
+
+class SSRooms {
+	rooms = []
+
+	addRoom(room) {
+		this.rooms.push(room)
+	}
+
+	getRoomForEl(el) {
+		return this.rooms.find(r => r.el === el)
+	}
+}
+
+class SSRoom {
+	room = null
+	position = null
+	damage = null
+	diverted = false
+
+	el = null
+	divertedTokenEl = null
+
+	constructor(room, position, damage, diverted) {
+		this.room = room
+		this.position = position
+		this.assertEl()
+		this.setDamage(damage)
+		this.setDiverted(diverted)
+	}
+
+	assertEl() {
+		let el = document.getElementsByClassName('ss-room--${this.room}')[0]
+		if (el) {
+			this.el = el
+			return
+		}
+		const roomsEl = document.getElementsByClassName('ss-rooms')[0]
+		el = dojo.create(
+			'div',
+			{
+				class: `ss-room ss-room--pos-${this.position} ss-room--${this.room}`
+			},
+			roomsEl
+		)
+		if (this.room !== 0) {
+			for (let i = 0; i < 3; i++) {
+				dojo.create(
+					'div',
+					{ class: `ss-room__damage ss-room__damage--${i}` },
+					el
+				)
+			}
+			this.divertedTokenEl = dojo.create(
+				'div',
+				{ class: 'ss-room__diverted-token' },
+				el
+			)
+		}
+		this.el = el
+	}
+
+	setDamage(damage) {
+		if (this.room === 0) {
+			return
+		}
+		this.el.classList.remove('ss-room--damaged-0')
+		this.el.classList.remove('ss-room--damaged-1')
+		this.el.classList.remove('ss-room--damaged-2')
+		this.el.classList.remove('ss-room--damaged-3')
+		this.damage = damage
+		this.el.classList.add(`ss-room--damaged-${damage}`)
+	}
+
+	setDiverted(diverted) {
+		if (this.room === 0) {
+			return
+		}
+		this.diverted = diverted
+		this.divertedTokenEl.classList[diverted ? 'add' : 'remove'](
+			'ss-room__diverted-token--visible'
+		)
+	}
+}
