@@ -221,6 +221,7 @@
 	background-position: 50% 50%;
 	background-size: contain;
 	background-repeat: no-repeat;
+	filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.5)) drop-shadow(-1px -1px 1px rgba(0,0,0,0.5));
 	display: none;
 }
 .ss-room__diverted-token--visible {

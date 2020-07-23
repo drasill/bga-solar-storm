@@ -14,14 +14,22 @@ require_once APP_GAMEMODULE_PATH . 'module/table/table.game.php';
 require_once 'modules/SolarStormRooms.php';
 
 class SolarStorm extends Table {
-
 	/** @var SolarStormRooms */
 	private $rooms;
+	/** @var Deck */
+	private $resourceCards;
+	/** @var Deck */
+	private $damageCards;
 
 	function __construct() {
 		parent::__construct();
 		self::initGameStateLabels([]);
 		$this->rooms = new SolarStormRooms();
+		$this->resourceCards = self::getNew('module.common.deck');
+		$this->resourceCards->init('resource_card');
+
+		$this->damageCards = self::getNew('module.common.deck');
+		$this->damageCards->init('damage_cards');
 	}
 
 	protected function getGameName() {
@@ -69,10 +77,34 @@ class SolarStorm extends Table {
 
 		$this->rooms->generateRooms();
 
+		$this->initializeDecks();
+
 		// Activate first player (which is in general a good idea :) )
 		$this->activeNextPlayer();
 
 		/************ End of the game initialization *****/
+	}
+
+	private function initializeDecks() {
+		// Resource cards
+		$cards = [];
+		foreach ($this->resourceTypes as $resourceType) {
+			$nbr = 15;
+			if ($resourceType['id'] === 'universal') {
+				// TODO:DIFFICULTY
+				$nbr = 8;
+			}
+			$cards[] = [
+				'type' => $resourceType['id'],
+				'type_arg' => null,
+				'nbr' => $nbr,
+			];
+		}
+		$this->resourceCards->createCards($cards, 'deck');
+		$this->resourceCards->shuffle('deck');
+
+		// Damage cargs
+		// TODO
 	}
 
 	protected function getAllDatas() {
@@ -86,6 +118,9 @@ class SolarStorm extends Table {
 		$result['players'] = self::getCollectionFromDb($sql);
 
 		$result['rooms'] = $this->rooms->toArray();
+		$result['resourceCardsNbr'] = $this->resourceCards->countCardInLocation(
+			'deck'
+		);
 
 		return $result;
 	}
