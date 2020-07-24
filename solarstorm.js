@@ -27,12 +27,15 @@ define([
 			this.rooms = new SSRooms()
 			this.players = new SSPlayers()
 			this.resourceTypes = []
+			this.playAreaEl = null
+			this.damageDeck = null
 		},
 
 		setup: function(gamedatas) {
 			this.resourceTypes = gamedatas.resourceTypes
 			this.initializePlayArea()
 			this.initializePlayersArea()
+			this.initializeDamageDeck()
 			this.setupNotifications()
 		},
 
@@ -43,10 +46,9 @@ define([
 				this.rooms.addRoom(room)
 			})
 
+			this.playAreaEl = document.getElementsByClassName('ss-play-area')[0]
 			// Global area on click
-			document
-				.getElementsByClassName('ss-play-area')[0]
-				.addEventListener('click', this.onPlayAreaClick.bind(this))
+			this.playAreaEl.addEventListener('click', this.onPlayAreaClick.bind(this))
 		},
 
 		initializePlayersArea() {
@@ -71,6 +73,35 @@ define([
 						.stock.addToStock(resourceCard.type)
 				})
 			}
+		},
+
+		initializeDamageDeck() {
+			this.damageDeck = new ebg.stock()
+			const damageDeckEl = dojo.create(
+				'div',
+				{
+					class: 'ss-damage-deck',
+					id: 'ss-damage-deck'
+				},
+				this.playAreaEl
+			)
+			this.damageDeck.create(this, damageDeckEl, 160, 117)
+			this.damageDeck.setSelectionMode(0)
+			this.damageDeck.extraClasses = 'ss-damage-card'
+			this.damageDeck.setSelectionAppearance('class')
+			for (let i = 0; i < 24; i++) {
+				this.damageDeck.addItemType(
+					i,
+					1,
+					g_gamethemeurl + 'img/damages.jpg',
+					i+1
+				)
+			}
+			for (let card of Object.values(this.gamedatas.damageCardsDiscarded)) {
+				console.log(card)
+				this.damageDeck.addToStock(card.type)
+			}
+
 		},
 
 		onScreenWidthChange(arguments) {
@@ -242,10 +273,15 @@ define([
         */
 		setupNotifications: function() {
 			dojo.subscribe('resourceCards', this, 'notif_resourceCards')
+			dojo.subscribe('updateRooms', this, 'notif_updateRooms')
 		},
 
 		notif_resourceCards(notif) {
 			console.log('resourceCards', notif)
+		},
+
+		notif_updateRooms(notif) {
+			console.log('updateRooms', notif)
 		}
 
 		// TODO: from this point and below, you can write your game notifications handling methods
@@ -470,8 +506,7 @@ class SSPlayer {
 			'div',
 			{
 				class: 'ss-player-hand',
-				id: `ss-player-hand--${this.id}`,
-				innerHTML: 'test'
+				id: `ss-player-hand--${this.id}`
 			},
 			this.boardEl
 		)

@@ -29,7 +29,7 @@ class SolarStorm extends Table {
 		$this->resourceCards->init('resource_card');
 
 		$this->damageCards = self::getNew('module.common.deck');
-		$this->damageCards->init('damage_cards');
+		$this->damageCards->init('damage_card');
 	}
 
 	protected function getGameName() {
@@ -103,6 +103,7 @@ class SolarStorm extends Table {
 		$this->resourceCards->createCards($cards, 'deck');
 		$this->resourceCards->shuffle('deck');
 
+		// Distribute initial resourceCards
 		$players = self::loadPlayersBasicInfos();
 		foreach ($players as $player) {
 			// TODO:NBPLAYERS change the number of cards according to number of players
@@ -113,8 +114,55 @@ class SolarStorm extends Table {
 			);
 		}
 
-		// Damage cargs
-		// TODO
+		// Damage cards
+		$cards = [];
+		$types = ['1room', '2room', '3room'];
+		foreach ($types as $index => $nbRoom) {
+			$cards[$nbRoom] = [];
+			for ($i = 0; $i < 8; $i++) {
+				$cards[$nbRoom][] = [
+					'type' => $index * 8 + $i,
+					'type_arg' => null,
+					'nbr' => 1,
+				];
+				shuffle($cards[$nbRoom]);
+			}
+		}
+		$cards = array_merge($cards['3room'], $cards['2room'], $cards['1room']);
+		
+		$this->damageCards->createCards($cards, 'deck');
+
+		// $this->drawDamageCard('bottom');
+		// $this->drawDamageCard('bottom');
+	}
+
+	// FIXME private
+	public function drawDamageCard(string $from): void {
+		if (!in_array($from, ['top', 'bottom'])) {
+			throw new \Exception('Invalid position to draw damage card from');
+		}
+
+		$cards = $this->damageCards->getCardsInLocation('deck', null, 'location_arg');
+		if ($from === 'bottom') {
+			$card = $cards[0];
+		} else {
+			$card = $cards[count($cards) - 1];
+		}
+
+		$this->damageCards->moveCard($card['id'], 'discard');
+
+		$roomsSlugs = $this->damageCardsInfos[$card['type']];
+		$updatedRooms = [];
+		foreach ($roomsSlugs as $roomsSlug) {
+			$room = $this->rooms->getRoomBySlug($roomsSlug);
+			$room['damage']++;
+			$this->rooms->updateRoom($room);
+			$updatedRooms[] = $room;
+		}
+
+		$this->notifyAllPlayers('updateRooms', 'room update', [
+			'rooms' => $updatedRooms,
+		]);
 	}
 
 	protected function getAllDatas() {
@@ -129,13 +177,19 @@ class SolarStorm extends Table {
 		);
 		$result['resourceTypes'] = $this->resourceTypes;
 
+		$result['damageCardsNbr'] = $this->damageCards->countCardInLocation(
+			'deck'
+		);
+		$result['damageCardsDiscarded'] = $this->damageCards->getCardsInLocation(
+			'discard'
+		);
+
 		$data = [];
 		foreach ($players as $player) {
 			$playerId = $player['player_id'];
-			$data[$playerId] = array_values($this->resourceCards->getCardsInLocation(
-				'hand',
-				$playerId
-			));
+			$data[$playerId] = array_values(
+				$this->resourceCards->getCardsInLocation('hand', $playerId)
+			);
 		}
 		$result['resourceCards'] = $data;
 

@@ -23,7 +23,7 @@ class SolarStormRooms extends APP_GameClass {
 		// Position 4 (center) is always room 0 (Energy Core)
 		array_splice($rooms, 4, 0, 0);
 		foreach ($rooms as $position => $room) {
-			$damage = rand(0, 2);
+			$damage = 0;
 			$sql = "INSERT INTO rooms (position, room, damage, diverted) VALUES ('$position', '$room', '$damage', false)";
 			self::DbQuery($sql);
 		}
@@ -39,15 +39,49 @@ class SolarStormRooms extends APP_GameClass {
 			$roomInfo = $this->table->roomInfos[$roomId];
 			$room = [
 				'id' => $roomId,
-				'slug'=> $roomInfo['slug'],
-				'name'=> $roomInfo['name'],
-				'description'=> $roomInfo['description'],
+				'slug' => $roomInfo['slug'],
+				'name' => $roomInfo['name'],
+				'description' => $roomInfo['description'],
 				'position' => (int) $roomData['position'],
 				'damage' => (int) $roomData['damage'],
 				'diverted' => $roomData['diverted'] == 1,
 			];
 			$this->rooms[] = $room;
 		}
+	}
+
+	public function getRoomById(int $id): array {
+	}
+
+	public function getRoomBySlug(string $slug): array {
+		foreach ($this->rooms as $room) {
+			if ($room['slug'] === $slug) {
+				return $room;
+			}
+		}
+		throw new \Exception("Room '$slug' not found");
+	}
+
+	public function updateRoom(array $newRoom): void {
+
+		$found = true;
+		foreach ($this->rooms as &$room) {
+			if ($room['id'] === $newRoom['id']) {
+				$found = true;
+				break;
+			}
+		}
+		if (!$found)
+		throw new \Exception("Room id '{$newRoom['id']} not found");
+
+		$damage = (int) $newRoom['damage'];
+		$diverted = $newRoom['diverted'] ? 1 : 0;
+		$roomId = (int) $newRoom['id'];
+		$sql = "UPDATE rooms SET damage = $damage, diverted = $diverted WHERE room = $roomId";
+		self::DbQuery($sql);
+
+		$room['damage'] = $newRoom['damage'];
+		$room['diverted'] = $newRoom['diverted'];
 	}
 
 	public function toArray() {
