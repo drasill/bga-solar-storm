@@ -19,48 +19,81 @@ define([
 	'dojo',
 	'dojo/_base/declare',
 	'ebg/core/gamegui',
-	'ebg/counter'
+	'ebg/counter',
+	'ebg/stock'
 ], function(dojo, declare) {
 	return declare('bgagame.solarstorm', ebg.core.gamegui, {
 		constructor: function() {
 			this.rooms = new SSRooms()
+			this.players = new SSPlayers()
+			this.resourceTypes = []
 		},
 
 		setup: function(gamedatas) {
-			// Setting up player boards
-			for (var player_id in gamedatas.players) {
-				var player = gamedatas.players[player_id]
-			}
-			this.initializeRooms(gamedatas.rooms)
+			this.resourceTypes = gamedatas.resourceTypes
+			this.initializePlayArea()
+			this.initializePlayersArea()
 			this.setupNotifications()
+		},
 
+		initializePlayArea() {
+			// Initialize rooms
+			this.gamedatas.rooms.forEach(roomData => {
+				const room = new SSRoom(this, roomData)
+				this.rooms.addRoom(room)
+			})
+
+			// Global area on click
 			document
-				.getElementsByClassName('ss-playarea')[0]
+				.getElementsByClassName('ss-play-area')[0]
 				.addEventListener('click', this.onPlayAreaClick.bind(this))
 		},
 
-		initializeRooms(roomsData) {
-			roomsData.forEach(roomData => {
-				const room = new SSRoom(
-					+roomData.room,
-					+roomData.position,
-					+roomData.damage,
-					roomData.diverted == '1'
+		initializePlayersArea() {
+			for (let playerId in this.gamedatas.players) {
+				const data = this.gamedatas.players[playerId]
+				const order = this.gamedatas.playerorder.findIndex(p => p == playerId)
+				const player = new SSPlayer(
+					this,
+					+playerId,
+					data.name,
+					data.color,
+					order
 				)
-				this.rooms.addRoom(room)
-			})
+				this.players.addPlayer(player)
+			}
+			for (const [playerId, playerCards] of Object.entries(
+				this.gamedatas.resourceCards
+			)) {
+				playerCards.forEach(resourceCard => {
+					this.players
+						.getPlayerById(playerId)
+						.stock.addToStock(resourceCard.type)
+				})
+			}
+		},
+
+		onScreenWidthChange(arguments) {
+			this.players.assertPositions()
 		},
 
 		onPlayAreaClick(evt) {
-			console.log(evt)
 			const el = evt.target
 
 			// DEBUG test
 			if (el.classList.contains('ss-room')) {
-				const room = this.rooms.getRoomForEl(el)
-				room.setDamage((room.damage + 1) % 4)
-				room.setDiverted(!room.diverted)
 				dojo.stopEvent(evt)
+
+				const room = this.rooms.getByEl(el)
+				room.setDamage((room.damage + 1) % 4)
+
+				room.setDiverted(!room.diverted)
+
+				const playerIndex = Math.trunc(
+					Math.random() * this.players.players.length
+				)
+				const player = this.players.players[playerIndex]
+				player.setRoomPosition(room.position)
 			}
 		},
 
@@ -208,19 +241,11 @@ define([
         
         */
 		setupNotifications: function() {
-			console.log('notifications subscriptions setup')
+			dojo.subscribe('resourceCards', this, 'notif_resourceCards')
+		},
 
-			// TODO: here, associate your game notifications with local methods
-
-			// Example 1: standard notification handling
-			// dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
-
-			// Example 2: standard notification handling + tell the user interface to wait
-			//            during 3 seconds after calling the method in order to let the players
-			//            see what is happening in the game.
-			// dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
-			// this.notifqueue.setSynchronous( 'cardPlayed', 3000 );
-			//
+		notif_resourceCards(notif) {
+			console.log('resourceCards', notif)
 		}
 
 		// TODO: from this point and below, you can write your game notifications handling methods
@@ -249,13 +274,21 @@ class SSRooms {
 		this.rooms.push(room)
 	}
 
-	getRoomForEl(el) {
+	getByEl(el) {
 		return this.rooms.find(r => r.el === el)
+	}
+
+	getByPosition(position) {
+		return this.rooms.find(r => r.position === position)
 	}
 }
 
 class SSRoom {
-	room = null
+	gameObject = null
+	id = null
+	slug = null
+	name = null
+	description = null
 	position = null
 	damage = null
 	diverted = false
@@ -263,16 +296,20 @@ class SSRoom {
 	el = null
 	divertedTokenEl = null
 
-	constructor(room, position, damage, diverted) {
-		this.room = room
-		this.position = position
+	constructor(gameObject, data) {
+		this.gameObject = gameObject
+		this.id = data.id
+		this.slug = data.slug
+		this.name = data.name
+		this.description = data.description
+		this.position = data.position
 		this.assertEl()
-		this.setDamage(damage)
-		this.setDiverted(diverted)
+		this.setDamage(data.damage)
+		this.setDiverted(data.diverted)
 	}
 
 	assertEl() {
-		let el = document.getElementsByClassName('ss-room--${this.room}')[0]
+		let el = document.getElementsByClassName(`ss-room--${this.id}`)[0]
 		if (el) {
 			this.el = el
 			return
@@ -281,11 +318,17 @@ class SSRoom {
 		el = dojo.create(
 			'div',
 			{
-				class: `ss-room ss-room--pos-${this.position} ss-room--${this.room}`
+				id: `ss-room--${this.id}`,
+				class: `ss-room ss-room--pos-${this.position} ss-room--${this.id}`
 			},
 			roomsEl
 		)
-		if (this.room !== 0) {
+		this.gameObject.addTooltipHtml(
+			el.id,
+			`<div class="ss-room ss-room-tooltip ss-room--${this.id}"></div><b>${this.name}</b><hr/>${this.description}`,
+			1000
+		)
+		if (this.id !== 0) {
 			for (let i = 0; i < 3; i++) {
 				dojo.create(
 					'div',
@@ -303,7 +346,7 @@ class SSRoom {
 	}
 
 	setDamage(damage) {
-		if (this.room === 0) {
+		if (this.id === 0) {
 			return
 		}
 		this.el.classList.remove('ss-room--damaged-0')
@@ -315,12 +358,170 @@ class SSRoom {
 	}
 
 	setDiverted(diverted) {
-		if (this.room === 0) {
+		if (this.id === 0) {
 			return
 		}
 		this.diverted = diverted
 		this.divertedTokenEl.classList[diverted ? 'add' : 'remove'](
 			'ss-room__diverted-token--visible'
 		)
+	}
+}
+
+class SSPlayers {
+	players = []
+
+	addPlayer(player) {
+		this.players.push(player)
+	}
+
+	getPlayerById(id) {
+		return this.players.find(p => p.id === +id)
+	}
+
+	getAtPosition(position) {
+		return this.players.filter(p => p.position === +position)
+	}
+
+	assertPositions() {
+		this.players.forEach(player => {
+			player.setRoomPosition(player.position, true, false)
+		})
+	}
+}
+
+class SSPlayer {
+	gameObject = null
+	id = null
+	name = null
+	color = null
+	boardEl = null
+	stock = null
+	meepleEl = null
+	order = null
+	position = null
+
+	constructor(gameObject, id, name, color, order) {
+		this.gameObject = gameObject
+		this.id = +id
+		this.name = name
+		this.color = color
+		this.order = order
+		this.assertBoardEl()
+		this.assertMeepleEl()
+		this.createStock()
+		this.setRoomPosition(null)
+	}
+
+	assertBoardEl() {
+		let boardEl = document.getElementsByClassName(
+			`ss-players-board--id-${this.id}`
+		)[0]
+		if (boardEl) {
+			this.boardEl = boardEl
+			return
+		}
+		const playersArea = document.getElementsByClassName('ss-players-area')[0]
+		boardEl = dojo.create(
+			'div',
+			{
+				class: `ss-player-board ss-players-board--id-${this.id}`
+			},
+			playersArea
+		)
+		const handEl = dojo.create(
+			'div',
+			{
+				class: 'ss-player-board__name',
+				style: {
+					backgroundColor: '#' + this.color
+				},
+				innerHTML: `Hand for ${this.name} #${this.id}`
+			},
+			boardEl
+		)
+		this.boardEl = boardEl
+	}
+
+	assertMeepleEl() {
+		let meepleEl = document.getElementsByClassName(
+			`ss-player-meeple--id-${this.id}`
+		)[0]
+		if (meepleEl) {
+			this.meepleEl = meepleEl
+			return
+		}
+		const playersArea = document.getElementsByClassName('ss-play-area')[0]
+		meepleEl = dojo.create(
+			'div',
+			{
+				id: `ss-player-meeple--id-${this.id}`,
+				class: `ss-player-meeple ss-player-meeple--order-${this.order} ss-player-meeple--id-${this.id}`
+			},
+			playersArea
+		)
+		this.gameObject.addTooltipHtml(meepleEl.id, _(`Player ${this.name}`), 250)
+		this.meepleEl = meepleEl
+	}
+
+	createStock() {
+		this.stock = new ebg.stock()
+		const handEl = dojo.create(
+			'div',
+			{
+				class: 'ss-player-hand',
+				id: `ss-player-hand--${this.id}`,
+				innerHTML: 'test'
+			},
+			this.boardEl
+		)
+		this.stock.create(this.gameObject, handEl, 117, 160)
+		this.stock.setSelectionMode(1)
+		this.stock.extraClasses = 'ss-resource-card'
+		this.stock.setSelectionAppearance('class')
+		this.gameObject.resourceTypes.forEach((type, index) => {
+			this.stock.addItemType(
+				type.id,
+				index,
+				g_gamethemeurl + 'img/resources.png',
+				index
+			)
+		})
+	}
+
+	setRoomPosition(position, instant = false, moveOthers = true) {
+		const previousPosition = this.position
+		this.position = position
+		if (position === null) {
+			this.meepleEl.style.display = 'none'
+			return
+		}
+		this.meepleEl.style.display = 'block'
+
+		const roomEl = this.gameObject.rooms.getByPosition(position).el
+		const duration = instant ? 0 : 750
+		const roomPos = dojo.position(roomEl)
+
+		const index = this.gameObject.players
+			.getAtPosition(position)
+			.sort(p => p.order)
+			.findIndex(p => p.id === this.id)
+		const offsetX = index * 20 + roomPos.w * 0.2
+		const offsetY = roomPos.h * 0.2
+
+		this.gameObject
+			.slideToObjectPos(this.meepleEl, roomEl, offsetX, offsetY, duration, 0)
+			.play()
+
+		if (moveOthers) {
+			this.gameObject.players
+				.getAtPosition(position)
+				.forEach(p => p.setRoomPosition(position, false, false))
+			if (previousPosition !== position) {
+				this.gameObject.players
+					.getAtPosition(previousPosition)
+					.forEach(p => p.setRoomPosition(previousPosition, false, false))
+			}
+		}
 	}
 }

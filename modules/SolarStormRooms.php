@@ -3,14 +3,17 @@
 declare(strict_types=1);
 
 class SolarStormRooms extends APP_GameClass {
-
 	/** @var array */
 	private $rooms;
+
+	/** @var SolarStorm */
+	private $table;
 
 	/**
 	 * Constructor
 	 */
-	public function __construct() {
+	public function __construct(SolarStorm $table) {
+		$this->table = $table;
 		$this->load();
 	}
 
@@ -20,7 +23,7 @@ class SolarStormRooms extends APP_GameClass {
 		// Position 4 (center) is always room 0 (Energy Core)
 		array_splice($rooms, 4, 0, 0);
 		foreach ($rooms as $position => $room) {
-			$damage = rand(0,2);
+			$damage = rand(0, 2);
 			$sql = "INSERT INTO rooms (position, room, damage, diverted) VALUES ('$position', '$room', '$damage', false)";
 			self::DbQuery($sql);
 		}
@@ -28,8 +31,23 @@ class SolarStormRooms extends APP_GameClass {
 	}
 
 	public function load() {
+		$this->rooms = [];
 		$sql = 'SELECT id, position, room, damage, diverted FROM rooms';
-		$this->rooms = self::getCollectionFromDb($sql);
+		$roomsData = self::getCollectionFromDb($sql);
+		foreach ($roomsData as $roomData) {
+			$roomId = (int) $roomData['room'];
+			$roomInfo = $this->table->roomInfos[$roomId];
+			$room = [
+				'id' => $roomId,
+				'slug'=> $roomInfo['slug'],
+				'name'=> $roomInfo['name'],
+				'description'=> $roomInfo['description'],
+				'position' => (int) $roomData['position'],
+				'damage' => (int) $roomData['damage'],
+				'diverted' => $roomData['diverted'] == 1,
+			];
+			$this->rooms[] = $room;
+		}
 	}
 
 	public function toArray() {

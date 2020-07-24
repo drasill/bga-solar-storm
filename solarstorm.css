@@ -6,72 +6,17 @@
  * This code has been produced on the BGA studio platform for use on http://boardgamearena.com.
  * See http://en.boardgamearena.com/#!doc/Studio for more information.
  * -----
- *
- * solarstorm.css
- *
- * SolarStorm stylesheet
- *
  */
 
-/*
-    This is the CSS stylesheet of your game User Interface.
-    
-    Styles defined on this file will be applied to the HTML elements you define in your
-    HTML template (solarstorm_solarstorm.tpl), and to HTML elements you create dynamically
-    (in solarstorm.js).
-    
-    Usually, you are using CSS to:
-    
-    1°) define the overall layout of your game
-        (ex: place the board on the top left, place player's hand beside, place the deck on the right, ...).
+.ss-wrapper,
+.ss-wrapper * {
+	box-sizing: border-box;
+}
 
-    2°) create your CSS-sprites:
-        All images of your games should be gathered into a small number of image files. Then, using
-        background-image and background-position CSS properties, you create HTML blocks that can 
-        display these images correctly (see example below).
-    
-    3°) ... anything else:
-        It is really easy to add and remove CSS classes dynamically from your Javascript with
-        dojo.addClass and dojo.removeClass. It is also easy to check if an element has a class
-        (dojo.hasClass) or to get all elements with a specific class (dojo.query). This is why,
-        very often, using CSS classes for the logic of your user interface allow you to do complex
-        thing easily.
-        
-        
-     Note: on the production platform, this file will be compressed and comments will be removed.
-           Consequently, don't hesitate to put as many comments as necessary.
-*/
-
-/* Note: you must not use any @import directive */
-
-/********* You can start writing your CSS below this line: **********/
-
-/*
-    Example of CSS sprites (a black token and a white token, 20x20px each, embedded in the same "tokens.png" 40x20px image):
-
-    .white_token {
-        background-image: url('img/tokens.png');
-        background-position: 0px 0px;
-    }
-    .black_token {
-        background-image: url('img/tokens.png');
-        background-position: -20px 0px;
-    }
-    .token {
-        width: 20px;
-        height: 20px;
-        background-repeat: none;
-    }
-*/
-
-.ss-playarea {
+.ss-play-area {
 	position: relative;
 	height: 0;
 	padding-bottom: 60%;
-	box-sizing: border-box;
-}
-.ss-playarea * {
-	box-sizing: border-box;
 }
 
 .ss-playmat {
@@ -97,14 +42,15 @@
 	position: absolute;
 	width: 32%;
 	height: 32%;
-	background-image: url('img/rooms.png');
+	background-image: url(img/rooms.jpg);
 	background-size: 300%;
 	border-radius: 4%;
 	box-shadow: rgba(0, 0, 0, 0.7) 3px 3px 5px;
 }
 
 .ss-room:hover {
-	filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.5)) drop-shadow(-2px -2px 2px rgba(0,0,0,0.5));
+	filter: drop-shadow(2px 2px 2px rgba(0, 0, 0, 0.5))
+		drop-shadow(-2px -2px 2px rgba(0, 0, 0, 0.5));
 }
 
 .ss-room--pos-0 {
@@ -148,28 +94,34 @@
 	background-position: 0% 0%;
 }
 .ss-room--1 {
-	background-position: 100% 0%;
+	background-position: 50% 0%;
 }
 .ss-room--2 {
-	background-position: 200% 0%;
+	background-position: 100% 0%;
 }
 .ss-room--3 {
-	background-position: 0% 100%;
+	background-position: 0% 50%;
 }
 .ss-room--4 {
-	background-position: 100% 100%;
+	background-position: 50% 50%;
 }
 .ss-room--5 {
-	background-position: 200% 100%;
+	background-position: 100% 50%;
 }
 .ss-room--6 {
-	background-position: 0% 200%;
+	background-position: 0% 100%;
 }
 .ss-room--7 {
-	background-position: 100% 200%;
+	background-position: 50% 100%;
 }
 .ss-room--8 {
-	background-position: 200% 200%;
+	background-position: 100% 100%;
+}
+
+.ss-room-tooltip {
+	position: relative;
+	width: 333px;
+	height: 245px;
 }
 
 .ss-room__damage {
@@ -177,10 +129,10 @@
 	width: 10%;
 	height: 14%;
 	left: 90%;
-	background-image: url('img/damage-cube.png');
+	background-image: url(img/damage-cube.png);
 	background-size: contain;
 	background-repeat: no-repeat;
-	transition: all 1.3s ease-out;
+	transition: all 1.3s ease-in-out;
 }
 .ss-room__damage--0 {
 	top: 19%;
@@ -213,21 +165,88 @@
 
 .ss-room__diverted-token {
 	position: absolute;
-	top: 25%;
-	bottom: 35%;
-	left: 35%;
-	right: 35%;
-	background-image: url('img/diverted-token.png');
+	top: 0%;
+	bottom: 0%;
+	left: 0%;
+	right: 0%;
+	background-image: url(img/diverted-token.png);
 	background-position: 50% 50%;
 	background-size: contain;
 	background-repeat: no-repeat;
-	filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.5)) drop-shadow(-1px -1px 1px rgba(0,0,0,0.5));
-	display: none;
+	filter: drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.5))
+		drop-shadow(-1px -1px 1px rgba(0, 0, 0, 0.5));
+	top: 0%;
+	left: 35%;
+	height: 20%;
+	width: 15%;
+	opacity: 0;
+	pointer-events: none;
+	transition: all 1.3s ease-in-out;
 }
 .ss-room__diverted-token--visible {
-	display: block;
+	top: 45%;
+	left: 5%;
+	height: 30%;
+	width: 20%;
+	opacity: 1;
+	pointer-events: all;
 }
 
 .ss-room__diverted-token:hover {
-	filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.5)) drop-shadow(-2px -2px 2px rgba(0,0,0,0.5));
+	filter: drop-shadow(2px 2px 2px rgba(0, 0, 0, 0.5))
+		drop-shadow(-2px -2px 2px rgba(0, 0, 0, 0.5));
+}
+
+.ss-resource-card {
+	filter: drop-shadow(2px 2px 2px rgba(0, 0, 0, 0.5))
+		drop-shadow(-2px -2px 2px rgba(0, 0, 0, 0.5));
+}
+.ss-resource-card.stockitem_selected {
+	border: none !important;
+	outline: 1px solid #2565e8;
+	filter: drop-shadow(3px 3px 6px rgba(0, 0, 255, 0.7))
+		drop-shadow(-3px -3px 6px rgba(0, 0, 255, 0.7));
+}
+
+.ss-player-board {
+	margin: 10px;
+	padding: 10px;
+	background: #ffffff77;
+	display: flex;
+}
+
+.ss-player-board__name {
+	padding: 10px;
+}
+
+.ss-player-board .ss-player-hand {
+	flex: 1;
+	margin-left: 5%;
+}
+
+.ss-player-meeple {
+	position: absolute;
+	background-image: url(img/meeples.png);
+	background-position: 0 0;
+	background-size: 100% 400%;
+	background-repeat: no-repeat;
+	width: 3%;
+	height: 6%;
+	filter: drop-shadow(1px 1px 1px rgba(255, 255, 255, 0.7))
+		drop-shadow(-1px -1px 1px rgba(255, 255, 255, 0.7))
+		drop-shadow(-1px 1px 1px rgba(255, 255, 255, 0.7))
+		drop-shadow(1px -1px 1px rgba(255, 255, 255, 0.7));
+}
+
+.ss-player-meeple--order-0 {
+	background-position: 0 0;
+}
+.ss-player-meeple--order-1 {
+	background-position: 0 33%;
+}
+.ss-player-meeple--order-2 {
+	background-position: 0 66%;
+}
+.ss-player-meeple--order-3 {
+	background-position: 0 100%;
 }

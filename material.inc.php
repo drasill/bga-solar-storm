@@ -58,3 +58,69 @@ $this->resourceTypes = [
 		'nametr' => self::_('Universal'),
 	],
 ];
+
+$this->roomInfos = [
+	0 => [
+		'slug' => 'energy-core',
+		'name' => self::_('Energy Core'),
+		'description' => self::_(
+			'When all rooms have diverted power, get here and use 1 action to reactivate the Energy Core'
+		),
+	],
+	1 => [
+		'slug' => 'mess-hall',
+		'name' => self::_('Mess Hall'),
+		'description' => self::_(
+			'Give, take or exchange a resource card with another player'
+		),
+	],
+	2 => [
+		'slug' => 'repair-centre',
+		'name' => self::_('Repair Centre'),
+		'description' => self::_(
+			'Repair a damaged room by one space on the Repair Track. Discard the matching card.'
+		),
+	],
+	3 => [
+		'slug' => 'medical-bay',
+		'name' => self::_('Medical Bay'),
+		'description' => self::_(
+			'Take two actions tokens when starting in this room'
+		),
+	],
+	4 => [
+		'slug' => 'engine-room',
+		'name' => self::_('Engine Room'),
+		'description' => self::_(
+			'Swap a card from your hand with one from the discard pile'
+		),
+	],
+	5 => [
+		'slug' => 'crew-quarters',
+		'name' => self::_('Crew Quarters'),
+		'description' => self::_(
+			"Move a player's meeple to a rooms that has another meeple in it"
+		),
+	],
+	6 => [
+		'slug' => 'cargo-hold',
+		'name' => self::_('Cargo Hold'),
+		'description' => self::_(
+			'Look at the next 5 resources cards. Then put them back in any order.'
+		),
+	],
+	7 => [
+		'slug' => 'armoury',
+		'name' => self::_('Armoury'),
+		'description' => self::_(
+			'Place 2 protection tokens on any rooms(s) (this ends at the start of your next turn)'
+		),
+	],
+	8 => [
+		'slug' => 'bridge',
+		'name' => self::_('Bridge'),
+		'description' => self::_(
+			'Look at the next 3 Damage cards and put them back in any order.'
+		),
+	],
+];

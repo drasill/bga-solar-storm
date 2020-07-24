@@ -9,9 +9,14 @@
 -- See http://en.boardgamearena.com/#!doc/Studio for more information.
 -->
 
-<div class="ss-playarea">
-	<div class="ss-playmat"></div>
-	<div class="ss-rooms"></div>
+<div class="ss-wrapper">
+	<div class="ss-play-area">
+		<div class="ss-playmat"></div>
+		<div class="ss-rooms"></div>
+	</div>
+	
+	<div class="ss-players-area">
+	</div>
 </div>
 
 <script type="text/javascript">

@@ -24,7 +24,7 @@ class SolarStorm extends Table {
 	function __construct() {
 		parent::__construct();
 		self::initGameStateLabels([]);
-		$this->rooms = new SolarStormRooms();
+		$this->rooms = new SolarStormRooms($this);
 		$this->resourceCards = self::getNew('module.common.deck');
 		$this->resourceCards->init('resource_card');
 
@@ -91,7 +91,7 @@ class SolarStorm extends Table {
 		foreach ($this->resourceTypes as $resourceType) {
 			$nbr = 15;
 			if ($resourceType['id'] === 'universal') {
-				// TODO:DIFFICULTY
+				// TODO:DIFFICULTY change nbr according to difficulty
 				$nbr = 8;
 			}
 			$cards[] = [
@@ -103,6 +103,16 @@ class SolarStorm extends Table {
 		$this->resourceCards->createCards($cards, 'deck');
 		$this->resourceCards->shuffle('deck');
 
+		$players = self::loadPlayersBasicInfos();
+		foreach ($players as $player) {
+			// TODO:NBPLAYERS change the number of cards according to number of players
+			$cards = $this->resourceCards->pickCards(
+				2,
+				'deck',
+				$player['player_id']
+			);
+		}
+
 		// Damage cargs
 		// TODO
 	}
@@ -110,17 +120,24 @@ class SolarStorm extends Table {
 	protected function getAllDatas() {
 		$result = [];
 
-		$currentPlayerId = self::getCurrentPlayerId();
-
-		// Get information about players
-		// Note: you can retrieve some extra field you added for "player" table in "dbmodel.sql" if you need it.
-		$sql = 'SELECT player_id id, player_score score FROM player ';
-		$result['players'] = self::getCollectionFromDb($sql);
+		// $currentPlayerId = self::getCurrentPlayerId();
+		$players = self::loadPlayersBasicInfos();
 
 		$result['rooms'] = $this->rooms->toArray();
 		$result['resourceCardsNbr'] = $this->resourceCards->countCardInLocation(
 			'deck'
 		);
+		$result['resourceTypes'] = $this->resourceTypes;
+
+		$data = [];
+		foreach ($players as $player) {
+			$playerId = $player['player_id'];
+			$data[$playerId] = array_values($this->resourceCards->getCardsInLocation(
+				'hand',
+				$playerId
+			));
+		}
+		$result['resourceCards'] = $data;
 
 		return $result;
 	}
