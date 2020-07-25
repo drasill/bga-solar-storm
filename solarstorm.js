@@ -54,25 +54,20 @@ define([
 		},
 
 		initializePlayersArea() {
-			for (let playerId in this.gamedatas.players) {
-				const data = this.gamedatas.players[playerId]
-				const order = this.gamedatas.playerorder.findIndex(p => p == playerId)
+			const playersData = this.gamedatas.ssPlayers.sort(
+				(p1, p2) => p1.order - p2.order
+			)
+			console.dir(playersData)
+			playersData.forEach(data => {
 				const player = new SSPlayer(
 					this,
-					+playerId,
+					data.id,
 					data.name,
 					data.color,
-					order
+					data.order,
+					data.position
 				)
 				this.players.addPlayer(player)
-			}
-
-			this.players.players.forEach(player => {
-				player.setRoomPosition(
-					this.gamedatas.ssPlayers[player.id].position,
-					false,
-					true
-				)
 			})
 
 			for (const [playerId, playerCards] of Object.entries(
@@ -145,6 +140,15 @@ define([
 			console.log('Entering state: ' + stateName, args)
 
 			switch (stateName) {
+				case 'playerTurn':
+					const leftStr = dojo.string.substitute(_('(${n} left)'), {
+						n: args.args.actions
+					})
+					this.gamedatas.gamestate.descriptionmyturn += ' ' + leftStr
+					this.gamedatas.gamestate.description += ' ' + leftStr
+					this.updatePageTitle()
+
+					break
 				case 'playerMove':
 					this.rooms.highlight(args.args.possibleDestinations)
 					break
@@ -176,6 +180,11 @@ define([
 						this.addActionButton('buttonMove', _('Move'), evt => {
 							this.onPlayerChooseAction(evt, 'move')
 						})
+						break
+					case 'playerMove':
+						this.addActionButton('buttonCancel', _('Cancel'), evt => {
+							this.ajaxAction('cancel', { lock: true })
+						}, null, null, 'gray')
 						break
 				}
 			}
@@ -293,23 +302,6 @@ define([
 				.getPlayerById(notif.args.player_id)
 				.setRoomPosition(notif.args.position)
 		}
-
-		// TODO: from this point and below, you can write your game notifications handling methods
-
-		/*
-        Example:
-        
-        notif_cardPlayed: function( notif )
-        {
-            console.log( 'notif_cardPlayed' );
-            console.log( notif );
-            
-            // Note: notif.args contains the arguments specified during you "notifyAllPlayers" / "notifyPlayer" PHP call
-            
-            // TODO: play the card in the user interface.
-        },    
-        
-        */
 	})
 })
 
@@ -461,7 +453,7 @@ class SSPlayer {
 	order = null
 	position = null
 
-	constructor(gameObject, id, name, color, order) {
+	constructor(gameObject, id, name, color, order, position) {
 		this.gameObject = gameObject
 		this.id = +id
 		this.name = name
@@ -470,7 +462,7 @@ class SSPlayer {
 		this.assertBoardEl()
 		this.assertMeepleEl()
 		this.createStock()
-		this.setRoomPosition(null)
+		this.setRoomPosition(position, false, true)
 	}
 
 	assertBoardEl() {
@@ -561,10 +553,11 @@ class SSPlayer {
 		const duration = instant ? 0 : 750
 		const roomPos = dojo.position(roomEl)
 
-		const index = this.gameObject.players
-			.getAtPosition(position)
-			.sort(p => p.order)
-			.findIndex(p => p.id === this.id)
+		// const index = this.gameObject.players
+		// .getAtPosition(position)
+		// .sort(p => p.order)
+		// .findIndex(p => p.id === this.id)
+		const index = this.order
 		const offsetX = index * 20 + roomPos.w * 0.2
 		const offsetY = roomPos.h * 0.2
 

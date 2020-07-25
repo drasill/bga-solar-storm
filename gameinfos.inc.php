@@ -88,10 +88,10 @@ $gameinfos = array(
 	'diplomacy' => 3,
 
 	// Colors attributed to players
-	'player_colors' => ['423D37', 'CB0E2D', '006DC8', 'EBC700'],
+	'player_colors' => ['423D37', 'C90E2D', '006DC8', 'EBC700'],
 
 	// Favorite colors support : if set to "true", support attribution of favorite colors based on player's preferences (see reattributeColorsBasedOnPreferences PHP method)
-	'favorite_colors_support' => true,
+	'favorite_colors_support' => false,
 
 	// When doing a rematch, the player order is swapped using a "rotation" so the starting player is not the same
 	// If you want to disable this, set this to false

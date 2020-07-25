@@ -33,8 +33,6 @@ class action_solarstorm extends APP_GameAction {
 		}
 	}
 
-	// TODO: defines your action entry points there
-
 	public function choose() {
 		self::setAjaxMode();
 		$actionName = self::getArg('actionName', AT_enum, true, null, ['move']);
@@ -46,6 +44,12 @@ class action_solarstorm extends APP_GameAction {
 		self::setAjaxMode();
 		$position = self::getArg('position', AT_posint, true);
 		$this->game->actionMove((int)$position);
+		self::ajaxResponse();
+	}
+
+	public function cancel() {
+		self::setAjaxMode();
+		$this->game->actionCancel();
 		self::ajaxResponse();
 	}
 }

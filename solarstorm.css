@@ -257,15 +257,15 @@
 		drop-shadow(1px -1px 1px rgba(255, 255, 255, 0.7));
 }
 
-.ss-player-meeple--order-0 {
+.ss-player-meeple--order-1 {
 	background-position: 0 0;
 }
-.ss-player-meeple--order-1 {
+.ss-player-meeple--order-2 {
 	background-position: 0 33%;
 }
-.ss-player-meeple--order-2 {
+.ss-player-meeple--order-3 {
 	background-position: 0 66%;
 }
-.ss-player-meeple--order-3 {
+.ss-player-meeple--order-4 {
 	background-position: 0 100%;
 }

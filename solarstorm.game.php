@@ -74,10 +74,6 @@ class SolarStorm extends Table {
 		}
 		$sql .= implode($values, ',');
 		self::DbQuery($sql);
-		self::reattributeColorsBasedOnPreferences(
-			$players,
-			$gameinfos['player_colors']
-		);
 		self::reloadPlayersBasicInfos();
 		$this->ssPlayers->load();
 
@@ -285,8 +281,19 @@ class SolarStorm extends Table {
 
 	public function actionChoose($actionName): void {
 		self::checkAction('choose');
-		$playerId = self::getActivePlayerId();
-		$this->gamestate->nextState('transMove');
+		switch ($actionName) {
+			case 'move':
+				$this->gamestate->nextState('transMove');
+				break;
+			default:
+				throw new BgaUserException("Invalid action $actionName");
+				break;
+		}
+	}
+
+	public function actionCancel() {
+		self::checkAction('cancel');
+		$this->gamestate->nextState('transActionCancel');
 	}
 
 	public function actionMove(int $position): void {
@@ -307,17 +314,26 @@ class SolarStorm extends Table {
 		}
 
 		$player->setPosition($position);
+		$player->incrementActions(-1);
+		$player->save();
 		$this->notifyPlayerData(
 			$player,
 			clienttranslate('${player_name} moves to ${roomName}'),
 			['roomName' => $room->getName()]
 		);
-		$this->gamestate->nextState('transTurn');
+		$this->gamestate->nextState('transActionDone');
 	}
 
 	//////////////////////////////////////////////////////////////////////////////
 	//////////// Game state arguments
 	////////////
+
+	public function argPlayerTurn() {
+		$player = $this->ssPlayers->getActive();
+		return [
+			'actions' => $player->getActions(),
+		];
+	}
 
 	public function argPlayerMove() {
 		$player = $this->ssPlayers->getActive();
@@ -332,23 +348,17 @@ class SolarStorm extends Table {
 	//////////// Game state actions
 	////////////
 
-	/*
-        Here, you can create methods defined as "game state actions" (see "action" property in states.inc.php).
-        The action method of state X is called everytime the current game state is set to X.
-    */
-
-	/*
-    
-    Example for game state "MyGameState":
-
-    function stMyGameState()
-    {
-        // Do some stuff ...
-        
-        // (very often) go to another gamestate
-        $this->gamestate->nextState( 'some_gamestate_transition' );
-    }    
-    */
+	public function stActionDone() {
+		$player = $this->ssPlayers->getActive();
+		$actions = $player->getActions();
+		if ($actions === 0) {
+			$player->setActions(3);
+			$player->save();
+			$playerId = self::activeNextPlayer();
+			self::giveExtraTime($playerId);
+		}
+		$this->gamestate->nextState('transPlayerTurn');
+	}
 
 	//////////////////////////////////////////////////////////////////////////////
 	//////////// Zombie

@@ -109,7 +109,7 @@ class SolarStormRoom extends APP_GameClass {
 			'id' => $this->roomId,
 			'slug' => $this->slug,
 			'name' => $this->name,
-			'description' => $this->position,
+			'description' => $this->description,
 			'position' => $this->position,
 			'diverted' => $this->diverted,
 			'damage' => $this->damage,

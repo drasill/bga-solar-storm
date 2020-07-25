@@ -17,6 +17,7 @@
 if (!defined('ST_PLAYER_TURN')) {
 	define('ST_PLAYER_TURN', 2);
 	define('ST_PLAYER_MOVE', 3);
+	define('ST_ACTION_DONE', 4);
 }
 
 $machinestates = [
@@ -31,9 +32,10 @@ $machinestates = [
 
 	ST_PLAYER_TURN => [
 		'name' => 'playerTurn',
-		'description' => clienttranslate('${actplayer} must play your actions'),
-		'descriptionmyturn' => clienttranslate('${you} must play your actions'),
+		'description' => clienttranslate('${actplayer} must choose an action'),
+		'descriptionmyturn' => clienttranslate('${you} must choose an action'),
 		'type' => 'activeplayer',
+		'args' => 'argPlayerTurn',
 		'possibleactions' => ['choose'],
 		'transitions' => [
 			'transMove' => ST_PLAYER_MOVE,
@@ -42,13 +44,28 @@ $machinestates = [
 
 	ST_PLAYER_MOVE => [
 		'name' => 'playerMove',
-		'description' => clienttranslate('${actplayer} must choose a destination'),
-		'descriptionmyturn' => clienttranslate('${you} must choose a destination'),
+		'description' => clienttranslate(
+			'${actplayer} must choose a destination'
+		),
+		'descriptionmyturn' => clienttranslate(
+			'${you} must choose a destination'
+		),
 		'type' => 'activeplayer',
 		'args' => 'argPlayerMove',
-		'possibleactions' => ['move'],
+		'possibleactions' => ['move', 'cancel'],
 		'transitions' => [
-			'transTurn' => ST_PLAYER_TURN,
+			'transActionDone' => ST_ACTION_DONE,
+			'transActionCancel' => ST_PLAYER_TURN,
+		],
+	],
+
+	ST_ACTION_DONE => [
+		'name' => 'actionDone',
+		'type' => 'game',
+		'action' => 'stActionDone',
+		'updateGameProgression' => true,
+		'transitions' => [
+			'transPlayerTurn' => ST_PLAYER_TURN,
 		],
 	],
 	/*
