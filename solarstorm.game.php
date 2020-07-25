@@ -115,6 +115,8 @@ class SolarStorm extends Table {
 			// TODO:NBPLAYERS change the number of cards according to number of players
 			$cards = $this->resourceCards->pickCards(2, 'deck', $player->getId());
 		}
+		// Reveal 2 cards on table
+		$this->assertResourceCardsOnTable(false);
 
 		// Damage cards
 		$cards = [];
@@ -134,12 +136,12 @@ class SolarStorm extends Table {
 
 		$this->damageCards->createCards($cards, 'deck');
 
-		$this->drawDamageCard('bottom');
-		$this->drawDamageCard('bottom');
+		$this->drawDamageCard('bottom', false);
+		$this->drawDamageCard('bottom', false);
 	}
 
 	// FIXME private
-	public function drawDamageCard(string $from, bool $notify = false): void {
+	public function drawDamageCard(string $from, bool $notify = true): void {
 		if (!in_array($from, ['top', 'bottom'])) {
 			throw new \Exception('Invalid position to draw damage card from');
 		}
@@ -178,6 +180,37 @@ class SolarStorm extends Table {
 		}
 	}
 
+	// FIXME private
+	/**
+	 * Assert presence of 2 resources cards on the table.
+	 */
+	public function assertResourceCardsOnTable(bool $notify = true): void {
+		$currentCnt = $this->resourceCards->countCardInLocation('table');
+		$needToDrawCnt = 2 - $currentCnt;
+
+		if ($needToDrawCnt <= 0) {
+			return;
+		}
+
+		$cards = $this->resourceCards->pickCardsForLocation(
+			$needToDrawCnt,
+			'deck',
+			'table'
+		);
+
+		if ($notify) {
+			if ($notify) {
+				$this->notifyAllPlayers(
+					'addResourcesCardsOnTable',
+					'add resource',
+					[
+						'cards' => $cards,
+					]
+				);
+			}
+		}
+	}
+
 	protected function getAllDatas() {
 		$result = [];
 
@@ -194,6 +227,9 @@ class SolarStorm extends Table {
 		$result['damageCardsDiscarded'] = $this->damageCards->getCardsInLocation(
 			'discard'
 		);
+		$result[
+			'resourceCardsOnTable'
+		] = $this->resourceCards->getCardsInLocation('table');
 
 		$data = [];
 		foreach ($this->ssPlayers->getPlayers() as $player) {

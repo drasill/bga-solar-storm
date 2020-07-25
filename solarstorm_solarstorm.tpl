@@ -17,8 +17,9 @@
 			<div class="ss-rooms"></div>
 		</div>
 
-		<div class="ss-damage-deck-wrapper">
+		<div class="ss-decks-wrapper">
 			<div class="ss-damage-deck" id="ss-damage-deck"></div>
+			<div class="ss-resource-deck" id="ss-resource-deck"></div>
 		</div>
 
 	</div>

@@ -29,6 +29,7 @@ define([
 			this.resourceTypes = []
 			this.playAreaEl = null
 			this.damageDeck = null
+			this.resourceDeck = null
 		},
 
 		setup: function(gamedatas) {
@@ -36,6 +37,7 @@ define([
 			this.initializePlayArea()
 			this.initializePlayersArea()
 			this.initializeDamageDeck()
+			this.initializeResourceDeck()
 			this.setupNotifications()
 		},
 
@@ -103,6 +105,29 @@ define([
 				console.log(card)
 				this.damageDeck.addToStock(card.type)
 			}
+		},
+
+		initializeResourceDeck() {
+			const resourceDeckEl = document.getElementsByClassName('ss-resource-deck')[0]
+
+			this.resourceDeck = new ebg.stock()
+			this.resourceDeck.create(this, resourceDeckEl, 87, 120)
+			this.resourceDeck.setSelectionMode(1)
+			this.resourceDeck.extraClasses = 'ss-resource-card'
+			this.resourceDeck.setSelectionAppearance('class')
+			this.resourceTypes.forEach((type, index) => {
+				this.resourceDeck.addItemType(
+					type.id,
+					index,
+					g_gamethemeurl + 'img/resources.jpg',
+					index
+				)
+			})
+			for (let card of Object.values(this.gamedatas.resourceCardsOnTable)) {
+				console.log(card)
+				this.resourceDeck.addToStock(card.type)
+			}
+
 		},
 
 		onScreenWidthChange(arguments) {
@@ -273,13 +298,9 @@ define([
         
         */
 		setupNotifications: function() {
-			dojo.subscribe('resourceCards', this, 'notif_resourceCards')
 			dojo.subscribe('updateRooms', this, 'notif_updateRooms')
 			dojo.subscribe('updateDamageDiscard', this, 'notif_updateDamageDiscard')
-		},
-
-		notif_resourceCards(notif) {
-			console.log('notif_resourceCards', notif)
+			dojo.subscribe('addResourcesCardsOnTable', this, 'notif_addResourcesCardsOnTable')
 		},
 
 		notif_updateRooms(notif) {
@@ -295,6 +316,14 @@ define([
 			console.log('notif_updateDamageDiscard', notif)
 			notif.args.cards.forEach(cardData => {
 				this.damageDeck.addToStock(cardData.type)
+			})
+			// TODO update damageCardsNbr
+		},
+
+		notif_addResourcesCardsOnTable(notif) {
+			console.log('notif_addResourcesCardsOnTable', notif)
+			notif.args.cards.forEach(cardData => {
+				this.resourceDeck.addToStock(cardData.type)
 			})
 			// TODO update damageCardsNbr
 		}
@@ -529,7 +558,7 @@ class SSPlayer {
 			},
 			this.boardEl
 		)
-		this.stock.create(this.gameObject, handEl, 117, 160)
+		this.stock.create(this.gameObject, handEl, 87, 120)
 		this.stock.setSelectionMode(1)
 		this.stock.extraClasses = 'ss-resource-card'
 		this.stock.setSelectionAppearance('class')
@@ -537,7 +566,7 @@ class SSPlayer {
 			this.stock.addItemType(
 				type.id,
 				index,
-				g_gamethemeurl + 'img/resources.png',
+				g_gamethemeurl + 'img/resources.jpg',
 				index
 			)
 		})

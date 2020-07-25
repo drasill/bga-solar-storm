@@ -35,9 +35,11 @@
 	padding-bottom: 73.5%;
 }
 
-.ss-damage-deck-wrapper {
+.ss-decks-wrapper {
 	min-width: 250px;
 	margin: 20px;
+	display: flex;
+	flex-direction: column;
 }
 
 .ss-players-area {
