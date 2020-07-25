@@ -108,7 +108,9 @@ define([
 		},
 
 		initializeResourceDeck() {
-			const resourceDeckEl = document.getElementsByClassName('ss-resource-deck')[0]
+			const resourceDeckEl = document.getElementsByClassName(
+				'ss-resource-deck'
+			)[0]
 
 			this.resourceDeck = new ebg.stock()
 			this.resourceDeck.create(this, resourceDeckEl, 87, 120)
@@ -127,31 +129,10 @@ define([
 				console.log(card)
 				this.resourceDeck.addToStock(card.type)
 			}
-
 		},
 
 		onScreenWidthChange(arguments) {
 			this.players.assertPositions()
-		},
-
-		onPlayAreaClick(evt) {
-			const el = evt.target
-
-			// DEBUG test
-			if (el.classList.contains('ss-room')) {
-				dojo.stopEvent(evt)
-
-				const room = this.rooms.getByEl(el)
-				room.setDamage((room.damage + 1) % 4)
-
-				room.setDiverted(!room.diverted)
-
-				const playerIndex = Math.trunc(
-					Math.random() * this.players.players.length
-				)
-				const player = this.players.players[playerIndex]
-				player.setRoomPosition(room.position)
-			}
 		},
 
 		///////////////////////////////////////////////////
@@ -161,20 +142,11 @@ define([
 		//                  You can use this method to perform some user interface changes at this moment.
 		//
 		onEnteringState: function(stateName, args) {
-			console.log('Entering state: ' + stateName)
+			console.log('Entering state: ' + stateName, args)
 
 			switch (stateName) {
-				/* Example:
-            
-            case 'myGameState':
-            
-                // Show some HTML block at this game state
-                dojo.style( 'my_html_block_id', 'display', 'block' );
-                
-                break;
-           */
-
-				case 'dummmy':
+				case 'playerMove':
+					this.rooms.highlight(args.args.possibleDestinations)
 					break
 			}
 		},
@@ -186,17 +158,8 @@ define([
 			console.log('Leaving state: ' + stateName)
 
 			switch (stateName) {
-				/* Example:
-            
-            case 'myGameState':
-            
-                // Hide the HTML block we are displaying only during this game state
-                dojo.style( 'my_html_block_id', 'display', 'none' );
-                
-                break;
-           */
-
-				case 'dummmy':
+				case 'playerMove':
+					this.rooms.highlight(null)
 					break
 			}
 		},
@@ -205,24 +168,15 @@ define([
 		//                        action status bar (ie: the HTML links in the status bar).
 		//
 		onUpdateActionButtons: function(stateName, args) {
-			console.log('onUpdateActionButtons: ' + stateName)
+			console.log('onUpdateActionButtons: ' + stateName, args)
 
 			if (this.isCurrentPlayerActive()) {
-				switch (
-					stateName
-					/*               
-                 Example:
- 
-                 case 'myGameState':
-                    
-                    // Add 3 action buttons in the action status bar:
-                    
-                    this.addActionButton( 'button_1_id', _('Button 1 label'), 'onMyMethodToCall1' ); 
-                    this.addActionButton( 'button_2_id', _('Button 2 label'), 'onMyMethodToCall2' ); 
-                    this.addActionButton( 'button_3_id', _('Button 3 label'), 'onMyMethodToCall3' ); 
-                    break;
-*/
-				) {
+				switch (stateName) {
+					case 'playerTurn':
+						this.addActionButton('buttonMove', _('Move'), evt => {
+							this.onPlayerChooseAction(evt, 'move')
+						})
+						break
 				}
 			}
 		},
@@ -230,60 +184,60 @@ define([
 		///////////////////////////////////////////////////
 		//// Utility methods
 
-		/*
-        
-            Here, you can defines some utility methods that you can use everywhere in your javascript
-            script.
-        
-        */
-
 		///////////////////////////////////////////////////
 		//// Player's action
 
-		/*
-        
-            Here, you are defining methods to handle player's action (ex: results of mouse click on 
-            game objects).
-            
-            Most of the time, these methods:
-            _ check the action is possible at this game state.
-            _ make a call to the game server
-        
-        */
+		ajaxAction(action, args, check = true) {
+			console.log('ajaxAction', action, args, check)
+			if (check & !this.checkAction(action)) {
+				return
+			}
+			return new Promise((resolve, reject) => {
+				this.ajaxcall(
+					`/solarstorm/solarstorm/${action}.html`,
+					args,
+					this,
+					function(result) {
+						resolve(result)
+					},
+					function(is_error) {
+						reject(is_error)
+					}
+				)
+			})
+		},
 
-		/* Example:
-        
-        onMyMethodToCall1: function( evt )
-        {
-            console.log( 'onMyMethodToCall1' );
-            
-            // Preventing default browser reaction
-            dojo.stopEvent( evt );
+		onPlayerChooseAction(evt, action) {
+			console.log('onPlayerChooseAction', evt, action)
+			dojo.stopEvent(evt)
+			this.ajaxAction('choose', { lock: true, actionName: action })
+		},
 
-            // Check that this action is possible (see "possibleactions" in states.inc.php)
-            if( ! this.checkAction( 'myAction' ) )
-            {   return; }
+		onPlayAreaClick(evt) {
+			const el = evt.target
 
-            this.ajaxcall( "/solarstorm/solarstorm/myAction.html", { 
-                                                                    lock: true, 
-                                                                    myArgument1: arg1, 
-                                                                    myArgument2: arg2,
-                                                                    ...
-                                                                 }, 
-                         this, function( result ) {
-                            
-                            // What to do after the server call if it succeeded
-                            // (most of the time: nothing)
-                            
-                         }, function( is_error) {
+			// Clicked on a room
+			if (el.classList.contains('ss-room')) {
+				dojo.stopEvent(evt)
+				const room = this.rooms.getByEl(el)
+				this.onRoomClick(room)
+				// room.setDamage((room.damage + 1) % 4)
 
-                            // What to do after the server call in anyway (success or failure)
-                            // (most of the time: nothing)
+				// room.setDiverted(!room.diverted)
 
-                         } );        
-        },        
-        
-        */
+				// const playerIndex = Math.trunc(
+				// Math.random() * this.players.players.length
+				// )
+				// const player = this.players.players[playerIndex]
+				// player.setRoomPosition(room.position)
+			}
+		},
+
+		onRoomClick(room) {
+			if (this.last_server_state.name === 'playerMove') {
+				this.ajaxAction('move', { lock: true, position: room.position })
+			}
+		},
 
 		///////////////////////////////////////////////////
 		//// Reaction to cometD notifications
@@ -300,7 +254,12 @@ define([
 		setupNotifications: function() {
 			dojo.subscribe('updateRooms', this, 'notif_updateRooms')
 			dojo.subscribe('updateDamageDiscard', this, 'notif_updateDamageDiscard')
-			dojo.subscribe('addResourcesCardsOnTable', this, 'notif_addResourcesCardsOnTable')
+			dojo.subscribe(
+				'addResourcesCardsOnTable',
+				this,
+				'notif_addResourcesCardsOnTable'
+			)
+			dojo.subscribe('updatePlayerData', this, 'notif_updatePlayerData')
 		},
 
 		notif_updateRooms(notif) {
@@ -326,6 +285,13 @@ define([
 				this.resourceDeck.addToStock(cardData.type)
 			})
 			// TODO update damageCardsNbr
+		},
+
+		notif_updatePlayerData(notif) {
+			console.log('notif_updatePlayerData', notif)
+			this.players
+				.getPlayerById(notif.args.player_id)
+				.setRoomPosition(notif.args.position)
 		}
 
 		// TODO: from this point and below, you can write your game notifications handling methods
@@ -364,6 +330,12 @@ class SSRooms {
 
 	getByPosition(position) {
 		return this.rooms.find(r => r.position === position)
+	}
+
+	highlight(positions) {
+		this.rooms.forEach(room => {
+			room.highlight(positions && positions.includes(room.position))
+		})
 	}
 }
 
@@ -449,6 +421,10 @@ class SSRoom {
 		this.divertedTokenEl.classList[diverted ? 'add' : 'remove'](
 			'ss-room__diverted-token--visible'
 		)
+	}
+
+	highlight(value) {
+		this.el.classList[value ? 'add' : 'remove']('ss-room-highlight')
 	}
 }
 

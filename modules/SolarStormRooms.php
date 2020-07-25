@@ -62,6 +62,15 @@ class SolarStormRooms extends APP_GameClass {
 		throw new \Exception("Room '$slug' not found");
 	}
 
+	public function getRoomByPosition(int $position): array {
+		foreach ($this->rooms as $room) {
+			if ($room['position'] === $position) {
+				return $room;
+			}
+		}
+		throw new \Exception("Room @ '$position' not found");
+	}
+
 	public function updateRoom(array $newRoom): void {
 
 		$found = true;

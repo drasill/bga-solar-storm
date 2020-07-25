@@ -14,6 +14,11 @@
  *
  */
 
+if (!defined('ST_PLAYER_TURN')) {
+	define('ST_PLAYER_TURN', 2);
+	define('ST_PLAYER_MOVE', 3);
+}
+
 $machinestates = [
 	// The initial state. Please do not modify.
 	1 => [
@@ -24,15 +29,28 @@ $machinestates = [
 		'transitions' => ['' => 2],
 	],
 
-	2 => [
+	ST_PLAYER_TURN => [
 		'name' => 'playerTurn',
 		'description' => clienttranslate('${actplayer} must play your actions'),
-		'descriptionmyturn' => clienttranslate('${you} must play their actions'),
+		'descriptionmyturn' => clienttranslate('${you} must play your actions'),
 		'type' => 'activeplayer',
-		'possibleactions' => ['playCard', 'pass'],
-		'transitions' => ['playCard' => 2, 'pass' => 2],
+		'possibleactions' => ['choose'],
+		'transitions' => [
+			'transMove' => ST_PLAYER_MOVE,
+		],
 	],
 
+	ST_PLAYER_MOVE => [
+		'name' => 'playerMove',
+		'description' => clienttranslate('${actplayer} must choose a destination'),
+		'descriptionmyturn' => clienttranslate('${you} must choose a destination'),
+		'type' => 'activeplayer',
+		'args' => 'argPlayerMove',
+		'possibleactions' => ['move'],
+		'transitions' => [
+			'transTurn' => ST_PLAYER_TURN,
+		],
+	],
 	/*
     Examples:
     

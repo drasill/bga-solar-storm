@@ -262,71 +262,56 @@ class SolarStorm extends Table {
 	//////////// Utility functions
 	////////////
 
-	/*
-        In this space, you can put any utility methods useful for your game logic
-    */
+	private function notifyPlayerData(
+		SolarStormPlayer $player,
+		string $message = '',
+		array $args = []
+	): void {
+		$this->notifyAllPlayers(
+			'updatePlayerData',
+			$message,
+			[
+				'position' => $player->getPosition(),
+			] +
+				$args +
+				$player->getNotificationArgs()
+		);
+	}
 
 	//////////////////////////////////////////////////////////////////////////////
 	//////////// Player actions
 	////////////
 
-	/*
-        Each time a player is doing some game action, one of the methods below is called.
-        (note: each method below must match an input method in solarstorm.action.php)
-    */
+	public function actionChoose($actionName): void {
+		self::checkAction('choose');
+		$playerId = self::getActivePlayerId();
+		$this->gamestate->nextState('transMove');
+	}
 
-	/*
-    
-    Example:
-
-    function playCard( $card_id )
-    {
-        // Check that this is the player's turn and that it is a "possible action" at this game state (see states.inc.php)
-        self::checkAction( 'playCard' ); 
-        
-        $player_id = self::getActivePlayerId();
-        
-        // Add your game logic to play a card there 
-        ...
-        
-        // Notify all players about the card played
-        self::notifyAllPlayers( "cardPlayed", clienttranslate( '${player_name} plays ${card_name}' ), [
-            'player_id' => $player_id,
-            'player_name' => self::getActivePlayerName(),
-            'card_name' => $card_name,
-            'card_id' => $card_id
-        ] );
-          
-    }
-    
-    */
+	public function actionMove(int $position): void {
+		self::checkAction('move');
+		$player = $this->ssPlayers->getActive();
+		// TODO check valid position
+		$room = $this->rooms->getRoomByPosition($position);
+		$player->setPosition($position);
+		$this->notifyPlayerData(
+			$player,
+			clienttranslate('${player_name} moves to ${roomName}'),
+			['roomName' => $room['name']]
+		);
+		$this->gamestate->nextState('transTurn');
+	}
 
 	//////////////////////////////////////////////////////////////////////////////
 	//////////// Game state arguments
 	////////////
 
-	/*
-        Here, you can create methods defined as "game state arguments" (see "args" property in states.inc.php).
-        These methods function is to return some additional information that is specific to the current
-        game state.
-    */
-
-	/*
-    
-    Example for game state "MyGameState":
-    
-    function argMyGameState()
-    {
-        // Get some values from the current game situation in database...
-    
-        // return values:
-        return [
-            'variable1' => $value1,
-            'variable2' => $value2,
-            ...
-        ];
-    }    
-    */
+	public function argPlayerMove() {
+		$possibleDestinations = [1, 3, 5, 7];
+		return [
+			'possibleDestinations' => $possibleDestinations,
+		];
+	}
 
 	//////////////////////////////////////////////////////////////////////////////
 	//////////// Game state actions

@@ -24,12 +24,8 @@ class SolarStormPlayers extends APP_GameClass {
 		$playersData = self::getCollectionFromDb(
 			'SELECT player_id, player_name, player_color FROM player'
 		);
-		$playerPositions = self::getCollectionFromDb(
-			'SELECT player_id, position FROM player_positions'
-		);
 		foreach ($playersData as $playerData) {
-			$position = $playerPositions[$playerData['player_id']] ?? 4;
-			$player = new SolarStormPlayer($playerData, $position);
+			$player = new SolarStormPlayer($playerData);
 			$this->players[$player->getId()] = $player;
 		}
 	}
@@ -37,6 +33,12 @@ class SolarStormPlayers extends APP_GameClass {
 	public function getPlayers(): array {
 		return $this->players;
 	}
+
+	public function getActive(): SolarStormPlayer {
+		$playerId = $this->table->getActivePlayerId();
+		return $this->players[$playerId];
+	}
+
 	public function toArray(): array {
 		return array_map(function ($p) {
 			return $p->toArray();

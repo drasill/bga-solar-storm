@@ -56,6 +56,12 @@
 	box-shadow: rgba(0, 0, 0, 0.7) 3px 3px 5px;
 }
 
+.ss-room-highlight {
+	border: 2px solid blue;
+	cursor: pointer;
+	box-shadow: rgba(0, 0, 255, 0.7) 4px 4px 6px;
+}
+
 .ss-room:hover {
 	filter: drop-shadow(2px 2px 2px rgba(0, 0, 0, 0.5))
 		drop-shadow(-2px -2px 2px rgba(0, 0, 0, 0.5));
