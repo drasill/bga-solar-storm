@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 class SolarStormRooms extends APP_GameClass {
-	/** @var array */
+	/** @var SolarStormRoom[] */
 	private $rooms;
 
 	/** @var SolarStorm */
@@ -35,65 +35,41 @@ class SolarStormRooms extends APP_GameClass {
 		$sql = 'SELECT id, position, room, damage, diverted FROM rooms';
 		$roomsData = self::getCollectionFromDb($sql);
 		foreach ($roomsData as $roomData) {
-			$roomId = (int) $roomData['room'];
-			$roomInfo = $this->table->roomInfos[$roomId];
-			$room = [
-				'id' => $roomId,
-				'slug' => $roomInfo['slug'],
-				'name' => $roomInfo['name'],
-				'description' => $roomInfo['description'],
-				'position' => (int) $roomData['position'],
-				'damage' => (int) $roomData['damage'],
-				'diverted' => $roomData['diverted'] == 1,
-			];
+			$room = new SolarStormRoom($this->table, $roomData);
 			$this->rooms[] = $room;
 		}
 	}
 
-	public function getRoomById(int $id): array {
+	public function getRoom(int $roomId): SolarStormRoom {
+		foreach ($this->rooms as $room) {
+			if ($room->getRoomId() === $roomId) {
+				return $room;
+			}
+		}
+		throw new \Exception("Room id '$roomId' not found");
 	}
 
-	public function getRoomBySlug(string $slug): array {
+	public function getRoomBySlug(string $slug): SolarStormRoom {
 		foreach ($this->rooms as $room) {
-			if ($room['slug'] === $slug) {
+			if ($room->getSlug() === $slug) {
 				return $room;
 			}
 		}
 		throw new \Exception("Room '$slug' not found");
 	}
 
-	public function getRoomByPosition(int $position): array {
+	public function getRoomByPosition(int $position): SolarStormRoom {
 		foreach ($this->rooms as $room) {
-			if ($room['position'] === $position) {
+			if ($room->getPosition() === $position) {
 				return $room;
 			}
 		}
 		throw new \Exception("Room @ '$position' not found");
 	}
 
-	public function updateRoom(array $newRoom): void {
-
-		$found = true;
-		foreach ($this->rooms as &$room) {
-			if ($room['id'] === $newRoom['id']) {
-				$found = true;
-				break;
-			}
-		}
-		if (!$found)
-		throw new \Exception("Room id '{$newRoom['id']} not found");
-
-		$damage = (int) $newRoom['damage'];
-		$diverted = $newRoom['diverted'] ? 1 : 0;
-		$roomId = (int) $newRoom['id'];
-		$sql = "UPDATE rooms SET damage = $damage, diverted = $diverted WHERE room = $roomId";
-		self::DbQuery($sql);
-
-		$room['damage'] = $newRoom['damage'];
-		$room['diverted'] = $newRoom['diverted'];
-	}
-
 	public function toArray() {
-		return array_values($this->rooms);
+		return array_map(function ($r) {
+			return $r->toArray();
+		}, $this->rooms);
 	}
 }

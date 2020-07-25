@@ -11,6 +11,7 @@
 
 require_once APP_GAMEMODULE_PATH . 'module/table/table.game.php';
 
+require_once 'modules/SolarStormRoom.php';
 require_once 'modules/SolarStormRooms.php';
 require_once 'modules/SolarStormPlayer.php';
 require_once 'modules/SolarStormPlayers.php';
@@ -168,9 +169,9 @@ class SolarStorm extends Table {
 		$updatedRooms = [];
 		foreach ($roomsSlugs as $roomsSlug) {
 			$room = $this->rooms->getRoomBySlug($roomsSlug);
-			$room['damage']++;
-			$this->rooms->updateRoom($room);
-			$updatedRooms[] = $room;
+			$room->setDamage($room->getDamage() + 1);
+			$room->save();
+			$updatedRooms[] = $room->toArray();
 		}
 
 		if ($notify) {
@@ -291,13 +292,25 @@ class SolarStorm extends Table {
 	public function actionMove(int $position): void {
 		self::checkAction('move');
 		$player = $this->ssPlayers->getActive();
-		// TODO check valid position
+		$currentRoom = $this->rooms->getRoomByPosition($player->getPosition());
 		$room = $this->rooms->getRoomByPosition($position);
+
+		// Check position is valid
+		if (!in_array($position, $currentRoom->getPossibleDestinations())) {
+			throw new BgaUserException(
+				sprintf(
+					self::_('You cannot move from %s to %s'),
+					$currentRoom->getName(),
+					$room->getName()
+				)
+			);
+		}
+
 		$player->setPosition($position);
 		$this->notifyPlayerData(
 			$player,
 			clienttranslate('${player_name} moves to ${roomName}'),
-			['roomName' => $room['name']]
+			['roomName' => $room->getName()]
 		);
 		$this->gamestate->nextState('transTurn');
 	}
@@ -307,7 +320,9 @@ class SolarStorm extends Table {
 	////////////
 
 	public function argPlayerMove() {
-		$possibleDestinations = [1, 3, 5, 7];
+		$player = $this->ssPlayers->getActive();
+		$room = $this->rooms->getRoomByPosition($player->getPosition());
+		$possibleDestinations = $room->getPossibleDestinations();
 		return [
 			'possibleDestinations' => $possibleDestinations,
 		];
