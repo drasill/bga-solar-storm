@@ -15,27 +15,33 @@
 
 .ss-play-area {
 	position: relative;
-	height: 0;
-	padding-bottom: 60%;
+	display: flex;
+	flex-wrap: wrap;
 }
 
-.ss-playmat {
-	position: absolute;
-	top: 0;
-	left: 0;
-	bottom: 0;
-	right: 0;
-	background-image: url(img/playmat.jpg);
-	background-repeat: no-repeat;
-	background-size: contain;
+.ss-rooms-wrapper {
+	margin: 20px;
+	position: relative;
+	min-width: 600px;
+	max-width: 900px;
+	flex: 1;
 }
-
 .ss-rooms {
-	position: absolute;
-	top: 22.4%;
-	left: 27.3%;
-	width: 45.5%;
-	height: 54.7%;
+	position: relative;
+	top: 0;
+	height: 0;
+	width: 100%;
+	height: 0;
+	padding-bottom: 73.5%;
+}
+
+.ss-damage-deck-wrapper {
+	min-width: 250px;
+	margin: 20px;
+}
+
+.ss-players-area {
+	margin: 20px;
 }
 
 .ss-room {
@@ -193,6 +199,11 @@
 }
 
 .ss-room__diverted-token:hover {
+	filter: drop-shadow(2px 2px 2px rgba(0, 0, 0, 0.5))
+		drop-shadow(-2px -2px 2px rgba(0, 0, 0, 0.5));
+}
+
+.ss-damage-card {
 	filter: drop-shadow(2px 2px 2px rgba(0, 0, 0, 0.5))
 		drop-shadow(-2px -2px 2px rgba(0, 0, 0, 0.5));
 }

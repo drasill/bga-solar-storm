@@ -10,13 +10,22 @@
 -->
 
 <div class="ss-wrapper">
+
 	<div class="ss-play-area">
-		<div class="ss-playmat"></div>
-		<div class="ss-rooms"></div>
+
+		<div class="ss-rooms-wrapper">
+			<div class="ss-rooms"></div>
+		</div>
+
+		<div class="ss-damage-deck-wrapper">
+			<div class="ss-damage-deck" id="ss-damage-deck"></div>
+		</div>
+
 	</div>
 	
 	<div class="ss-players-area">
 	</div>
+
 </div>
 
 <script type="text/javascript">

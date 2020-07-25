@@ -64,6 +64,15 @@ define([
 				)
 				this.players.addPlayer(player)
 			}
+
+			this.players.players.forEach(player => {
+				player.setRoomPosition(
+					this.gamedatas.ssPlayers[player.id].position,
+					false,
+					true
+				)
+			})
+
 			for (const [playerId, playerCards] of Object.entries(
 				this.gamedatas.resourceCards
 			)) {
@@ -77,31 +86,23 @@ define([
 
 		initializeDamageDeck() {
 			this.damageDeck = new ebg.stock()
-			const damageDeckEl = dojo.create(
-				'div',
-				{
-					class: 'ss-damage-deck',
-					id: 'ss-damage-deck'
-				},
-				this.playAreaEl
-			)
+			const damageDeckEl = document.getElementsByClassName('ss-damage-deck')[0]
 			this.damageDeck.create(this, damageDeckEl, 160, 117)
 			this.damageDeck.setSelectionMode(0)
 			this.damageDeck.extraClasses = 'ss-damage-card'
-			this.damageDeck.setSelectionAppearance('class')
+			this.damageDeck.setOverlap(20, 0)
 			for (let i = 0; i < 24; i++) {
 				this.damageDeck.addItemType(
 					i,
 					1,
 					g_gamethemeurl + 'img/damages.jpg',
-					i+1
+					i + 1
 				)
 			}
 			for (let card of Object.values(this.gamedatas.damageCardsDiscarded)) {
 				console.log(card)
 				this.damageDeck.addToStock(card.type)
 			}
-
 		},
 
 		onScreenWidthChange(arguments) {
@@ -274,14 +275,28 @@ define([
 		setupNotifications: function() {
 			dojo.subscribe('resourceCards', this, 'notif_resourceCards')
 			dojo.subscribe('updateRooms', this, 'notif_updateRooms')
+			dojo.subscribe('updateDamageDiscard', this, 'notif_updateDamageDiscard')
 		},
 
 		notif_resourceCards(notif) {
-			console.log('resourceCards', notif)
+			console.log('notif_resourceCards', notif)
 		},
 
 		notif_updateRooms(notif) {
-			console.log('updateRooms', notif)
+			console.log('notif_updateRooms', notif)
+			notif.args.rooms.forEach(roomData => {
+				const room = this.rooms.getBySlug(roomData.slug)
+				room.setDamage(roomData.damage)
+				room.setDiverted(roomData.diverted)
+			})
+		},
+
+		notif_updateDamageDiscard(notif) {
+			console.log('notif_updateDamageDiscard', notif)
+			notif.args.cards.forEach(cardData => {
+				this.damageDeck.addToStock(cardData.type)
+			})
+			// TODO update damageCardsNbr
 		}
 
 		// TODO: from this point and below, you can write your game notifications handling methods
@@ -312,6 +327,10 @@ class SSRooms {
 
 	getByEl(el) {
 		return this.rooms.find(r => r.el === el)
+	}
+
+	getBySlug(slug) {
+		return this.rooms.find(r => r.slug === slug)
 	}
 
 	getByPosition(position) {

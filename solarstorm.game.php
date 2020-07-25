@@ -12,10 +12,14 @@
 require_once APP_GAMEMODULE_PATH . 'module/table/table.game.php';
 
 require_once 'modules/SolarStormRooms.php';
+require_once 'modules/SolarStormPlayer.php';
+require_once 'modules/SolarStormPlayers.php';
 
 class SolarStorm extends Table {
 	/** @var SolarStormRooms */
 	private $rooms;
+	/** @var SolarStormPlayers */
+	private $ssPlayers;
 	/** @var Deck */
 	private $resourceCards;
 	/** @var Deck */
@@ -25,6 +29,8 @@ class SolarStorm extends Table {
 		parent::__construct();
 		self::initGameStateLabels([]);
 		$this->rooms = new SolarStormRooms($this);
+		$this->ssPlayers = new SolarStormPlayers($this);
+
 		$this->resourceCards = self::getNew('module.common.deck');
 		$this->resourceCards->init('resource_card');
 
@@ -72,6 +78,7 @@ class SolarStorm extends Table {
 			$gameinfos['player_colors']
 		);
 		self::reloadPlayersBasicInfos();
+		$this->ssPlayers->load();
 
 		/************ Start the game initialization *****/
 
@@ -104,14 +111,9 @@ class SolarStorm extends Table {
 		$this->resourceCards->shuffle('deck');
 
 		// Distribute initial resourceCards
-		$players = self::loadPlayersBasicInfos();
-		foreach ($players as $player) {
+		foreach ($this->ssPlayers->getPlayers() as $player) {
 			// TODO:NBPLAYERS change the number of cards according to number of players
-			$cards = $this->resourceCards->pickCards(
-				2,
-				'deck',
-				$player['player_id']
-			);
+			$cards = $this->resourceCards->pickCards(2, 'deck', $player->getId());
 		}
 
 		// Damage cards
@@ -129,20 +131,24 @@ class SolarStorm extends Table {
 			}
 		}
 		$cards = array_merge($cards['3room'], $cards['2room'], $cards['1room']);
-		
+
 		$this->damageCards->createCards($cards, 'deck');
 
-		// $this->drawDamageCard('bottom');
-		// $this->drawDamageCard('bottom');
+		$this->drawDamageCard('bottom');
+		$this->drawDamageCard('bottom');
 	}
 
 	// FIXME private
-	public function drawDamageCard(string $from): void {
+	public function drawDamageCard(string $from, bool $notify = false): void {
 		if (!in_array($from, ['top', 'bottom'])) {
 			throw new \Exception('Invalid position to draw damage card from');
 		}
 
-		$cards = $this->damageCards->getCardsInLocation('deck', null, 'location_arg');
+		$cards = $this->damageCards->getCardsInLocation(
+			'deck',
+			null,
+			'location_arg'
+		);
 		if ($from === 'bottom') {
 			$card = $cards[0];
 		} else {
@@ -150,6 +156,11 @@ class SolarStorm extends Table {
 		}
 
 		$this->damageCards->moveCard($card['id'], 'discard');
+		if ($notify) {
+			$this->notifyAllPlayers('updateDamageDiscard', 'drawn damage card', [
+				'cards' => [$card],
+			]);
+		}
 
 		$roomsSlugs = $this->damageCardsInfos[$card['type']];
 		$updatedRooms = [];
@@ -160,18 +171,18 @@ class SolarStorm extends Table {
 			$updatedRooms[] = $room;
 		}
 
-		$this->notifyAllPlayers('updateRooms', 'room update', [
-			'rooms' => $updatedRooms,
-		]);
+		if ($notify) {
+			$this->notifyAllPlayers('updateRooms', 'room update', [
+				'rooms' => $updatedRooms,
+			]);
+		}
 	}
 
 	protected function getAllDatas() {
 		$result = [];
 
-		// $currentPlayerId = self::getCurrentPlayerId();
-		$players = self::loadPlayersBasicInfos();
-
 		$result['rooms'] = $this->rooms->toArray();
+		$result['ssPlayers'] = $this->ssPlayers->toArray();
 		$result['resourceCardsNbr'] = $this->resourceCards->countCardInLocation(
 			'deck'
 		);
@@ -185,10 +196,9 @@ class SolarStorm extends Table {
 		);
 
 		$data = [];
-		foreach ($players as $player) {
-			$playerId = $player['player_id'];
-			$data[$playerId] = array_values(
-				$this->resourceCards->getCardsInLocation('hand', $playerId)
+		foreach ($this->ssPlayers->getPlayers() as $player) {
+			$data[$player->getId()] = array_values(
+				$this->resourceCards->getCardsInLocation('hand', $player->getId())
 			);
 		}
 		$result['resourceCards'] = $data;
