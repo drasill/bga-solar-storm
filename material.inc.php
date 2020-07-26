@@ -32,27 +32,27 @@ $this->card_types = array(
 */
 
 $this->resourceTypes = [
-	[
+	'data' => [
 		'id' => 'data',
 		'name' => clienttranslate('Data'),
 		'nametr' => self::_('Data'),
 	],
-	[
+	'metal' => [
 		'id' => 'metal',
 		'name' => clienttranslate('Metal'),
 		'nametr' => self::_('Metal'),
 	],
-	[
+	'nanobots' => [
 		'id' => 'nanobots',
 		'name' => clienttranslate('Nanobots'),
 		'nametr' => self::_('Nanobots'),
 	],
-	[
+	'energy' => [
 		'id' => 'energy',
 		'name' => clienttranslate('Energy'),
 		'nametr' => self::_('Energy'),
 	],
-	[
+	'universal' => [
 		'id' => 'universal',
 		'name' => clienttranslate('Universal'),
 		'nametr' => self::_('Universal'),

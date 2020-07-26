@@ -76,7 +76,7 @@ define([
 				playerCards.forEach(resourceCard => {
 					this.players
 						.getPlayerById(playerId)
-						.stock.addToStock(resourceCard.type)
+						.stock.addToStockWithId(resourceCard.type, resourceCard.id)
 				})
 			}
 		},
@@ -97,14 +97,13 @@ define([
 				)
 			}
 			for (let card of Object.values(this.gamedatas.damageCardsDiscarded)) {
-				console.log(card)
 				this.damageDeck.addToStock(card.type)
 			}
 		},
 
 		initializeResourceDeck() {
 			const resourceDeckEl = document.getElementsByClassName(
-				'ss-resource-deck'
+				'ss-resource-deck__table'
 			)[0]
 
 			this.resourceDeck = new ebg.stock()
@@ -120,9 +119,15 @@ define([
 					index
 				)
 			})
+			dojo.connect(
+				this.resourceDeck,
+				'onChangeSelection',
+				this,
+				'onResourceDeckSelection'
+			)
 			for (let card of Object.values(this.gamedatas.resourceCardsOnTable)) {
-				console.log(card)
-				this.resourceDeck.addToStock(card.type)
+				console.log('adding resource card', card)
+				this.resourceDeck.addToStockWithId(card.type, card.id)
 			}
 		},
 
@@ -182,9 +187,16 @@ define([
 						})
 						break
 					case 'playerMove':
-						this.addActionButton('buttonCancel', _('Cancel'), evt => {
-							this.ajaxAction('cancel', { lock: true })
-						}, null, null, 'gray')
+						this.addActionButton(
+							'buttonCancel',
+							_('Cancel'),
+							evt => {
+								this.ajaxAction('cancel', { lock: true })
+							},
+							null,
+							null,
+							'gray'
+						)
 						break
 				}
 			}
@@ -230,22 +242,37 @@ define([
 				dojo.stopEvent(evt)
 				const room = this.rooms.getByEl(el)
 				this.onRoomClick(room)
-				// room.setDamage((room.damage + 1) % 4)
+				return
+			}
 
-				// room.setDiverted(!room.diverted)
-
-				// const playerIndex = Math.trunc(
-				// Math.random() * this.players.players.length
-				// )
-				// const player = this.players.players[playerIndex]
-				// player.setRoomPosition(room.position)
+			// Clicked on resourceDeck
+			if (el.classList.contains('ss-resource-deck__deck')) {
+				dojo.stopEvent(evt)
+				this.onResourceDeckClick()
+				return
 			}
 		},
 
 		onRoomClick(room) {
-			if (this.last_server_state.name === 'playerMove') {
-				this.ajaxAction('move', { lock: true, position: room.position })
+			// if (this.last_server_state.name === 'playerMove') {
+			this.ajaxAction('move', { lock: true, position: room.position })
+			// }
+		},
+
+		// Clicked on resource deck (hidden)
+		onResourceDeckClick() {
+			this.resourceDeck.unselectAll()
+			this.ajaxAction('pickResource', { lock: true, cardId: 9999 })
+		},
+
+		// Clicked on resource deck (visible)
+		onResourceDeckSelection() {
+			var card = this.resourceDeck.getSelectedItems()[0]
+			if (!card) {
+				return
 			}
+			this.resourceDeck.unselectAll()
+			this.ajaxAction('pickResource', { lock: true, cardId: card.id })
 		},
 
 		///////////////////////////////////////////////////
@@ -269,6 +296,7 @@ define([
 				'notif_addResourcesCardsOnTable'
 			)
 			dojo.subscribe('updatePlayerData', this, 'notif_updatePlayerData')
+			dojo.subscribe('playerPickResource', this, 'notif_playerPickResource')
 		},
 
 		notif_updateRooms(notif) {
@@ -291,9 +319,18 @@ define([
 		notif_addResourcesCardsOnTable(notif) {
 			console.log('notif_addResourcesCardsOnTable', notif)
 			notif.args.cards.forEach(cardData => {
-				this.resourceDeck.addToStock(cardData.type)
+				this.resourceDeck.addToStockWithId(cardData.type, cardData.id)
 			})
 			// TODO update damageCardsNbr
+		},
+
+		notif_playerPickResource(notif) {
+			console.log('notif_playerPickResource', notif)
+			const card = notif.args.card
+			this.resourceDeck.removeFromStockById(card.id)
+			const player = this.players.getPlayerById(notif.args.player_id)
+			player.stock.addToStockWithId(card.type, card.id)
+			// TODO animation
 		},
 
 		notif_updatePlayerData(notif) {

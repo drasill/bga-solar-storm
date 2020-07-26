@@ -17,7 +17,11 @@
 if (!defined('ST_PLAYER_TURN')) {
 	define('ST_PLAYER_TURN', 2);
 	define('ST_PLAYER_MOVE', 3);
-	define('ST_ACTION_DONE', 4);
+	define('ST_PLAYER_SCAVENGE', 4);
+	define('ST_PLAYER_SCAVENGE_PICK_CARDS', 5);
+	define('ST_PLAYER_ACTION_DONE', 20);
+	define('ST_PLAYER_PICK_RESOURCES_CARDS', 21);
+	define('ST_PLAYER_END_TURN', 40);
 }
 
 $machinestates = [
@@ -54,20 +58,80 @@ $machinestates = [
 		'args' => 'argPlayerMove',
 		'possibleactions' => ['move', 'cancel'],
 		'transitions' => [
-			'transActionDone' => ST_ACTION_DONE,
+			'transActionDone' => ST_PLAYER_ACTION_DONE,
 			'transActionCancel' => ST_PLAYER_TURN,
 		],
 	],
 
-	ST_ACTION_DONE => [
+	ST_PLAYER_SCAVENGE => [
+		'name' => 'playerScavenge',
+		'description' => clienttranslate('${actplayer} must roll the dice'),
+		'descriptionmyturn' => clienttranslate('${you} must roll the dice'),
+		'type' => 'activeplayer',
+		'args' => 'argPlayerScavenge',
+		'possibleactions' => ['roll', 'cancel'],
+		'transitions' => [
+			'transActionRoll' => ST_PLAYER_SCAVENGE_PICK_CARDS,
+			'transActionRollNone' => ST_PLAYER_TURN,
+			'transActionCancel' => ST_PLAYER_TURN,
+		],
+	],
+
+	ST_PLAYER_SCAVENGE_PICK_CARDS => [
+		'name' => 'playerScavenge',
+		'description' => clienttranslate(
+			'${actplayer} must pick resources cards'
+		),
+		'descriptionmyturn' => clienttranslate(
+			'${you} must pick resources cards'
+		),
+		'type' => 'activeplayer',
+		'args' => 'argPlayerScavenge',
+		'possibleactions' => ['pick'],
+		'transitions' => [
+			'transActionRoll' => ST_PLAYER_SCAVENGE_PICK_CARDS,
+			'transActionRollNone' => ST_PLAYER_TURN,
+			'transActionCancel' => ST_PLAYER_TURN,
+		],
+	],
+
+	ST_PLAYER_ACTION_DONE => [
 		'name' => 'actionDone',
 		'type' => 'game',
 		'action' => 'stActionDone',
 		'updateGameProgression' => true,
 		'transitions' => [
 			'transPlayerTurn' => ST_PLAYER_TURN,
+			'transPlayerPickResourcesCards' => ST_PLAYER_PICK_RESOURCES_CARDS,
 		],
 	],
+
+	ST_PLAYER_PICK_RESOURCES_CARDS => [
+		'name' => 'pickResources',
+		'description' => clienttranslate(
+			'${actplayer} must pick resources cards'
+		),
+		'descriptionmyturn' => clienttranslate(
+			'${you} must pick resources cards'
+		),
+		'type' => 'activeplayer',
+		'possibleactions' => ['pickResource'],
+		'transitions' => [
+			'transPlayerEndTurn' => ST_PLAYER_END_TURN,
+			'transPlayerPickResourcesCards' => ST_PLAYER_PICK_RESOURCES_CARDS,
+		],
+	],
+
+	ST_PLAYER_END_TURN => [
+		'name' => 'endTurn',
+		'type' => 'game',
+		'action' => 'stEndTurn',
+		'updateGameProgression' => true,
+		'transitions' => [
+			'transPlayerTurn' => ST_PLAYER_TURN,
+		],
+	],
+
 	/*
     Examples:
     

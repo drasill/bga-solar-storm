@@ -36,7 +36,7 @@
 }
 
 .ss-decks-wrapper {
-	min-width: 250px;
+	min-width: 280px;
 	margin: 20px;
 	display: flex;
 	flex-direction: column;
@@ -225,6 +225,24 @@
 	outline: 1px solid #2565e8;
 	filter: drop-shadow(3px 3px 6px rgba(0, 0, 255, 0.7))
 		drop-shadow(-3px -3px 6px rgba(0, 0, 255, 0.7));
+}
+
+.ss-resource-deck {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: nowrap;
+}
+
+.ss-resource-deck__deck {
+	width: 87px;
+	height: 120px;
+	background-image: url('img/resources.jpg');
+	background-position: 100% 0;
+	margin-right: 5px;
+}
+
+.ss-resource-deck__table {
+	flex-grow: 1;
 }
 
 .ss-player-board {

@@ -52,4 +52,11 @@ class action_solarstorm extends APP_GameAction {
 		$this->game->actionCancel();
 		self::ajaxResponse();
 	}
+
+	public function pickResource() {
+		self::setAjaxMode();
+		$cardId = (int)self::getArg('cardId', AT_posint, true);
+		$this->game->actionPickResource($cardId);
+		self::ajaxResponse();
+	}
 }

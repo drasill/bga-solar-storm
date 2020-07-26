@@ -28,7 +28,10 @@ class SolarStorm extends Table {
 
 	function __construct() {
 		parent::__construct();
-		self::initGameStateLabels([]);
+		self::initGameStateLabels([
+			// If the player has picked a resourceCard from the deck (0/1)
+			'resourcePickedFromDeck' => 11,
+		]);
 		$this->rooms = new SolarStormRooms($this);
 		$this->ssPlayers = new SolarStormPlayers($this);
 
@@ -78,6 +81,8 @@ class SolarStorm extends Table {
 		$this->ssPlayers->load();
 
 		/************ Start the game initialization *****/
+
+		self::setGameStateInitialValue('resourcePickedFromDeck', 0);
 
 		$this->rooms->generateRooms();
 
@@ -197,13 +202,9 @@ class SolarStorm extends Table {
 
 		if ($notify) {
 			if ($notify) {
-				$this->notifyAllPlayers(
-					'addResourcesCardsOnTable',
-					'add resource',
-					[
-						'cards' => $cards,
-					]
-				);
+				$this->notifyAllPlayers('addResourcesCardsOnTable', '', [
+					'cards' => $cards,
+				]);
 			}
 		}
 	}
@@ -216,7 +217,7 @@ class SolarStorm extends Table {
 		$result['resourceCardsNbr'] = $this->resourceCards->countCardInLocation(
 			'deck'
 		);
-		$result['resourceTypes'] = $this->resourceTypes;
+		$result['resourceTypes'] = array_values($this->resourceTypes);
 
 		$result['damageCardsNbr'] = $this->damageCards->countCardInLocation(
 			'deck'
@@ -324,6 +325,81 @@ class SolarStorm extends Table {
 		$this->gamestate->nextState('transActionDone');
 	}
 
+	public function actionPickResource($cardId) {
+		$player = $this->ssPlayers->getActive();
+
+		// Depending on state, player can pick from deck (facedown) and/or table (face up)
+		$stateName = $this->gamestate->state()['name'];
+		$canPickFromTable = true;
+		if ($stateName === 'pickResources') {
+			// If we are in the 'pickResources' state (phase 2)
+			$previouslyPickedFromDeck = (bool) self::getGameStateValue(
+				'resourcePickedFromDeck'
+			);
+			if ($previouslyPickedFromDeck) {
+				// Now, can only pick from deck
+				$canPickFromTable = false;
+			}
+		}
+
+		$fromDeck = false;
+		if ($cardId === 9999) {
+			$fromDeck = true;
+			// Pick from deck
+			$card = $this->resourceCards->pickCardForLocation(
+				'deck',
+				'hand',
+				$player->getId()
+			);
+		} else {
+			// Pick from table
+			if (!$canPickFromTable) {
+				throw new BgaUserException(self::_('You must pick from the deck'));
+			}
+			$card = $this->resourceCards->getCard($cardId);
+			// Check resource is on table
+			if ($card['location'] !== 'table') {
+				throw new BgaVisibleSystemException('Card not on table !'); // NOI18N
+			}
+		}
+
+		$this->resourceCards->moveCard($card['id'], 'hand', $player->getId());
+
+		$resourceName = $this->resourceTypes[$card['type']]['name'];
+		if ($fromDeck) {
+			$message = clienttranslate(
+				'${player_name} takes a resource from the deck : ${resourceName}'
+			);
+		} else {
+			$message = clienttranslate(
+				'${player_name} takes a resource : ${resourceName}'
+			);
+		}
+
+		$this->notifyAllPlayers(
+			'playerPickResource',
+			$message,
+			[
+				'card' => $card,
+				'resourceName' => $resourceName,
+			] + $player->getNotificationArgs()
+		);
+
+		$this->assertResourceCardsOnTable(true);
+
+		if ($stateName === 'pickResources') {
+			if (!$fromDeck || $previouslyPickedFromDeck) {
+				// Picked from table, or second pick from deck: end state now
+				self::setGameStateValue('resourcePickedFromDeck', 0);
+				$this->gamestate->nextState('transPlayerEndTurn');
+				return;
+			}
+			self::setGameStateValue('resourcePickedFromDeck', 1);
+		}
+
+		$this->gamestate->nextState('transPlayerPickResourcesCards');
+	}
+
 	//////////////////////////////////////////////////////////////////////////////
 	//////////// Game state arguments
 	////////////
@@ -352,11 +428,18 @@ class SolarStorm extends Table {
 		$player = $this->ssPlayers->getActive();
 		$actions = $player->getActions();
 		if ($actions === 0) {
-			$player->setActions(3);
-			$player->save();
-			$playerId = self::activeNextPlayer();
-			self::giveExtraTime($playerId);
+			$this->gamestate->nextState('transPlayerPickResourcesCards');
+		} else {
+			$this->gamestate->nextState('transPlayerTurn');
 		}
+	}
+
+	public function stEndTurn() {
+		$player = $this->ssPlayers->getActive();
+		$player->setActions(3);
+		$player->save();
+		$playerId = self::activeNextPlayer();
+		self::giveExtraTime($playerId);
 		$this->gamestate->nextState('transPlayerTurn');
 	}
 
