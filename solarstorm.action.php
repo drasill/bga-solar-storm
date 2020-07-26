@@ -35,7 +35,7 @@ class action_solarstorm extends APP_GameAction {
 
 	public function choose() {
 		self::setAjaxMode();
-		$actionName = self::getArg('actionName', AT_enum, true, null, ['move']);
+		$actionName = self::getArg('actionName', AT_enum, true, null, ['move', 'scavenge']);
 		$this->game->actionChoose($actionName);
 		self::ajaxResponse();
 	}
@@ -44,6 +44,12 @@ class action_solarstorm extends APP_GameAction {
 		self::setAjaxMode();
 		$position = self::getArg('position', AT_posint, true);
 		$this->game->actionMove((int)$position);
+		self::ajaxResponse();
+	}
+
+	public function rollDice() {
+		self::setAjaxMode();
+		$this->game->actionRollDice();
 		self::ajaxResponse();
 	}
 

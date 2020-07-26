@@ -185,8 +185,26 @@ define([
 						this.addActionButton('buttonMove', _('Move'), evt => {
 							this.onPlayerChooseAction(evt, 'move')
 						})
+						this.addActionButton('buttonScavenge', _('Scavenge'), evt => {
+							this.onPlayerChooseAction(evt, 'scavenge')
+						})
 						break
 					case 'playerMove':
+						this.addActionButton(
+							'buttonCancel',
+							_('Cancel'),
+							evt => {
+								this.ajaxAction('cancel', { lock: true })
+							},
+							null,
+							null,
+							'gray'
+						)
+						break
+					case 'playerScavenge':
+						this.addActionButton('buttonRollDice', _('Roll dice'), evt => {
+							this.ajaxAction('rollDice', { lock: true })
+						})
 						this.addActionButton(
 							'buttonCancel',
 							_('Cancel'),

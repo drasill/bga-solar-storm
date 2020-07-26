@@ -43,6 +43,7 @@ $machinestates = [
 		'possibleactions' => ['choose'],
 		'transitions' => [
 			'transMove' => ST_PLAYER_MOVE,
+			'transScavenge' => ST_PLAYER_SCAVENGE,
 		],
 	],
 
@@ -65,33 +66,30 @@ $machinestates = [
 
 	ST_PLAYER_SCAVENGE => [
 		'name' => 'playerScavenge',
-		'description' => clienttranslate('${actplayer} must roll the dice'),
-		'descriptionmyturn' => clienttranslate('${you} must roll the dice'),
+		'description' => clienttranslate('Scavenge: ${actplayer} must roll the dice'),
+		'descriptionmyturn' => clienttranslate('Scavenge: ${you} must roll the dice'),
 		'type' => 'activeplayer',
-		'args' => 'argPlayerScavenge',
-		'possibleactions' => ['roll', 'cancel'],
+		'possibleactions' => ['rollDice', 'cancel'],
 		'transitions' => [
-			'transActionRoll' => ST_PLAYER_SCAVENGE_PICK_CARDS,
-			'transActionRollNone' => ST_PLAYER_TURN,
+			'transActionScavengePickCards' => ST_PLAYER_SCAVENGE_PICK_CARDS,
+			'transActionScavengePickNothing' => ST_PLAYER_ACTION_DONE,
 			'transActionCancel' => ST_PLAYER_TURN,
 		],
 	],
 
 	ST_PLAYER_SCAVENGE_PICK_CARDS => [
-		'name' => 'playerScavenge',
+		'name' => 'playerScavengePickCards',
 		'description' => clienttranslate(
-			'${actplayer} must pick resources cards'
+			'Scavenge: ${actplayer} must pick resources cards'
 		),
 		'descriptionmyturn' => clienttranslate(
-			'${you} must pick resources cards'
+			'Scavenge: ${you} must pick resources cards'
 		),
 		'type' => 'activeplayer',
-		'args' => 'argPlayerScavenge',
-		'possibleactions' => ['pick'],
+		'possibleactions' => ['pickResource'],
 		'transitions' => [
-			'transActionRoll' => ST_PLAYER_SCAVENGE_PICK_CARDS,
-			'transActionRollNone' => ST_PLAYER_TURN,
-			'transActionCancel' => ST_PLAYER_TURN,
+			'transActionScavengePickCards' => ST_PLAYER_SCAVENGE_PICK_CARDS,
+			'transActionScavengeEnd' => ST_PLAYER_ACTION_DONE,
 		],
 	],
 
@@ -109,10 +107,10 @@ $machinestates = [
 	ST_PLAYER_PICK_RESOURCES_CARDS => [
 		'name' => 'pickResources',
 		'description' => clienttranslate(
-			'${actplayer} must pick resources cards'
+			'End of turn: ${actplayer} must pick resources cards'
 		),
 		'descriptionmyturn' => clienttranslate(
-			'${you} must pick resources cards'
+			'End of turn: ${you} must pick resources cards'
 		),
 		'type' => 'activeplayer',
 		'possibleactions' => ['pickResource'],

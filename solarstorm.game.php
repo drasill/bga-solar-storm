@@ -31,6 +31,7 @@ class SolarStorm extends Table {
 		self::initGameStateLabels([
 			// If the player has picked a resourceCard from the deck (0/1)
 			'resourcePickedFromDeck' => 11,
+			'scavengeNumberOfCards' => 12,
 		]);
 		$this->rooms = new SolarStormRooms($this);
 		$this->ssPlayers = new SolarStormPlayers($this);
@@ -83,6 +84,7 @@ class SolarStorm extends Table {
 		/************ Start the game initialization *****/
 
 		self::setGameStateInitialValue('resourcePickedFromDeck', 0);
+		self::setGameStateInitialValue('scavengeNumberOfCards', 0);
 
 		$this->rooms->generateRooms();
 
@@ -286,6 +288,9 @@ class SolarStorm extends Table {
 			case 'move':
 				$this->gamestate->nextState('transMove');
 				break;
+			case 'scavenge':
+				$this->gamestate->nextState('transScavenge');
+				break;
 			default:
 				throw new BgaUserException("Invalid action $actionName");
 				break;
@@ -325,7 +330,55 @@ class SolarStorm extends Table {
 		$this->gamestate->nextState('transActionDone');
 	}
 
+	public function actionRollDice() {
+		self::checkAction('rollDice');
+
+		$player = $this->ssPlayers->getActive();
+		$player->incrementActions(-1);
+		$player->save();
+
+		$dice = bga_rand(1, 6);
+
+		$this->notifyAllPlayers(
+			'playerRollsDice',
+			clienttranslate('${player_name} rolls the dice : ${dice_result}'),
+			[
+				'dice_result' => $dice,
+			] + $player->getNotificationArgs()
+		);
+
+		$numCardsToPick = 0;
+		if ($dice === 6) {
+			$numCardsToPick = 2;
+		} elseif ($dice > 2) {
+			$numCardsToPick = 1;
+		}
+
+		// Sadness
+		if ($numCardsToPick === 0) {
+			$this->notifyAllPlayers(
+				'message',
+				clienttranslate('${player_name} finds nothing while scavenging'),
+				$player->getNotificationArgs()
+			);
+			$this->gamestate->nextState('transActionScavengePickNothing');
+			return;
+		}
+
+		// Let user pick card(s)
+		$this->notifyAllPlayers(
+			'message',
+			clienttranslate('${player_name} can pick ${num} resource card(s)'),
+			[
+				'num' => $numCardsToPick,
+			] + $player->getNotificationArgs()
+		);
+		self::setGameStateValue('scavengeNumberOfCards', $numCardsToPick);
+		$this->gamestate->nextState('transActionScavengePickCards');
+	}
+
 	public function actionPickResource($cardId) {
+		self::checkAction('pickResource');
 		$player = $this->ssPlayers->getActive();
 
 		// Depending on state, player can pick from deck (facedown) and/or table (face up)
@@ -395,6 +448,20 @@ class SolarStorm extends Table {
 				return;
 			}
 			self::setGameStateValue('resourcePickedFromDeck', 1);
+		}
+
+		if ($stateName === 'playerScavengePickCards') {
+			// Action "scavenge", check number of picks
+			$num = (int) self::getGameStateValue('scavengeNumberOfCards');
+			$num--;
+			if ($num <= 0) {
+				// End
+				$this->gamestate->nextState('transActionScavengeEnd');
+				return;
+			}
+			self::setGameStateValue('scavengeNumberOfCards', $num);
+			$this->gamestate->nextState('transActionScavengePickCards');
+			return;
 		}
 
 		$this->gamestate->nextState('transPlayerPickResourcesCards');
