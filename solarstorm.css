@@ -24,7 +24,7 @@
 	position: relative;
 	min-width: 600px;
 	max-width: 900px;
-	flex: 1;
+	flex: 1000;
 }
 .ss-rooms {
 	position: relative;
@@ -40,6 +40,7 @@
 	margin: 20px;
 	display: flex;
 	flex-direction: column;
+	flex: 1;
 }
 
 .ss-players-area {
@@ -246,19 +247,19 @@
 }
 
 .ss-player-board {
-	margin: 10px;
-	padding: 10px;
-	background: #ffffff77;
-	display: flex;
+}
+
+.ss-player-board--highlight {
+	border: 2px solid blue;
+	box-shadow: rgba(0, 0, 255, 0.7) 4px 4px 6px;
 }
 
 .ss-player-board__name {
-	padding: 10px;
+	padding: 5px 10px;
+	margin-bottom: 5px;
 }
 
 .ss-player-board .ss-player-hand {
-	flex: 1;
-	margin-left: 5%;
 }
 
 .ss-player-meeple {
@@ -267,8 +268,8 @@
 	background-position: 0 0;
 	background-size: 100% 400%;
 	background-repeat: no-repeat;
-	width: 3%;
-	height: 6%;
+	width: 50px;
+	height: 50px;
 	filter: drop-shadow(1px 1px 1px rgba(255, 255, 255, 0.7))
 		drop-shadow(-1px -1px 1px rgba(255, 255, 255, 0.7))
 		drop-shadow(-1px 1px 1px rgba(255, 255, 255, 0.7))

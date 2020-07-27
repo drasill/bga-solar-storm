@@ -23,6 +23,7 @@
 				<div class="ss-resource-deck__deck ss-resource-card"></div>
 				<div class="ss-resource-deck__table" id="ss-resource-deck__table"></div>
 			</div>
+			<div class="ss-players-hands"></div>
 		</div>
 
 	</div>

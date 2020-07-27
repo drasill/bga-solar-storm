@@ -29,6 +29,24 @@ class SolarStormPlayers extends APP_GameClass {
 		}
 	}
 
+	public function getPlayer(int $playerId): SolarStormPlayer {
+		foreach ($this->players as $player) {
+			if ($player->getId() === $playerId) {
+				return $player;
+			}
+		}
+		throw new \Exception("Player id '$playerId' not found");
+	}
+
+	/**
+	 * @return SolarStormPlayer[]
+	 */
+	public function getPlayersAtPosition(int $position): array {
+		return array_filter($this->players, function ($player) use ($position) {
+			return $player->getPosition() === $position;
+		});
+	}
+
 	public function getPlayers(): array {
 		return $this->players;
 	}

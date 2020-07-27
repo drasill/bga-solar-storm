@@ -15,6 +15,11 @@
  *
  */
 
+// Utility : first element matching selector
+function $first(selector) {
+	return document.querySelectorAll(selector)[0]
+}
+
 define([
 	'dojo',
 	'dojo/_base/declare',
@@ -48,7 +53,7 @@ define([
 				this.rooms.addRoom(room)
 			})
 
-			this.playAreaEl = document.getElementsByClassName('ss-play-area')[0]
+			this.playAreaEl = $first('.ss-play-area')
 			// Global area on click
 			this.playAreaEl.addEventListener('click', this.onPlayAreaClick.bind(this))
 		},
@@ -83,7 +88,7 @@ define([
 
 		initializeDamageDeck() {
 			this.damageDeck = new ebg.stock()
-			const damageDeckEl = document.getElementsByClassName('ss-damage-deck')[0]
+			const damageDeckEl = $first('.ss-damage-deck')
 			this.damageDeck.create(this, damageDeckEl, 160, 117)
 			this.damageDeck.setSelectionMode(0)
 			this.damageDeck.extraClasses = 'ss-damage-card'
@@ -102,10 +107,7 @@ define([
 		},
 
 		initializeResourceDeck() {
-			const resourceDeckEl = document.getElementsByClassName(
-				'ss-resource-deck__table'
-			)[0]
-
+			const resourceDeckEl = $first('.ss-resource-deck__table')
 			this.resourceDeck = new ebg.stock()
 			this.resourceDeck.create(this, resourceDeckEl, 87, 120)
 			this.resourceDeck.setSelectionMode(1)
@@ -157,6 +159,10 @@ define([
 				case 'playerMove':
 					this.rooms.highlight(args.args.possibleDestinations)
 					break
+				case 'playerShare':
+				case 'playerShareChoosePlayer':
+					this.players.highlightHands(args.args.possiblePlayers)
+					break
 			}
 		},
 
@@ -169,6 +175,10 @@ define([
 			switch (stateName) {
 				case 'playerMove':
 					this.rooms.highlight(null)
+					break
+				case 'playerShare':
+				case 'playerShareChoosePlayer':
+					this.players.highlightHands(null)
 					break
 			}
 		},
@@ -188,8 +198,13 @@ define([
 						this.addActionButton('buttonScavenge', _('Scavenge'), evt => {
 							this.onPlayerChooseAction(evt, 'scavenge')
 						})
+						this.addActionButton('buttonShare', _('Share'), evt => {
+							this.onPlayerChooseAction(evt, 'share')
+						})
 						break
 					case 'playerMove':
+					case 'playerShare':
+					case 'playerShareChoosePlayer':
 						this.addActionButton(
 							'buttonCancel',
 							_('Cancel'),
@@ -272,9 +287,9 @@ define([
 		},
 
 		onRoomClick(room) {
-			// if (this.last_server_state.name === 'playerMove') {
-			this.ajaxAction('move', { lock: true, position: room.position })
-			// }
+			if (this.last_server_state.name === 'playerMove') {
+				this.ajaxAction('move', { lock: true, position: room.position })
+			}
 		},
 
 		// Clicked on resource deck (hidden)
@@ -291,6 +306,27 @@ define([
 			}
 			this.resourceDeck.unselectAll()
 			this.ajaxAction('pickResource', { lock: true, cardId: card.id })
+		},
+
+		// Click on resource player hand
+		onPlayerResourceClick(player, card) {
+			if (
+				this.last_server_state.name === 'playerDiscardResources' &&
+				player.isCurrentActive()
+			) {
+				this.ajaxAction('discardResource', { lock: true, cardId: card.id })
+				return
+			}
+
+			if (this.last_server_state.name === 'playerShare') {
+				this.ajaxAction('shareResource', { lock: true, cardId: card.id })
+				return
+			}
+
+			if (this.last_server_state.name === 'playerShareChoosePlayer') {
+				this.ajaxAction('giveResource', { lock: true, playerId: player.id })
+				return
+			}
 		},
 
 		///////////////////////////////////////////////////
@@ -315,6 +351,12 @@ define([
 			)
 			dojo.subscribe('updatePlayerData', this, 'notif_updatePlayerData')
 			dojo.subscribe('playerPickResource', this, 'notif_playerPickResource')
+			dojo.subscribe(
+				'playerDiscardResource',
+				this,
+				'notif_playerDiscardResource'
+			)
+			dojo.subscribe('playerShareResource', this, 'notif_playerShareResource')
 		},
 
 		notif_updateRooms(notif) {
@@ -348,6 +390,30 @@ define([
 			this.resourceDeck.removeFromStockById(card.id)
 			const player = this.players.getPlayerById(notif.args.player_id)
 			player.stock.addToStockWithId(card.type, card.id)
+			// TODO animation
+		},
+
+		notif_playerDiscardResource(notif) {
+			console.log('notif_playerDiscardResource', notif)
+			const card = notif.args.card
+			const player = this.players.getPlayerById(notif.args.player_id)
+			player.stock.removeFromStockById(card.id)
+			// TODO animation
+		},
+
+		notif_playerShareResource(notif) {
+			console.log('notif_playerShareResource', notif)
+			const card = notif.args.card
+			const player = this.players.getPlayerById(notif.args.player_id)
+			if (notif.args.shareAction === 'take') {
+				const fromPlayer = this.players.getPlayerById(notif.args.from_player_id)
+				fromPlayer.stock.removeFromStockById(card.id)
+				player.stock.addToStockWithId(card.type, card.id)
+			} else {
+				const toPlayer = this.players.getPlayerById(notif.args.to_player_id)
+				player.stock.removeFromStockById(card.id)
+				toPlayer.stock.addToStockWithId(card.type, card.id)
+			}
 			// TODO animation
 		},
 
@@ -412,12 +478,12 @@ class SSRoom {
 	}
 
 	assertEl() {
-		let el = document.getElementsByClassName(`ss-room--${this.id}`)[0]
+		let el = $first(`.ss-room--${this.id}`)
 		if (el) {
 			this.el = el
 			return
 		}
-		const roomsEl = document.getElementsByClassName('ss-rooms')[0]
+		const roomsEl = $first('.ss-rooms')
 		el = dojo.create(
 			'div',
 			{
@@ -495,6 +561,12 @@ class SSPlayers {
 			player.setRoomPosition(player.position, true, false)
 		})
 	}
+
+	highlightHands(ids) {
+		this.players.forEach(player => {
+			player.highlightHand(ids && ids.includes(player.id))
+		})
+	}
 }
 
 class SSPlayer {
@@ -520,21 +592,26 @@ class SSPlayer {
 		this.setRoomPosition(position, false, true)
 	}
 
+	isCurrentActive() {
+		return (
+			this.gameObject.player_id == this.id &&
+			this.gameObject.getActivePlayerId() == this.id
+		)
+	}
+
 	assertBoardEl() {
-		let boardEl = document.getElementsByClassName(
-			`ss-players-board--id-${this.id}`
-		)[0]
+		let boardEl = $first(`.ss-players-board--id-${this.id}`)
 		if (boardEl) {
 			this.boardEl = boardEl
 			return
 		}
-		const playersArea = document.getElementsByClassName('ss-players-area')[0]
+		const playersHandsEl = $first('.ss-players-hands')
 		boardEl = dojo.create(
 			'div',
 			{
 				class: `ss-player-board ss-players-board--id-${this.id}`
 			},
-			playersArea
+			playersHandsEl
 		)
 		const handEl = dojo.create(
 			'div',
@@ -543,7 +620,7 @@ class SSPlayer {
 				style: {
 					backgroundColor: '#' + this.color
 				},
-				innerHTML: `Hand for ${this.name} #${this.id}`
+				innerHTML: `Hand of ${this.name}`
 			},
 			boardEl
 		)
@@ -551,14 +628,12 @@ class SSPlayer {
 	}
 
 	assertMeepleEl() {
-		let meepleEl = document.getElementsByClassName(
-			`ss-player-meeple--id-${this.id}`
-		)[0]
+		let meepleEl = $first(`.ss-player-meeple--id-${this.id}`)
 		if (meepleEl) {
 			this.meepleEl = meepleEl
 			return
 		}
-		const playersArea = document.getElementsByClassName('ss-play-area')[0]
+		const playersArea = $first('.ss-play-area')
 		meepleEl = dojo.create(
 			'div',
 			{
@@ -585,6 +660,15 @@ class SSPlayer {
 		this.stock.setSelectionMode(1)
 		this.stock.extraClasses = 'ss-resource-card'
 		this.stock.setSelectionAppearance('class')
+		this.stock.setOverlap(30, 5)
+		dojo.connect(this.stock, 'onChangeSelection', () => {
+			var card = this.stock.getSelectedItems()[0]
+			if (!card) {
+				return
+			}
+			this.stock.unselectAll()
+			this.gameObject.onPlayerResourceClick(this, card)
+		})
 		this.gameObject.resourceTypes.forEach((type, index) => {
 			this.stock.addItemType(
 				type.id,
@@ -613,7 +697,7 @@ class SSPlayer {
 		// .sort(p => p.order)
 		// .findIndex(p => p.id === this.id)
 		const index = this.order
-		const offsetX = index * 20 + roomPos.w * 0.2
+		const offsetX = index * 30
 		const offsetY = roomPos.h * 0.2
 
 		this.gameObject
@@ -630,5 +714,11 @@ class SSPlayer {
 					.forEach(p => p.setRoomPosition(previousPosition, false, false))
 			}
 		}
+	}
+
+	highlightHand(value) {
+		this.boardEl.classList[value ? 'add' : 'remove'](
+			'ss-player-board--highlight'
+		)
 	}
 }

@@ -35,7 +35,11 @@ class action_solarstorm extends APP_GameAction {
 
 	public function choose() {
 		self::setAjaxMode();
-		$actionName = self::getArg('actionName', AT_enum, true, null, ['move', 'scavenge']);
+		$actionName = self::getArg('actionName', AT_enum, true, null, [
+			'move',
+			'scavenge',
+			'share',
+		]);
 		$this->game->actionChoose($actionName);
 		self::ajaxResponse();
 	}
@@ -43,7 +47,7 @@ class action_solarstorm extends APP_GameAction {
 	public function move() {
 		self::setAjaxMode();
 		$position = self::getArg('position', AT_posint, true);
-		$this->game->actionMove((int)$position);
+		$this->game->actionMove((int) $position);
 		self::ajaxResponse();
 	}
 
@@ -61,8 +65,29 @@ class action_solarstorm extends APP_GameAction {
 
 	public function pickResource() {
 		self::setAjaxMode();
-		$cardId = (int)self::getArg('cardId', AT_posint, true);
+		$cardId = (int) self::getArg('cardId', AT_posint, true);
 		$this->game->actionPickResource($cardId);
+		self::ajaxResponse();
+	}
+
+	public function discardResource() {
+		self::setAjaxMode();
+		$cardId = (int) self::getArg('cardId', AT_posint, true);
+		$this->game->actionDiscardResource($cardId);
+		self::ajaxResponse();
+	}
+
+	public function shareResource() {
+		self::setAjaxMode();
+		$cardId = (int) self::getArg('cardId', AT_posint, true);
+		$this->game->actionShareResource($cardId);
+		self::ajaxResponse();
+	}
+
+	public function giveResource() {
+		self::setAjaxMode();
+		$playerId = (int) self::getArg('playerId', AT_posint, true);
+		$this->game->actionGiveResource($playerId);
 		self::ajaxResponse();
 	}
 }

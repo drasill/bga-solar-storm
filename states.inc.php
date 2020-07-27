@@ -19,9 +19,12 @@ if (!defined('ST_PLAYER_TURN')) {
 	define('ST_PLAYER_MOVE', 3);
 	define('ST_PLAYER_SCAVENGE', 4);
 	define('ST_PLAYER_SCAVENGE_PICK_CARDS', 5);
+	define('ST_PLAYER_SHARE', 6);
+	define('ST_PLAYER_SHARE_CHOOSE_PLAYER', 7);
 	define('ST_PLAYER_ACTION_DONE', 20);
 	define('ST_PLAYER_PICK_RESOURCES_CARDS', 21);
 	define('ST_PLAYER_END_TURN', 40);
+	define('ST_PLAYER_DISCARD_RESOURCES', 41);
 }
 
 $machinestates = [
@@ -42,8 +45,9 @@ $machinestates = [
 		'args' => 'argPlayerTurn',
 		'possibleactions' => ['choose'],
 		'transitions' => [
-			'transMove' => ST_PLAYER_MOVE,
-			'transScavenge' => ST_PLAYER_SCAVENGE,
+			'transPlayerMove' => ST_PLAYER_MOVE,
+			'transPlayerScavenge' => ST_PLAYER_SCAVENGE,
+			'transPlayerShare' => ST_PLAYER_SHARE,
 		],
 	],
 
@@ -66,8 +70,12 @@ $machinestates = [
 
 	ST_PLAYER_SCAVENGE => [
 		'name' => 'playerScavenge',
-		'description' => clienttranslate('Scavenge: ${actplayer} must roll the dice'),
-		'descriptionmyturn' => clienttranslate('Scavenge: ${you} must roll the dice'),
+		'description' => clienttranslate(
+			'Scavenge: ${actplayer} must roll the dice'
+		),
+		'descriptionmyturn' => clienttranslate(
+			'Scavenge: ${you} must roll the dice'
+		),
 		'type' => 'activeplayer',
 		'possibleactions' => ['rollDice', 'cancel'],
 		'transitions' => [
@@ -93,11 +101,46 @@ $machinestates = [
 		],
 	],
 
+	ST_PLAYER_SHARE => [
+		'name' => 'playerShare',
+		'description' => clienttranslate(
+			'${actplayer} must select a card to share, or to take from another player'
+		),
+		'descriptionmyturn' => clienttranslate(
+			'${you} must select a card to share, or to take from another player'
+		),
+		'type' => 'activeplayer',
+		'action' => 'stActionShare',
+		'args' => 'argPlayerShare',
+		'possibleactions' => ['shareResource', 'cancel'],
+		'transitions' => [
+			'transPlayerShareChoosePlayer' => ST_PLAYER_SHARE_CHOOSE_PLAYER,
+			'transActionDone' => ST_PLAYER_ACTION_DONE,
+			'transActionCancel' => ST_PLAYER_TURN,
+		],
+	],
+
+	ST_PLAYER_SHARE_CHOOSE_PLAYER => [
+		'name' => 'playerShareChoosePlayer',
+		'description' => clienttranslate(
+			'${actplayer} must select a player to give a card to'
+		),
+		'descriptionmyturn' => clienttranslate(
+			'${you} must select a player to give a card to'
+		),
+		'type' => 'activeplayer',
+		'args' => 'argPlayerShareChoosePlayer',
+		'possibleactions' => ['giveResource', 'cancel'],
+		'transitions' => [
+			'transActionDone' => ST_PLAYER_ACTION_DONE,
+			'transActionCancel' => ST_PLAYER_TURN,
+		],
+	],
+
 	ST_PLAYER_ACTION_DONE => [
 		'name' => 'actionDone',
 		'type' => 'game',
 		'action' => 'stActionDone',
-		'updateGameProgression' => true,
 		'transitions' => [
 			'transPlayerTurn' => ST_PLAYER_TURN,
 			'transPlayerPickResourcesCards' => ST_PLAYER_PICK_RESOURCES_CARDS,
@@ -127,6 +170,22 @@ $machinestates = [
 		'updateGameProgression' => true,
 		'transitions' => [
 			'transPlayerTurn' => ST_PLAYER_TURN,
+			'transPlayerDiscardResources' => ST_PLAYER_DISCARD_RESOURCES,
+		],
+	],
+
+	ST_PLAYER_DISCARD_RESOURCES => [
+		'name' => 'playerDiscardResources',
+		'description' => clienttranslate(
+			'End of turn: ${actplayer} must discard resources cards (max 6)'
+		),
+		'descriptionmyturn' => clienttranslate(
+			'End of turn: ${you} must discard resources cards (max 6)'
+		),
+		'type' => 'activeplayer',
+		'possibleactions' => ['discardResource'],
+		'transitions' => [
+			'transPlayerEndTurn' => ST_PLAYER_END_TURN,
 		],
 	],
 
