@@ -336,6 +336,20 @@ class SolarStorm extends Table {
 			case 'repair':
 				$this->gamestate->nextState('transPlayerRepair');
 				break;
+			case 'room':
+				$player = $this->ssPlayers->getActive();
+				$room = $this->rooms->getRoomByPosition($player->getPosition());
+				$roomSlug = $room->getSlug();
+				switch ($roomSlug) {
+					case 'crew-quarters':
+						$this->gamestate->nextState('transPlayerRoomCrewQuarter');
+						break;
+					default:
+						throw new BgaVisibleSystemException(
+							"Room $roomSlug not implemented yet"
+						); // NOI18N
+				}
+				break;
 			default:
 				throw new BgaVisibleSystemException("Invalid action $actionName"); // NOI18N
 				break;
@@ -663,6 +677,38 @@ class SolarStorm extends Table {
 		$this->gamestate->nextState('transActionDone');
 	}
 
+	public function actionMoveMeepleToRoom(int $playerId, int $position): void {
+		self::checkAction('moveMeepleToRoom');
+		$player = $this->ssPlayers->getActive();
+		$playerToMove = $this->ssPlayers->getPlayer($playerId);
+		$room = $this->rooms->getRoomByPosition($position);
+
+		if ($playerToMove->getPosition() === $position) {
+			throw new BgaUserException(self::_('Player is already in this room'));
+		}
+
+		// Check position is valid (destination room already has a meeple)
+		if (empty($this->ssPlayers->getPlayersAtPosition($position))) {
+			throw new BgaUserException(self::_('Cannot move to an empty room'));
+		}
+
+		$playerToMove->setPosition($position);
+		$player->incrementActions(-1);
+		$player->save();
+		$this->notifyPlayerData(
+			$playerToMove,
+			clienttranslate(
+				'${player_name} is moved to ${roomName} by ${player_action_name} (Crew Quarters action)'
+			),
+			[
+				'roomName' => $room->getName(),
+				'player_action_name' => $player->getName(),
+				'player_action_id' => $player->getId(),
+			]
+		);
+		$this->gamestate->nextState('transActionDone');
+	}
+
 	//////////////////////////////////////////////////////////////////////////////
 	//////////// Game state arguments
 	////////////
@@ -685,13 +731,13 @@ class SolarStorm extends Table {
 
 	public function argPlayerScavengePickCards() {
 		return [
-			'possibleSources' => $this->whereDoesPlayerCanPickResourceFrom()
+			'possibleSources' => $this->whereDoesPlayerCanPickResourceFrom(),
 		];
 	}
 
 	public function argPlayerPickResourcesCards() {
 		return [
-			'possibleSources' => $this->whereDoesPlayerCanPickResourceFrom()
+			'possibleSources' => $this->whereDoesPlayerCanPickResourceFrom(),
 		];
 	}
 

@@ -22,6 +22,7 @@ if (!defined('ST_PLAYER_TURN')) {
 	define('ST_PLAYER_SHARE', 6);
 	define('ST_PLAYER_SHARE_CHOOSE_PLAYER', 7);
 	define('ST_PLAYER_REPAIR', 8);
+	define('ST_PLAYER_ROOM_CREW_QUARTER', 10);
 	define('ST_PLAYER_ACTION_DONE', 20);
 	define('ST_PLAYER_PICK_RESOURCES_CARDS', 21);
 	define('ST_PLAYER_END_TURN', 40);
@@ -50,6 +51,7 @@ $machinestates = [
 			'transPlayerScavenge' => ST_PLAYER_SCAVENGE,
 			'transPlayerShare' => ST_PLAYER_SHARE,
 			'transPlayerRepair' => ST_PLAYER_REPAIR,
+			'transPlayerRoomCrewQuarter' => ST_PLAYER_ROOM_CREW_QUARTER,
 		],
 	],
 
@@ -150,6 +152,22 @@ $machinestates = [
 		),
 		'type' => 'activeplayer',
 		'possibleactions' => ['selectResourceForRepair', 'cancel'],
+		'transitions' => [
+			'transActionDone' => ST_PLAYER_ACTION_DONE,
+			'transActionCancel' => ST_PLAYER_TURN,
+		],
+	],
+
+	ST_PLAYER_ROOM_CREW_QUARTER => [
+		'name' => 'playerRoomCrewQuarter',
+		'description' => clienttranslate(
+			'Crew Quarters: ${actplayer} must select a meeple to move'
+		),
+		'descriptionmyturn' => clienttranslate(
+			'Crew Quarters: ${you} must select a meeple to move'
+		),
+		'type' => 'activeplayer',
+		'possibleactions' => ['moveMeepleToRoom', 'cancel'],
 		'transitions' => [
 			'transActionDone' => ST_PLAYER_ACTION_DONE,
 			'transActionCancel' => ST_PLAYER_TURN,

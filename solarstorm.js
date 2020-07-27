@@ -35,6 +35,8 @@ define([
 			this.playAreaEl = null
 			this.damageDeck = null
 			this.resourceDeck = null
+
+			this.selectedMeeplePlayer = null
 		},
 
 		setup: function(gamedatas) {
@@ -180,6 +182,9 @@ define([
 				case 'playerRepair':
 					this.players.highlightHands([+this.getActivePlayerId()])
 					break
+				case 'playerRoomCrewQuarter':
+					this.players.highlightMeeples('all')
+					break
 			}
 		},
 
@@ -204,6 +209,12 @@ define([
 				case 'playerDiscardResources':
 				case 'playerRepair':
 					this.players.highlightHands(null)
+					break
+				case 'playerRoomCrewQuarter':
+					this.players.highlightMeeples(null)
+					this.selectedMeeplePlayer = null
+					this.rooms.highlight(null)
+					break
 			}
 		},
 
@@ -228,6 +239,9 @@ define([
 						this.addActionButton('buttonRepair', _('Repair'), evt => {
 							this.onPlayerChooseAction(evt, 'repair')
 						})
+						this.addActionButton('buttonRoom', _('Room action'), evt => {
+							this.onPlayerChooseAction(evt, 'room')
+						})
 						break
 					case 'playerMove':
 						this.addActionCancelButton()
@@ -245,6 +259,9 @@ define([
 						this.addActionButton('buttonRollDice', _('Roll dice'), evt => {
 							this.ajaxAction('rollDice', { lock: true })
 						})
+						this.addActionCancelButton()
+						break
+					case 'playerRoomCrewQuarter':
 						this.addActionCancelButton()
 						break
 				}
@@ -318,6 +335,31 @@ define([
 		onRoomClick(room) {
 			if (this.last_server_state.name === 'playerMove') {
 				this.ajaxAction('move', { lock: true, position: room.position })
+				return
+			}
+			if (
+				this.last_server_state.name === 'playerRoomCrewQuarter' &&
+				this.selectedMeeplePlayer
+			) {
+				this.ajaxAction('moveMeepleToRoom', {
+					lock: true,
+					playerId: this.selectedMeeplePlayer.id,
+					position: room.position
+				})
+				return
+			}
+		},
+
+		onPlayerMeepleClick(player) {
+			console.log('Meeple click', player)
+			if (this.last_server_state.name === 'playerRoomCrewQuarter') {
+				// Select meeple
+				this.selectedMeeplePlayer = player
+				// Highlight rooms with players
+				const validPositions = this.players.players.map(p => p.position)
+				this.rooms.highlight(validPositions)
+				this.players.highlightMeeples(null)
+				return
 			}
 		},
 
@@ -602,6 +644,12 @@ class SSPlayers {
 			player.highlightHand(ids && ids.includes(player.id))
 		})
 	}
+
+	highlightMeeples(ids) {
+		this.players.forEach(player => {
+			player.highlightMeeple(ids === 'all' || (ids && ids.includes(player.id)))
+		})
+	}
 }
 
 class SSPlayer {
@@ -679,6 +727,9 @@ class SSPlayer {
 		)
 		this.gameObject.addTooltipHtml(meepleEl.id, _(`Player ${this.name}`), 250)
 		this.meepleEl = meepleEl
+		this.meepleEl.addEventListener('click', () => {
+			this.gameObject.onPlayerMeepleClick(this)
+		})
 	}
 
 	createStock() {
@@ -718,7 +769,7 @@ class SSPlayer {
 		const previousPosition = this.position
 		this.position = position
 		if (position === null) {
-			this.meepleEl.style.display = 'none'
+			// this.meepleEl.style.display = 'none'
 			return
 		}
 		this.meepleEl.style.display = 'block'
@@ -754,6 +805,12 @@ class SSPlayer {
 	highlightHand(value) {
 		this.boardEl.classList[value ? 'add' : 'remove'](
 			'ss-player-board--highlight'
+		)
+	}
+
+	highlightMeeple(value) {
+		this.meepleEl.classList[value ? 'add' : 'remove'](
+			'ss-player-meeple--highlight'
 		)
 	}
 }

@@ -270,6 +270,30 @@
 		drop-shadow(1px -1px 1px rgba(255, 255, 255, 0.7));
 }
 
+.ss-player-meeple:hover {
+	cursor: pointer;
+	filter: drop-shadow(1px 1px 1px rgba(191,191,191, 0.7))
+		drop-shadow(-1px -1px 1px rgba(191,191,191, 0.7))
+		drop-shadow(-1px 1px 1px rgba(191,191,191, 0.7))
+		drop-shadow(1px -1px 1px rgba(191,191,191, 0.7));
+}
+
+.ss-player-meeple--highlight {
+	cursor: pointer;
+	filter: drop-shadow(1px 1px 1px rgba(0, 0, 255, 0.7))
+		drop-shadow(-1px -1px 1px rgba(0, 0, 255, 0.7))
+		drop-shadow(-1px 1px 1px rgba(0, 0, 255, 0.7))
+		drop-shadow(1px -1px 1px rgba(0, 0, 255, 0.7));
+}
+
+.ss-player-meeple--highlight:hover {
+	cursor: pointer;
+	filter: drop-shadow(1px 1px 1px rgba(127, 127, 255, 0.7))
+		drop-shadow(-1px -1px 1px rgba(127, 127, 255, 0.7))
+		drop-shadow(-1px 1px 1px rgba(127, 127, 255, 0.7))
+		drop-shadow(1px -1px 1px rgba(127, 127, 255, 0.7));
+}
+
 .ss-player-meeple--order-1 {
 	background-position: 0 0;
 }

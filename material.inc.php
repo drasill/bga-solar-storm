@@ -104,7 +104,7 @@ $this->roomInfos = [
 		'slug' => 'crew-quarters',
 		'name' => self::_('Crew Quarters'),
 		'description' => self::_(
-			"Move a player's meeple to a rooms that has another meeple in it"
+			"Move a player's meeple to a room that has another meeple in it"
 		),
 		'resources' => ['energy', 'data', 'metal'],
 	],
