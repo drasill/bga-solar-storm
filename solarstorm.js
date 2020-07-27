@@ -92,7 +92,7 @@ define([
 			this.damageDeck.create(this, damageDeckEl, 160, 117)
 			this.damageDeck.setSelectionMode(0)
 			this.damageDeck.extraClasses = 'ss-damage-card'
-			this.damageDeck.setOverlap(20, 0)
+			this.damageDeck.setOverlap(0.01, 0)
 			for (let i = 0; i < 24; i++) {
 				this.damageDeck.addItemType(
 					i,
@@ -358,7 +358,10 @@ define([
 			}
 
 			if (this.last_server_state.name === 'playerRepair') {
-				this.ajaxAction('selectResourceForRepair', { lock: true, cardId: card.id })
+				this.ajaxAction('selectResourceForRepair', {
+					lock: true,
+					cardId: card.id
+				})
 				return
 			}
 		},
@@ -493,7 +496,7 @@ class SSRoom {
 	name = null
 	description = null
 	position = null
-	damage = null
+	damage = [false, false, false]
 	diverted = false
 
 	el = null
@@ -552,12 +555,10 @@ class SSRoom {
 		if (this.id === 0) {
 			return
 		}
-		this.el.classList.remove('ss-room--damaged-0')
-		this.el.classList.remove('ss-room--damaged-1')
-		this.el.classList.remove('ss-room--damaged-2')
-		this.el.classList.remove('ss-room--damaged-3')
+		damage.forEach((dmg, index) => {
+			this.el.classList[dmg ? 'add' : 'remove'](`ss-room--damaged-${index}`)
+		})
 		this.damage = damage
-		this.el.classList.add(`ss-room--damaged-${damage}`)
 	}
 
 	setDiverted(diverted) {

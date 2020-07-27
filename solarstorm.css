@@ -159,20 +159,9 @@
 	top: 54%;
 }
 
-.ss-room--damaged-1 .ss-room__damage--0 {
-	top: 0;
-	left: 0;
-	opacity: 0;
-}
-.ss-room--damaged-2 .ss-room__damage--0,
-.ss-room--damaged-2 .ss-room__damage--1 {
-	top: 0;
-	left: 0;
-	opacity: 0;
-}
-.ss-room--damaged-3 .ss-room__damage--0,
-.ss-room--damaged-3 .ss-room__damage--1,
-.ss-room--damaged-3 .ss-room__damage--2 {
+.ss-room--damaged-0 .ss-room__damage--0,
+.ss-room--damaged-1 .ss-room__damage--1,
+.ss-room--damaged-2 .ss-room__damage--2 {
 	top: 0;
 	left: 0;
 	opacity: 0;

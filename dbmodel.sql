@@ -12,7 +12,9 @@ CREATE TABLE IF NOT EXISTS `rooms` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `position` int(10) NOT NULL,
   `room` int(10) NOT NULL,
-  `damage` int(10) NOT NULL,
+  `damage1` boolean NOT NULL,
+  `damage2` boolean NOT NULL,
+  `damage3` boolean NOT NULL,
   `diverted` boolean NOT NULL DEFAULT false,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;

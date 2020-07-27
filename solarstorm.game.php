@@ -176,7 +176,7 @@ class SolarStorm extends Table {
 		$updatedRooms = [];
 		foreach ($roomsSlugs as $roomsSlug) {
 			$room = $this->rooms->getRoomBySlug($roomsSlug);
-			$room->setDamage($room->getDamage() + 1);
+			$room->doDamage();
 			$room->save();
 			$updatedRooms[] = $room->toArray();
 		}
@@ -637,7 +637,8 @@ class SolarStorm extends Table {
 		}
 
 		$room = $this->rooms->getRoomByPosition($player->getPosition());
-		// TODO: check matching resource !
+		$room->repairWithResource($card['type']);
+		$room->save();
 
 		$this->resourceCards->moveCard($card['id'], 'discard');
 
@@ -654,8 +655,6 @@ class SolarStorm extends Table {
 			] + $player->getNotificationArgs()
 		);
 
-		$room->setDamage($room->getDamage() - 1);
-		$room->save();
 		$this->notifyAllPlayers('updateRooms', 'room update', [
 			'rooms' => [$room->toArray()],
 		]);

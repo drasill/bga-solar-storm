@@ -21,8 +21,11 @@ class SolarStormRoom extends APP_GameClass {
 	/** @var int */
 	private $position = null;
 
-	/** @var int */
-	private $damage = null;
+	/** @var bool[] */
+	private $damage = [false,false,false];
+
+	/** @var string[] */
+	private $resources = [];
 
 	/** @var bool */
 	private $diverted = null;
@@ -32,13 +35,14 @@ class SolarStormRoom extends APP_GameClass {
 
 		$this->roomId = (int) $roomData['room'];
 		$this->position = (int) $roomData['position'];
-		$this->damage = (int) $roomData['damage'];
+		$this->damage = [$roomData['damage1'] == 1, $roomData['damage2'] == 1, $roomData['damage3'] == 1];
 		$this->diverted = $roomData['diverted'] == 1;
 
 		$roomInfo = $this->table->roomInfos[$this->roomId];
 		$this->slug = $roomInfo['slug'];
 		$this->name = $roomInfo['name'];
 		$this->description = $roomInfo['description'];
+		$this->resources = $roomInfo['resources'];
 	}
 
 	public function getRoomId(): int {
@@ -61,16 +65,33 @@ class SolarStormRoom extends APP_GameClass {
 		return $this->position;
 	}
 
-	public function getDamage(): int {
-		return $this->damage;
-	}
-
 	public function isDiverted(): bool {
 		return $this->diverted;
 	}
 
-	public function setDamage(int $damage): void {
-		$this->damage = $damage;
+	public function doDamage(): void {
+		foreach ($this->damage as $dmgIndex => $dmgValue) {
+			if ($dmgValue) {
+				continue;
+			}
+			$this->damage[$dmgIndex] = true;
+			return;
+		}
+		throw new \Exception("Cannot damage this room more");
+	}
+
+	public function repairWithResource(string $resourceType): void {
+		foreach ($this->resources as $resIndex => $resType) {
+			if ($resType !== $resourceType) {
+				continue;
+			}
+			if (!$this->damage[$resIndex]) {
+				throw new \Exception("This rooms is not damaged on $resourceType");
+			}
+			$this->damage[$resIndex] = false;
+			return;
+		}
+		throw new \Exception("Cannot repair this room with $resourceType");
 	}
 
 	public function setDiverted(bool $diverted): void {
@@ -98,9 +119,11 @@ class SolarStormRoom extends APP_GameClass {
 
 	public function save() {
 		$roomId = $this->getRoomId();
-		$damage = $this->getDamage();
-		$diverted = $this->getDamage() ? '1' : '0';
-		$sql = "UPDATE rooms SET damage = $damage, diverted = $diverted WHERE room = $roomId";
+		$damage1 = $this->damage[0] ? '1' : '0';
+		$damage2 = $this->damage[1] ? '1' : '0';
+		$damage3 = $this->damage[2] ? '1' : '0';
+		$diverted = $this->diverted ? '1' : '0';
+		$sql = "UPDATE rooms SET damage1 = $damage1, damage2 = $damage2, damage3 = $damage3, diverted = $diverted WHERE room = $roomId";
 		self::DbQuery($sql);
 	}
 
