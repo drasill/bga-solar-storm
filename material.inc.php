@@ -66,6 +66,7 @@ $this->roomInfos = [
 		'description' => self::_(
 			'When all rooms have diverted power, get here and use 1 action to reactivate the Energy Core'
 		),
+		'resources' => [],
 	],
 	1 => [
 		'slug' => 'mess-hall',
@@ -73,6 +74,7 @@ $this->roomInfos = [
 		'description' => self::_(
 			'Give, take or exchange a resource card with another player'
 		),
+		'resources' => ['nanobots', 'energy', 'data'],
 	],
 	2 => [
 		'slug' => 'repair-centre',
@@ -80,6 +82,7 @@ $this->roomInfos = [
 		'description' => self::_(
 			'Repair a damaged room by one space on the Repair Track. Discard the matching card.'
 		),
+		'resources' => ['metal', 'energy', 'data'],
 	],
 	3 => [
 		'slug' => 'medical-bay',
@@ -87,6 +90,7 @@ $this->roomInfos = [
 		'description' => self::_(
 			'Take two actions tokens when starting in this room'
 		),
+		'resources' => ['metal', 'nanobots', 'energy'],
 	],
 	4 => [
 		'slug' => 'engine-room',
@@ -94,6 +98,7 @@ $this->roomInfos = [
 		'description' => self::_(
 			'Swap a card from your hand with one from the discard pile'
 		),
+		'resources' => ['data', 'metal', 'nanobots'],
 	],
 	5 => [
 		'slug' => 'crew-quarters',
@@ -101,6 +106,7 @@ $this->roomInfos = [
 		'description' => self::_(
 			"Move a player's meeple to a rooms that has another meeple in it"
 		),
+		'resources' => ['energy', 'data', 'metal'],
 	],
 	6 => [
 		'slug' => 'cargo-hold',
@@ -108,6 +114,7 @@ $this->roomInfos = [
 		'description' => self::_(
 			'Look at the next 5 resources cards. Then put them back in any order.'
 		),
+		'resources' => ['energy', 'metal', 'data'],
 	],
 	7 => [
 		'slug' => 'armoury',
@@ -115,6 +122,7 @@ $this->roomInfos = [
 		'description' => self::_(
 			'Place 2 protection tokens on any rooms(s) (this ends at the start of your next turn)'
 		),
+		'resources' => ['data', 'nanobots', 'metal'],
 	],
 	8 => [
 		'slug' => 'bridge',
@@ -122,6 +130,7 @@ $this->roomInfos = [
 		'description' => self::_(
 			'Look at the next 3 Damage cards and put them back in any order.'
 		),
+		'resources' => ['nanobots', 'data', 'energy'],
 	],
 ];
 

@@ -625,6 +625,45 @@ class SolarStorm extends Table {
 		$this->gamestate->nextState('transActionDone');
 	}
 
+	public function actionSelectResourceForRepair($cardId) {
+		self::checkAction('selectResourceForRepair');
+		$card = $this->resourceCards->getCard($cardId);
+		$player = $this->ssPlayers->getActive();
+		if (
+			$card['location'] !== 'hand' ||
+			$card['location_arg'] != $player->getId()
+		) {
+			throw new BgaVisibleSystemException('Card not in your hand'); // NOI18N
+		}
+
+		$room = $this->rooms->getRoomByPosition($player->getPosition());
+		// TODO: check matching resource !
+
+		$this->resourceCards->moveCard($card['id'], 'discard');
+
+		$resourceName = $this->resourceTypes[$card['type']]['name'];
+		$this->notifyAllPlayers(
+			'playerDiscardResource',
+			clienttranslate(
+				'${player_name} repairs ${roomName} with resource : ${resourceName}'
+			),
+			[
+				'card' => $card,
+				'resourceName' => $resourceName,
+				'roomName' => $room->getName(),
+			] + $player->getNotificationArgs()
+		);
+
+		$room->setDamage($room->getDamage() - 1);
+		$room->save();
+		$this->notifyAllPlayers('updateRooms', 'room update', [
+			'rooms' => [$room->toArray()],
+		]);
+		$player->incrementActions(-1);
+		$player->save();
+		$this->gamestate->nextState('transActionDone');
+	}
+
 	//////////////////////////////////////////////////////////////////////////////
 	//////////// Game state arguments
 	////////////

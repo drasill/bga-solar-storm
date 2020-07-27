@@ -91,4 +91,12 @@ class action_solarstorm extends APP_GameAction {
 		$this->game->actionGiveResource($playerId);
 		self::ajaxResponse();
 	}
+
+	public function selectResourceForRepair() {
+		self::setAjaxMode();
+		$cardId = (int) self::getArg('cardId', AT_posint, true);
+		$this->game->actionSelectResourceForRepair($cardId);
+		self::ajaxResponse();
+	}
+
 }

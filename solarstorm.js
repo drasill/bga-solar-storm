@@ -177,6 +177,7 @@ define([
 					this.players.highlightHands(args.args.possiblePlayers)
 					break
 				case 'playerDiscardResources':
+				case 'playerRepair':
 					this.players.highlightHands([+this.getActivePlayerId()])
 					break
 			}
@@ -201,6 +202,7 @@ define([
 					this.players.highlightHands(null)
 					break
 				case 'playerDiscardResources':
+				case 'playerRepair':
 					this.players.highlightHands(null)
 			}
 		},
@@ -352,6 +354,11 @@ define([
 
 			if (this.last_server_state.name === 'playerShareChoosePlayer') {
 				this.ajaxAction('giveResource', { lock: true, playerId: player.id })
+				return
+			}
+
+			if (this.last_server_state.name === 'playerRepair') {
+				this.ajaxAction('selectResourceForRepair', { lock: true, cardId: card.id })
 				return
 			}
 		},
