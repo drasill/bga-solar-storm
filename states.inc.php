@@ -1,4 +1,5 @@
 <?php
+// vim: tw=120:
 /**
  *------
  * BGA framework: © Gregory Isabelli <gisabelli@boardgamearena.com> & Emmanuel Colin <ecolin@boardgamearena.com>
@@ -16,15 +17,20 @@
 
 if (!defined('ST_PLAYER_TURN')) {
 	define('ST_PLAYER_TURN', 2);
+
 	define('ST_PLAYER_MOVE', 3);
 	define('ST_PLAYER_SCAVENGE', 4);
 	define('ST_PLAYER_SCAVENGE_PICK_CARDS', 5);
 	define('ST_PLAYER_SHARE', 6);
 	define('ST_PLAYER_SHARE_CHOOSE_PLAYER', 7);
 	define('ST_PLAYER_REPAIR', 8);
+
 	define('ST_PLAYER_ROOM_CREW_QUARTER', 10);
+	define('ST_PLAYER_ROOM_CARGO_HOLD', 11);
+
 	define('ST_PLAYER_ACTION_DONE', 20);
 	define('ST_PLAYER_PICK_RESOURCES_CARDS', 21);
+
 	define('ST_PLAYER_END_TURN', 40);
 	define('ST_PLAYER_DISCARD_RESOURCES', 41);
 }
@@ -52,17 +58,14 @@ $machinestates = [
 			'transPlayerShare' => ST_PLAYER_SHARE,
 			'transPlayerRepair' => ST_PLAYER_REPAIR,
 			'transPlayerRoomCrewQuarter' => ST_PLAYER_ROOM_CREW_QUARTER,
+			'transPlayerRoomCargoHold' => ST_PLAYER_ROOM_CARGO_HOLD,
 		],
 	],
 
 	ST_PLAYER_MOVE => [
 		'name' => 'playerMove',
-		'description' => clienttranslate(
-			'${actplayer} must choose a destination'
-		),
-		'descriptionmyturn' => clienttranslate(
-			'${you} must choose a destination'
-		),
+		'description' => clienttranslate('${actplayer} must choose a destination'),
+		'descriptionmyturn' => clienttranslate('${you} must choose a destination'),
 		'type' => 'activeplayer',
 		'args' => 'argPlayerMove',
 		'possibleactions' => ['move', 'cancel'],
@@ -74,12 +77,8 @@ $machinestates = [
 
 	ST_PLAYER_SCAVENGE => [
 		'name' => 'playerScavenge',
-		'description' => clienttranslate(
-			'Scavenge: ${actplayer} must roll the dice'
-		),
-		'descriptionmyturn' => clienttranslate(
-			'Scavenge: ${you} must roll the dice'
-		),
+		'description' => clienttranslate('Scavenge: ${actplayer} must roll the dice'),
+		'descriptionmyturn' => clienttranslate('Scavenge: ${you} must roll the dice'),
 		'type' => 'activeplayer',
 		'possibleactions' => ['rollDice', 'cancel'],
 		'transitions' => [
@@ -91,12 +90,8 @@ $machinestates = [
 
 	ST_PLAYER_SCAVENGE_PICK_CARDS => [
 		'name' => 'playerScavengePickCards',
-		'description' => clienttranslate(
-			'Scavenge: ${actplayer} must pick resources cards'
-		),
-		'descriptionmyturn' => clienttranslate(
-			'Scavenge: ${you} must pick resources cards'
-		),
+		'description' => clienttranslate('Scavenge: ${actplayer} must pick resources cards'),
+		'descriptionmyturn' => clienttranslate('Scavenge: ${you} must pick resources cards'),
 		'type' => 'activeplayer',
 		'args' => 'argPlayerScavengePickCards',
 		'possibleactions' => ['pickResource'],
@@ -108,12 +103,8 @@ $machinestates = [
 
 	ST_PLAYER_SHARE => [
 		'name' => 'playerShare',
-		'description' => clienttranslate(
-			'${actplayer} must select a card to share, or to take from another player'
-		),
-		'descriptionmyturn' => clienttranslate(
-			'${you} must select a card to share, or to take from another player'
-		),
+		'description' => clienttranslate('${actplayer} must select a card to share, or to take from another player'),
+		'descriptionmyturn' => clienttranslate('${you} must select a card to share, or to take from another player'),
 		'type' => 'activeplayer',
 		'action' => 'stActionShare',
 		'args' => 'argPlayerShare',
@@ -127,12 +118,8 @@ $machinestates = [
 
 	ST_PLAYER_SHARE_CHOOSE_PLAYER => [
 		'name' => 'playerShareChoosePlayer',
-		'description' => clienttranslate(
-			'${actplayer} must select a player to give a card to'
-		),
-		'descriptionmyturn' => clienttranslate(
-			'${you} must select a player to give a card to'
-		),
+		'description' => clienttranslate('${actplayer} must select a player to give a card to'),
+		'descriptionmyturn' => clienttranslate('${you} must select a player to give a card to'),
 		'type' => 'activeplayer',
 		'args' => 'argPlayerShareChoosePlayer',
 		'possibleactions' => ['giveResource', 'cancel'],
@@ -144,12 +131,8 @@ $machinestates = [
 
 	ST_PLAYER_REPAIR => [
 		'name' => 'playerRepair',
-		'description' => clienttranslate(
-			'Repair: ${actplayer} must select a resource'
-		),
-		'descriptionmyturn' => clienttranslate(
-			'Repair: ${you} must select a resource'
-		),
+		'description' => clienttranslate('Repair: ${actplayer} must select a resource'),
+		'descriptionmyturn' => clienttranslate('Repair: ${you} must select a resource'),
 		'type' => 'activeplayer',
 		'possibleactions' => ['selectResourceForRepair', 'cancel'],
 		'transitions' => [
@@ -160,17 +143,26 @@ $machinestates = [
 
 	ST_PLAYER_ROOM_CREW_QUARTER => [
 		'name' => 'playerRoomCrewQuarter',
-		'description' => clienttranslate(
-			'Crew Quarters: ${actplayer} must select a meeple to move'
-		),
-		'descriptionmyturn' => clienttranslate(
-			'Crew Quarters: ${you} must select a meeple to move'
-		),
+		'description' => clienttranslate('Crew Quarters: ${actplayer} must select a meeple to move'),
+		'descriptionmyturn' => clienttranslate('Crew Quarters: ${you} must select a meeple to move'),
 		'type' => 'activeplayer',
 		'possibleactions' => ['moveMeepleToRoom', 'cancel'],
 		'transitions' => [
 			'transActionDone' => ST_PLAYER_ACTION_DONE,
 			'transActionCancel' => ST_PLAYER_TURN,
+		],
+	],
+
+	ST_PLAYER_ROOM_CARGO_HOLD => [
+		'name' => 'playerRoomCargoHold',
+		'description' => clienttranslate('Cargo Hold: ${actplayer} must reorder the next resource cards'),
+		'descriptionmyturn' => clienttranslate('Cargo Hold: ${you} must reorder the next resource cards'),
+		'type' => 'activeplayer',
+		'action' => 'stPlayerRoomCargoHold',
+		'args' => 'argPlayerRoomCargoHold',
+		'possibleactions' => ['putBackResourceCardInDeck'],
+		'transitions' => [
+			'transActionDone' => ST_PLAYER_ACTION_DONE,
 		],
 	],
 
@@ -186,12 +178,8 @@ $machinestates = [
 
 	ST_PLAYER_PICK_RESOURCES_CARDS => [
 		'name' => 'pickResources',
-		'description' => clienttranslate(
-			'End of turn: ${actplayer} must pick resources cards'
-		),
-		'descriptionmyturn' => clienttranslate(
-			'End of turn: ${you} must pick resources cards'
-		),
+		'description' => clienttranslate('End of turn: ${actplayer} must pick resources cards'),
+		'descriptionmyturn' => clienttranslate('End of turn: ${you} must pick resources cards'),
 		'type' => 'activeplayer',
 		'args' => 'argPlayerPickResourcesCards',
 		'possibleactions' => ['pickResource'],
@@ -214,12 +202,8 @@ $machinestates = [
 
 	ST_PLAYER_DISCARD_RESOURCES => [
 		'name' => 'playerDiscardResources',
-		'description' => clienttranslate(
-			'End of turn: ${actplayer} must discard resources cards (max 6)'
-		),
-		'descriptionmyturn' => clienttranslate(
-			'End of turn: ${you} must discard resources cards (max 6)'
-		),
+		'description' => clienttranslate('End of turn: ${actplayer} must discard resources cards (max 6)'),
+		'descriptionmyturn' => clienttranslate('End of turn: ${you} must discard resources cards (max 6)'),
 		'type' => 'activeplayer',
 		'possibleactions' => ['discardResource'],
 		'transitions' => [

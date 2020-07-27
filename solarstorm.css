@@ -64,8 +64,7 @@
 }
 
 .ss-room:hover {
-	filter: drop-shadow(2px 2px 2px rgba(0, 0, 0, 0.5))
-		drop-shadow(-2px -2px 2px rgba(0, 0, 0, 0.5));
+	filter: drop-shadow(2px 2px 2px rgba(0, 0, 0, 0.5)) drop-shadow(-2px -2px 2px rgba(0, 0, 0, 0.5));
 }
 
 .ss-room--pos-0 {
@@ -177,8 +176,7 @@
 	background-position: 50% 50%;
 	background-size: contain;
 	background-repeat: no-repeat;
-	filter: drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.5))
-		drop-shadow(-1px -1px 1px rgba(0, 0, 0, 0.5));
+	filter: drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.5)) drop-shadow(-1px -1px 1px rgba(0, 0, 0, 0.5));
 	top: 0%;
 	left: 35%;
 	height: 20%;
@@ -197,24 +195,20 @@
 }
 
 .ss-room__diverted-token:hover {
-	filter: drop-shadow(2px 2px 2px rgba(0, 0, 0, 0.5))
-		drop-shadow(-2px -2px 2px rgba(0, 0, 0, 0.5));
+	filter: drop-shadow(2px 2px 2px rgba(0, 0, 0, 0.5)) drop-shadow(-2px -2px 2px rgba(0, 0, 0, 0.5));
 }
 
 .ss-damage-card {
-	filter: drop-shadow(2px 2px 2px rgba(0, 0, 0, 0.5))
-		drop-shadow(-2px -2px 2px rgba(0, 0, 0, 0.5));
+	filter: drop-shadow(2px 2px 2px rgba(0, 0, 0, 0.5)) drop-shadow(-2px -2px 2px rgba(0, 0, 0, 0.5));
 }
 
 .ss-resource-card {
-	filter: drop-shadow(2px 2px 2px rgba(0, 0, 0, 0.5))
-		drop-shadow(-2px -2px 2px rgba(0, 0, 0, 0.5));
+	filter: drop-shadow(2px 2px 2px rgba(0, 0, 0, 0.5)) drop-shadow(-2px -2px 2px rgba(0, 0, 0, 0.5));
 }
 .ss-resource-card.stockitem_selected {
 	border: none !important;
 	outline: 1px solid #2565e8;
-	filter: drop-shadow(3px 3px 6px rgba(0, 0, 255, 0.7))
-		drop-shadow(-3px -3px 6px rgba(0, 0, 255, 0.7));
+	filter: drop-shadow(3px 3px 6px rgba(0, 0, 255, 0.7)) drop-shadow(-3px -3px 6px rgba(0, 0, 255, 0.7));
 }
 
 .ss-resource-deck {
@@ -264,34 +258,26 @@
 	background-repeat: no-repeat;
 	width: 50px;
 	height: 50px;
-	filter: drop-shadow(1px 1px 1px rgba(255, 255, 255, 0.7))
-		drop-shadow(-1px -1px 1px rgba(255, 255, 255, 0.7))
-		drop-shadow(-1px 1px 1px rgba(255, 255, 255, 0.7))
-		drop-shadow(1px -1px 1px rgba(255, 255, 255, 0.7));
+	filter: drop-shadow(1px 1px 1px rgba(255, 255, 255, 0.7)) drop-shadow(-1px -1px 1px rgba(255, 255, 255, 0.7))
+		drop-shadow(-1px 1px 1px rgba(255, 255, 255, 0.7)) drop-shadow(1px -1px 1px rgba(255, 255, 255, 0.7));
 }
 
 .ss-player-meeple:hover {
 	cursor: pointer;
-	filter: drop-shadow(1px 1px 1px rgba(191,191,191, 0.7))
-		drop-shadow(-1px -1px 1px rgba(191,191,191, 0.7))
-		drop-shadow(-1px 1px 1px rgba(191,191,191, 0.7))
-		drop-shadow(1px -1px 1px rgba(191,191,191, 0.7));
+	filter: drop-shadow(1px 1px 1px rgba(191, 191, 191, 0.7)) drop-shadow(-1px -1px 1px rgba(191, 191, 191, 0.7))
+		drop-shadow(-1px 1px 1px rgba(191, 191, 191, 0.7)) drop-shadow(1px -1px 1px rgba(191, 191, 191, 0.7));
 }
 
 .ss-player-meeple--highlight {
 	cursor: pointer;
-	filter: drop-shadow(1px 1px 1px rgba(0, 0, 255, 0.7))
-		drop-shadow(-1px -1px 1px rgba(0, 0, 255, 0.7))
-		drop-shadow(-1px 1px 1px rgba(0, 0, 255, 0.7))
-		drop-shadow(1px -1px 1px rgba(0, 0, 255, 0.7));
+	filter: drop-shadow(1px 1px 1px rgba(0, 0, 255, 0.7)) drop-shadow(-1px -1px 1px rgba(0, 0, 255, 0.7))
+		drop-shadow(-1px 1px 1px rgba(0, 0, 255, 0.7)) drop-shadow(1px -1px 1px rgba(0, 0, 255, 0.7));
 }
 
 .ss-player-meeple--highlight:hover {
 	cursor: pointer;
-	filter: drop-shadow(1px 1px 1px rgba(127, 127, 255, 0.7))
-		drop-shadow(-1px -1px 1px rgba(127, 127, 255, 0.7))
-		drop-shadow(-1px 1px 1px rgba(127, 127, 255, 0.7))
-		drop-shadow(1px -1px 1px rgba(127, 127, 255, 0.7));
+	filter: drop-shadow(1px 1px 1px rgba(127, 127, 255, 0.7)) drop-shadow(-1px -1px 1px rgba(127, 127, 255, 0.7))
+		drop-shadow(-1px 1px 1px rgba(127, 127, 255, 0.7)) drop-shadow(1px -1px 1px rgba(127, 127, 255, 0.7));
 }
 
 .ss-player-meeple--order-1 {
@@ -305,4 +291,26 @@
 }
 .ss-player-meeple--order-4 {
 	background-position: 0 100%;
+}
+
+.ss-resource-reorder-dialog {
+	height: 0;
+	background: #ffffffcc;
+	transition: all 1.3s ease-in-out;
+	overflow: hidden;
+	margin: 10px;
+}
+
+.ss-resource-reorder-dialog__title {
+	margin-bottom: 10px;
+	padding: 10px;
+}
+
+.ss-resource-reorder-deck {
+	margin: 10px;
+}
+
+.ss-resource-reorder-dialog--visible {
+	overflow: visible;
+	height: 200px;
 }

@@ -11,6 +11,12 @@
 
 <div class="ss-wrapper">
 
+	<div class="ss-resource-reorder-dialog">
+		<div class="ss-resource-reorder-dialog__title"></div>
+		<div class="ss-resource-reorder-deck" id="ss-resource-reorder-deck">
+		</div>
+	</div>
+
 	<div class="ss-play-area">
 
 		<div class="ss-rooms-wrapper">

@@ -1,0 +1,9 @@
+{
+	"braceStyle": "1tbs",
+	"jsxBracketSameLine": true,
+	"semi": false,
+	"singleQuote": true,
+	"useTabs": true,
+	"trailingComma": "php5",
+	"printWidth": 120
+}

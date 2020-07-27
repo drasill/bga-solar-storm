@@ -1,4 +1,5 @@
 <?php
+// vim: tw=120:
 /**
  *------
  * BGA framework: © Gregory Isabelli <gisabelli@boardgamearena.com> & Emmanuel Colin <ecolin@boardgamearena.com>
@@ -63,8 +64,7 @@ class SolarStorm extends Table {
 
 		// Create players
 		// Note: if you added some extra field on "player" table in the database (dbmodel.sql), you can initialize it there.
-		$sql =
-			'INSERT INTO player (player_id, player_color, player_canal, player_name, player_avatar) VALUES ';
+		$sql = 'INSERT INTO player (player_id, player_color, player_canal, player_name, player_avatar) VALUES ';
 		$values = [];
 		foreach ($players as $playerId => $player) {
 			$color = array_shift($defaultColors);
@@ -154,11 +154,7 @@ class SolarStorm extends Table {
 			throw new \Exception('Invalid position to draw damage card from');
 		}
 
-		$cards = $this->damageCards->getCardsInLocation(
-			'deck',
-			null,
-			'location_arg'
-		);
+		$cards = $this->damageCards->getCardsInLocation('deck', null, 'location_arg');
 		if ($from === 'bottom') {
 			$card = $cards[0];
 		} else {
@@ -200,11 +196,7 @@ class SolarStorm extends Table {
 			return;
 		}
 
-		$cards = $this->resourceCards->pickCardsForLocation(
-			$needToDrawCnt,
-			'deck',
-			'table'
-		);
+		$cards = $this->resourceCards->pickCardsForLocation($needToDrawCnt, 'deck', 'table');
 
 		if ($notify) {
 			if ($notify) {
@@ -220,26 +212,16 @@ class SolarStorm extends Table {
 
 		$result['rooms'] = $this->rooms->toArray();
 		$result['ssPlayers'] = $this->ssPlayers->toArray();
-		$result['resourceCardsNbr'] = $this->resourceCards->countCardInLocation(
-			'deck'
-		);
+		$result['resourceCardsNbr'] = $this->resourceCards->countCardInLocation('deck');
 		$result['resourceTypes'] = array_values($this->resourceTypes);
 
-		$result['damageCardsNbr'] = $this->damageCards->countCardInLocation(
-			'deck'
-		);
-		$result['damageCardsDiscarded'] = $this->damageCards->getCardsInLocation(
-			'discard'
-		);
-		$result[
-			'resourceCardsOnTable'
-		] = $this->resourceCards->getCardsInLocation('table');
+		$result['damageCardsNbr'] = $this->damageCards->countCardInLocation('deck');
+		$result['damageCardsDiscarded'] = $this->damageCards->getCardsInLocation('discard');
+		$result['resourceCardsOnTable'] = $this->resourceCards->getCardsInLocation('table');
 
 		$data = [];
 		foreach ($this->ssPlayers->getPlayers() as $player) {
-			$data[$player->getId()] = array_values(
-				$this->resourceCards->getCardsInLocation('hand', $player->getId())
-			);
+			$data[$player->getId()] = array_values($this->resourceCards->getCardsInLocation('hand', $player->getId()));
 		}
 		$result['resourceCards'] = $data;
 
@@ -266,11 +248,7 @@ class SolarStorm extends Table {
 	//////////// Utility functions
 	////////////
 
-	private function notifyPlayerData(
-		SolarStormPlayer $player,
-		string $message = '',
-		array $args = []
-	): void {
+	private function notifyPlayerData(SolarStormPlayer $player, string $message = '', array $args = []): void {
 		$this->notifyAllPlayers(
 			'updatePlayerData',
 			$message,
@@ -284,9 +262,7 @@ class SolarStorm extends Table {
 
 	private function getPlayersIdsInTheSameRoom($excludeActive = false): array {
 		$activePlayer = $this->ssPlayers->getActive();
-		$playersInTheSameRoom = $this->ssPlayers->getPlayersAtPosition(
-			$activePlayer->getPosition()
-		);
+		$playersInTheSameRoom = $this->ssPlayers->getPlayersAtPosition($activePlayer->getPosition());
 		$ids = [];
 		foreach ($playersInTheSameRoom as $player) {
 			if ($excludeActive && $activePlayer->getId() === $player->getId()) {
@@ -303,9 +279,7 @@ class SolarStorm extends Table {
 		if ($stateName === 'pickResources') {
 			// If we are in the 'pickResources' state (phase 2)
 			$from[] = 'deck';
-			$previouslyPickedFromDeck = (bool) self::getGameStateValue(
-				'resourcePickedFromDeck'
-			);
+			$previouslyPickedFromDeck = (bool) self::getGameStateValue('resourcePickedFromDeck');
 			if (!$previouslyPickedFromDeck) {
 				$from[] = 'table';
 			}
@@ -344,10 +318,12 @@ class SolarStorm extends Table {
 					case 'crew-quarters':
 						$this->gamestate->nextState('transPlayerRoomCrewQuarter');
 						break;
+					case 'cargo-hold':
+						$this->resourceCards->pickCardsForLocation(5, 'deck', 'reorder');
+						$this->gamestate->nextState('transPlayerRoomCargoHold');
+						break;
 					default:
-						throw new BgaVisibleSystemException(
-							"Room $roomSlug not implemented yet"
-						); // NOI18N
+						throw new BgaVisibleSystemException("Room $roomSlug not implemented yet"); // NOI18N
 				}
 				break;
 			default:
@@ -370,22 +346,16 @@ class SolarStorm extends Table {
 		// Check position is valid
 		if (!in_array($position, $currentRoom->getPossibleDestinations())) {
 			throw new BgaUserException(
-				sprintf(
-					self::_('You cannot move from %s to %s'),
-					$currentRoom->getName(),
-					$room->getName()
-				)
+				sprintf(self::_('You cannot move from %s to %s'), $currentRoom->getName(), $room->getName())
 			);
 		}
 
 		$player->setPosition($position);
 		$player->incrementActions(-1);
 		$player->save();
-		$this->notifyPlayerData(
-			$player,
-			clienttranslate('${player_name} moves to ${roomName}'),
-			['roomName' => $room->getName()]
-		);
+		$this->notifyPlayerData($player, clienttranslate('${player_name} moves to ${roomName}'), [
+			'roomName' => $room->getName(),
+		]);
 		$this->gamestate->nextState('transActionDone');
 	}
 
@@ -449,17 +419,11 @@ class SolarStorm extends Table {
 		if ($cardId === 9999) {
 			$fromDeck = true;
 			// Pick from deck
-			$card = $this->resourceCards->pickCardForLocation(
-				'deck',
-				'hand',
-				$player->getId()
-			);
+			$card = $this->resourceCards->pickCardForLocation('deck', 'hand', $player->getId());
 		} else {
 			// Pick from table
 			if (!in_array('table', $possibleFrom)) {
-				throw new BgaUserException(
-					self::_('You must pick the second card from the deck')
-				);
+				throw new BgaUserException(self::_('You must pick the second card from the deck'));
 			}
 			$card = $this->resourceCards->getCard($cardId);
 			// Check resource is on table
@@ -472,13 +436,9 @@ class SolarStorm extends Table {
 
 		$resourceName = $this->resourceTypes[$card['type']]['name'];
 		if ($fromDeck) {
-			$message = clienttranslate(
-				'${player_name} takes a resource from the deck : ${resourceName}'
-			);
+			$message = clienttranslate('${player_name} takes a resource from the deck : ${resourceName}');
 		} else {
-			$message = clienttranslate(
-				'${player_name} takes a resource : ${resourceName}'
-			);
+			$message = clienttranslate('${player_name} takes a resource : ${resourceName}');
 		}
 
 		$this->notifyAllPlayers(
@@ -494,9 +454,7 @@ class SolarStorm extends Table {
 
 		$stateName = $this->gamestate->state()['name'];
 		if ($stateName === 'pickResources') {
-			$previouslyPickedFromDeck = (bool) self::getGameStateValue(
-				'resourcePickedFromDeck'
-			);
+			$previouslyPickedFromDeck = (bool) self::getGameStateValue('resourcePickedFromDeck');
 			if (!$fromDeck || $previouslyPickedFromDeck) {
 				// Picked from table, or second pick from deck: end state now
 				self::setGameStateValue('resourcePickedFromDeck', 0);
@@ -527,10 +485,7 @@ class SolarStorm extends Table {
 		self::checkAction('discardResource');
 		$card = $this->resourceCards->getCard($cardId);
 		$player = $this->ssPlayers->getActive();
-		if (
-			$card['location'] !== 'hand' ||
-			$card['location_arg'] != $player->getId()
-		) {
+		if ($card['location'] !== 'hand' || $card['location_arg'] != $player->getId()) {
 			throw new BgaVisibleSystemException('Card not in your hand'); // NOI18N
 		}
 		$this->resourceCards->moveCard($card['id'], 'discard');
@@ -538,9 +493,7 @@ class SolarStorm extends Table {
 		$resourceName = $this->resourceTypes[$card['type']]['name'];
 		$this->notifyAllPlayers(
 			'playerDiscardResource',
-			clienttranslate(
-				'${player_name} discards a resource : ${resourceName}'
-			),
+			clienttranslate('${player_name} discards a resource : ${resourceName}'),
 			[
 				'card' => $card,
 				'resourceName' => $resourceName,
@@ -566,9 +519,7 @@ class SolarStorm extends Table {
 		} else {
 			$shareAction = 'take';
 			if ($cardPlayer->getPosition() !== $player->getPosition()) {
-				throw new BgaUserException(
-					self::_('This player is not is the same room')
-				);
+				throw new BgaUserException(self::_('This player is not is the same room'));
 			}
 		}
 
@@ -579,9 +530,7 @@ class SolarStorm extends Table {
 			$resourceName = $this->resourceTypes[$card['type']]['name'];
 			$this->notifyAllPlayers(
 				'playerShareResource',
-				clienttranslate(
-					'${player_name} takes a resource : ${resourceName} from ${from_player_name}'
-				),
+				clienttranslate('${player_name} takes a resource : ${resourceName} from ${from_player_name}'),
 				[
 					'card' => $card,
 					'resourceName' => $resourceName,
@@ -602,21 +551,14 @@ class SolarStorm extends Table {
 
 	public function actionGiveResource(int $playerId) {
 		self::checkAction('giveResource');
-		$card = $this->resourceCards->getCard(
-			(int) $this->getGameStateValue('shareResourceToGive')
-		);
+		$card = $this->resourceCards->getCard((int) $this->getGameStateValue('shareResourceToGive'));
 		$player = $this->ssPlayers->getActive();
 		$toPlayer = $this->ssPlayers->getPlayer($playerId);
-		if (
-			$card['location'] !== 'hand' ||
-			$card['location_arg'] != $player->getId()
-		) {
+		if ($card['location'] !== 'hand' || $card['location_arg'] != $player->getId()) {
 			throw new BgaVisibleSystemException('Card not in player hand'); // NOI18N
 		}
 		if ($toPlayer->getPosition() !== $player->getPosition()) {
-			throw new BgaUserException(
-				self::_('This player is not is the same room')
-			);
+			throw new BgaUserException(self::_('This player is not is the same room'));
 		}
 
 		$this->resourceCards->moveCard($card['id'], 'hand', $toPlayer->getId());
@@ -625,9 +567,7 @@ class SolarStorm extends Table {
 		$resourceName = $this->resourceTypes[$card['type']]['name'];
 		$this->notifyAllPlayers(
 			'playerShareResource',
-			clienttranslate(
-				'${player_name} gives a resource : ${resourceName} to ${to_player_name}'
-			),
+			clienttranslate('${player_name} gives a resource : ${resourceName} to ${to_player_name}'),
 			[
 				'card' => $card,
 				'resourceName' => $resourceName,
@@ -643,10 +583,7 @@ class SolarStorm extends Table {
 		self::checkAction('selectResourceForRepair');
 		$card = $this->resourceCards->getCard($cardId);
 		$player = $this->ssPlayers->getActive();
-		if (
-			$card['location'] !== 'hand' ||
-			$card['location_arg'] != $player->getId()
-		) {
+		if ($card['location'] !== 'hand' || $card['location_arg'] != $player->getId()) {
 			throw new BgaVisibleSystemException('Card not in your hand'); // NOI18N
 		}
 
@@ -659,9 +596,7 @@ class SolarStorm extends Table {
 		$resourceName = $this->resourceTypes[$card['type']]['name'];
 		$this->notifyAllPlayers(
 			'playerDiscardResource',
-			clienttranslate(
-				'${player_name} repairs ${roomName} with resource : ${resourceName}'
-			),
+			clienttranslate('${player_name} repairs ${roomName} with resource : ${resourceName}'),
 			[
 				'card' => $card,
 				'resourceName' => $resourceName,
@@ -698,9 +633,7 @@ class SolarStorm extends Table {
 		$player->save();
 		$this->notifyPlayerData(
 			$playerToMove,
-			clienttranslate(
-				'${player_name} is moved to ${roomName} by ${player_action_name} (Crew Quarters action)'
-			),
+			clienttranslate('${player_name} is moved to ${roomName} by ${player_action_name} (Crew Quarters action)'),
 			[
 				'roomName' => $room->getName(),
 				'player_action_name' => $player->getName(),
@@ -708,6 +641,24 @@ class SolarStorm extends Table {
 			]
 		);
 		$this->gamestate->nextState('transActionDone');
+	}
+
+	public function actionPutBackResourceCardInDeck($cardId) {
+		self::checkAction('putBackResourceCardInDeck');
+		$player = $this->ssPlayers->getActive();
+		$card = $this->resourceCards->getCard($cardId);
+		if ($card['location'] !== 'reorder') {
+			throw new BgaVisibleSystemException('Card not in reorder deck'); // NOI18N
+		}
+		$this->resourceCards->moveCard($card['id'], 'deck');
+		$this->resourceCards->insertCardOnExtremePosition($card['id'], 'deck', true);
+		self::notifyPlayer($player->getId(), 'putBackResourceCardInDeck', '', [
+			'card' => $card,
+		]);
+		$num = $this->resourceCards->countCardInLocation('reorder');
+		if ($num <= 0) {
+			$this->gamestate->nextState('transActionDone');
+		}
 	}
 
 	//////////////////////////////////////////////////////////////////////////////
@@ -754,6 +705,17 @@ class SolarStorm extends Table {
 		];
 	}
 
+	public function argPlayerRoomCargoHold() {
+		$nextCards = $this->resourceCards->getCardsInLocation('reorder');
+		return [
+			'_private' => [
+				'active' => [
+					'resourceCards' => $nextCards,
+				],
+			],
+		];
+	}
+
 	//////////////////////////////////////////////////////////////////////////////
 	//////////// Game state actions
 	////////////
@@ -790,6 +752,12 @@ class SolarStorm extends Table {
 		$playerId = self::activeNextPlayer();
 		self::giveExtraTime($playerId);
 		$this->gamestate->nextState('transPlayerTurn');
+	}
+
+	public function stPlayerRoomCargoHold() {
+		$player = $this->ssPlayers->getActive();
+		$player->incrementActions(-1);
+		$player->save();
 	}
 
 	//////////////////////////////////////////////////////////////////////////////
@@ -829,9 +797,7 @@ class SolarStorm extends Table {
 			return;
 		}
 
-		throw new feException(
-			'Zombie mode not supported at this game state: ' . $statename
-		);
+		throw new feException('Zombie mode not supported at this game state: ' . $statename);
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////:

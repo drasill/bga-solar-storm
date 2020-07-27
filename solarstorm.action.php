@@ -108,5 +108,10 @@ class action_solarstorm extends APP_GameAction {
 		self::ajaxResponse();
 	}
 
-
+	public function putBackResourceCardInDeck() {
+		self::setAjaxMode();
+		$cardId = (int) self::getArg('cardId', AT_posint, true);
+		$this->game->actionPutBackResourceCardInDeck($cardId);
+		self::ajaxResponse();
+	}
 }

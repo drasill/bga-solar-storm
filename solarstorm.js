@@ -1,3 +1,4 @@
+// vim: tw=120:
 /**
  *------
  * BGA framework: © Gregory Isabelli <gisabelli@boardgamearena.com> & Emmanuel Colin <ecolin@boardgamearena.com>
@@ -20,13 +21,7 @@ function $first(selector) {
 	return document.querySelectorAll(selector)[0]
 }
 
-define([
-	'dojo',
-	'dojo/_base/declare',
-	'ebg/core/gamegui',
-	'ebg/counter',
-	'ebg/stock'
-], function(dojo, declare) {
+define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/stock'], function(dojo, declare) {
 	return declare('bgagame.solarstorm', ebg.core.gamegui, {
 		constructor: function() {
 			this.rooms = new SSRooms()
@@ -35,7 +30,7 @@ define([
 			this.playAreaEl = null
 			this.damageDeck = null
 			this.resourceDeck = null
-
+			this.reorderResourceDeck = null
 			this.selectedMeeplePlayer = null
 		},
 
@@ -61,29 +56,16 @@ define([
 		},
 
 		initializePlayersArea() {
-			const playersData = this.gamedatas.ssPlayers.sort(
-				(p1, p2) => p1.order - p2.order
-			)
+			const playersData = this.gamedatas.ssPlayers.sort((p1, p2) => p1.order - p2.order)
 			console.dir(playersData)
 			playersData.forEach(data => {
-				const player = new SSPlayer(
-					this,
-					data.id,
-					data.name,
-					data.color,
-					data.order,
-					data.position
-				)
+				const player = new SSPlayer(this, data.id, data.name, data.color, data.order, data.position)
 				this.players.addPlayer(player)
 			})
 
-			for (const [playerId, playerCards] of Object.entries(
-				this.gamedatas.resourceCards
-			)) {
+			for (const [playerId, playerCards] of Object.entries(this.gamedatas.resourceCards)) {
 				playerCards.forEach(resourceCard => {
-					this.players
-						.getPlayerById(playerId)
-						.stock.addToStockWithId(resourceCard.type, resourceCard.id)
+					this.players.getPlayerById(playerId).stock.addToStockWithId(resourceCard.type, resourceCard.id)
 				})
 			}
 		},
@@ -96,12 +78,7 @@ define([
 			this.damageDeck.extraClasses = 'ss-damage-card'
 			this.damageDeck.setOverlap(0.01, 0)
 			for (let i = 0; i < 24; i++) {
-				this.damageDeck.addItemType(
-					i,
-					1,
-					g_gamethemeurl + 'img/damages.jpg',
-					i + 1
-				)
+				this.damageDeck.addItemType(i, 1, g_gamethemeurl + 'img/damages.jpg', i + 1)
 			}
 			for (let card of Object.values(this.gamedatas.damageCardsDiscarded)) {
 				this.damageDeck.addToStock(card.type)
@@ -110,37 +87,24 @@ define([
 
 		initializeResourceDeck() {
 			const resourceDeckEl = $first('.ss-resource-deck__table')
-			this.resourceDeck = new ebg.stock()
-			this.resourceDeck.create(this, resourceDeckEl, 87, 120)
-			this.resourceDeck.setSelectionMode(1)
-			this.resourceDeck.extraClasses = 'ss-resource-card'
-			this.resourceDeck.setSelectionAppearance('class')
-			this.resourceTypes.forEach((type, index) => {
-				this.resourceDeck.addItemType(
-					type.id,
-					index,
-					g_gamethemeurl + 'img/resources.jpg',
-					index
-				)
-			})
-			dojo.connect(
-				this.resourceDeck,
-				'onChangeSelection',
-				this,
-				'onResourceDeckSelection'
-			)
+			this.resourceDeck = this.createResourceStock(resourceDeckEl, () => this.onResourceDeckSelection())
 			for (let card of Object.values(this.gamedatas.resourceCardsOnTable)) {
 				this.resourceDeck.addToStockWithId(card.type, card.id)
 			}
+
+			const reorderResourceDeckEl = $first('.ss-resource-reorder-deck')
+			this.reorderResourceDeck = this.createResourceStock(reorderResourceDeckEl, () =>
+				this.onReorderResourceDeckSelection()
+			)
 		},
 
 		highlightResourceDeck(which = []) {
 			const sources = ['deck', 'table']
 			sources.forEach(source => {
 				const valid = which.includes(source)
-				$first(`.ss-resource-deck__${source}`).classList[
-					valid ? 'add' : 'remove'
-				]('ss-resource-deck__source--highlight')
+				$first(`.ss-resource-deck__${source}`).classList[valid ? 'add' : 'remove'](
+					'ss-resource-deck__source--highlight'
+				)
 			})
 		},
 
@@ -148,12 +112,22 @@ define([
 			this.players.assertPositions()
 		},
 
+		showResourceCardsToPutInDeck(resourceCards) {
+			$first('.ss-resource-reorder-dialog__title').innerHTML =
+				_('Put back the cards in the deck.') + '<br/>' + _('The last one will be on top.')
+			$first('.ss-resource-reorder-dialog').classList.add('ss-resource-reorder-dialog--visible')
+			for (let card of Object.values(resourceCards)) {
+				this.reorderResourceDeck.addToStockWithId(card.type, card.id)
+			}
+		},
+
+		hideResourceCardsToPutInDeck() {
+			$first('.ss-resource-reorder-dialog').classList.remove('ss-resource-reorder-dialog--visible')
+		},
+
 		///////////////////////////////////////////////////
 		//// Game & client states
 
-		// onEnteringState: this method is called each time we are entering into a new game state.
-		//                  You can use this method to perform some user interface changes at this moment.
-		//
 		onEnteringState: function(stateName, args) {
 			console.log('Entering state: ' + stateName, args)
 
@@ -185,12 +159,12 @@ define([
 				case 'playerRoomCrewQuarter':
 					this.players.highlightMeeples('all')
 					break
+				case 'playerRoomCargoHold':
+					this.showResourceCardsToPutInDeck(args.args._private.resourceCards)
+					break
 			}
 		},
 
-		// onLeavingState: this method is called each time we are leaving a game state.
-		//                 You can use this method to perform some user interface changes at this moment.
-		//
 		onLeavingState: function(stateName) {
 			console.log('Leaving state: ' + stateName)
 
@@ -214,6 +188,9 @@ define([
 					this.players.highlightMeeples(null)
 					this.selectedMeeplePlayer = null
 					this.rooms.highlight(null)
+					break
+				case 'playerRoomCargoHold':
+					this.hideResourceCardsToPutInDeck()
 					break
 			}
 		},
@@ -284,6 +261,19 @@ define([
 		///////////////////////////////////////////////////
 		//// Utility methods
 
+		createResourceStock(el, onClick) {
+			const stock = new ebg.stock()
+			stock.create(this, el, 87, 120)
+			stock.setSelectionMode(1)
+			stock.extraClasses = 'ss-resource-card'
+			stock.setSelectionAppearance('class')
+			this.resourceTypes.forEach((type, index) => {
+				stock.addItemType(type.id, index, g_gamethemeurl + 'img/resources.jpg', index)
+			})
+			dojo.connect(stock, 'onChangeSelection', onClick)
+			return stock
+		},
+
 		///////////////////////////////////////////////////
 		//// Player's action
 
@@ -337,10 +327,7 @@ define([
 				this.ajaxAction('move', { lock: true, position: room.position })
 				return
 			}
-			if (
-				this.last_server_state.name === 'playerRoomCrewQuarter' &&
-				this.selectedMeeplePlayer
-			) {
+			if (this.last_server_state.name === 'playerRoomCrewQuarter' && this.selectedMeeplePlayer) {
 				this.ajaxAction('moveMeepleToRoom', {
 					lock: true,
 					playerId: this.selectedMeeplePlayer.id,
@@ -381,10 +368,7 @@ define([
 
 		// Click on resource player hand
 		onPlayerResourceClick(player, card) {
-			if (
-				this.last_server_state.name === 'playerDiscardResources' &&
-				player.isCurrentActive()
-			) {
+			if (this.last_server_state.name === 'playerDiscardResources' && player.isCurrentActive()) {
 				this.ajaxAction('discardResource', { lock: true, cardId: card.id })
 				return
 			}
@@ -408,6 +392,18 @@ define([
 			}
 		},
 
+		onReorderResourceDeckSelection() {
+			var card = this.reorderResourceDeck.getSelectedItems()[0]
+			if (!card) {
+				return
+			}
+			this.reorderResourceDeck.unselectAll()
+			this.ajaxAction('putBackResourceCardInDeck', {
+				lock: true,
+				cardId: card.id
+			})
+		},
+
 		///////////////////////////////////////////////////
 		//// Reaction to cometD notifications
 
@@ -423,19 +419,12 @@ define([
 		setupNotifications: function() {
 			dojo.subscribe('updateRooms', this, 'notif_updateRooms')
 			dojo.subscribe('updateDamageDiscard', this, 'notif_updateDamageDiscard')
-			dojo.subscribe(
-				'addResourcesCardsOnTable',
-				this,
-				'notif_addResourcesCardsOnTable'
-			)
+			dojo.subscribe('addResourcesCardsOnTable', this, 'notif_addResourcesCardsOnTable')
 			dojo.subscribe('updatePlayerData', this, 'notif_updatePlayerData')
 			dojo.subscribe('playerPickResource', this, 'notif_playerPickResource')
-			dojo.subscribe(
-				'playerDiscardResource',
-				this,
-				'notif_playerDiscardResource'
-			)
+			dojo.subscribe('playerDiscardResource', this, 'notif_playerDiscardResource')
 			dojo.subscribe('playerShareResource', this, 'notif_playerShareResource')
+			dojo.subscribe('putBackResourceCardInDeck', this, 'notif_putBackResourceCardInDeck')
 		},
 
 		notif_updateRooms(notif) {
@@ -496,11 +485,15 @@ define([
 			// TODO animation
 		},
 
+		notif_putBackResourceCardInDeck(notif) {
+			console.log('notif_putBackResourceCardInDeck', notif)
+			const card = notif.args.card
+			this.reorderResourceDeck.removeFromStockById(card.id, $first('.ss-resource-deck__deck'))
+		},
+
 		notif_updatePlayerData(notif) {
 			console.log('notif_updatePlayerData', notif)
-			this.players
-				.getPlayerById(notif.args.player_id)
-				.setRoomPosition(notif.args.position)
+			this.players.getPlayerById(notif.args.player_id).setRoomPosition(notif.args.position)
 		}
 	})
 })
@@ -578,17 +571,9 @@ class SSRoom {
 		)
 		if (this.id !== 0) {
 			for (let i = 0; i < 3; i++) {
-				dojo.create(
-					'div',
-					{ class: `ss-room__damage ss-room__damage--${i}` },
-					el
-				)
+				dojo.create('div', { class: `ss-room__damage ss-room__damage--${i}` }, el)
 			}
-			this.divertedTokenEl = dojo.create(
-				'div',
-				{ class: 'ss-room__diverted-token' },
-				el
-			)
+			this.divertedTokenEl = dojo.create('div', { class: 'ss-room__diverted-token' }, el)
 		}
 		this.el = el
 	}
@@ -608,9 +593,7 @@ class SSRoom {
 			return
 		}
 		this.diverted = diverted
-		this.divertedTokenEl.classList[diverted ? 'add' : 'remove'](
-			'ss-room__diverted-token--visible'
-		)
+		this.divertedTokenEl.classList[diverted ? 'add' : 'remove']('ss-room__diverted-token--visible')
 	}
 
 	highlight(value) {
@@ -676,10 +659,7 @@ class SSPlayer {
 	}
 
 	isCurrentActive() {
-		return (
-			this.gameObject.player_id == this.id &&
-			this.gameObject.getActivePlayerId() == this.id
-		)
+		return this.gameObject.player_id == this.id && this.gameObject.getActivePlayerId() == this.id
 	}
 
 	assertBoardEl() {
@@ -742,12 +722,7 @@ class SSPlayer {
 			},
 			this.boardEl
 		)
-		this.stock.create(this.gameObject, handEl, 87, 120)
-		this.stock.setSelectionMode(1)
-		this.stock.extraClasses = 'ss-resource-card'
-		this.stock.setSelectionAppearance('class')
-		this.stock.setOverlap(30, 5)
-		dojo.connect(this.stock, 'onChangeSelection', () => {
+		this.stock = this.gameObject.createResourceStock(handEl, () => {
 			var card = this.stock.getSelectedItems()[0]
 			if (!card) {
 				return
@@ -755,13 +730,9 @@ class SSPlayer {
 			this.stock.unselectAll()
 			this.gameObject.onPlayerResourceClick(this, card)
 		})
+		this.stock.setOverlap(30, 5)
 		this.gameObject.resourceTypes.forEach((type, index) => {
-			this.stock.addItemType(
-				type.id,
-				index,
-				g_gamethemeurl + 'img/resources.jpg',
-				index
-			)
+			this.stock.addItemType(type.id, index, g_gamethemeurl + 'img/resources.jpg', index)
 		})
 	}
 
@@ -786,14 +757,10 @@ class SSPlayer {
 		const offsetX = index * 30
 		const offsetY = roomPos.h * 0.2
 
-		this.gameObject
-			.slideToObjectPos(this.meepleEl, roomEl, offsetX, offsetY, duration, 0)
-			.play()
+		this.gameObject.slideToObjectPos(this.meepleEl, roomEl, offsetX, offsetY, duration, 0).play()
 
 		if (moveOthers) {
-			this.gameObject.players
-				.getAtPosition(position)
-				.forEach(p => p.setRoomPosition(position, false, false))
+			this.gameObject.players.getAtPosition(position).forEach(p => p.setRoomPosition(position, false, false))
 			if (previousPosition !== position) {
 				this.gameObject.players
 					.getAtPosition(previousPosition)
@@ -803,14 +770,10 @@ class SSPlayer {
 	}
 
 	highlightHand(value) {
-		this.boardEl.classList[value ? 'add' : 'remove'](
-			'ss-player-board--highlight'
-		)
+		this.boardEl.classList[value ? 'add' : 'remove']('ss-player-board--highlight')
 	}
 
 	highlightMeeple(value) {
-		this.meepleEl.classList[value ? 'add' : 'remove'](
-			'ss-player-meeple--highlight'
-		)
+		this.meepleEl.classList[value ? 'add' : 'remove']('ss-player-meeple--highlight')
 	}
 }
