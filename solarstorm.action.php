@@ -35,13 +35,7 @@ class action_solarstorm extends APP_GameAction {
 
 	public function choose() {
 		self::setAjaxMode();
-		$actionName = self::getArg('actionName', AT_enum, true, null, [
-			'move',
-			'scavenge',
-			'share',
-			'repair',
-			'room',
-		]);
+		$actionName = self::getArg('actionName', AT_enum, true, null, ['move', 'scavenge', 'share', 'repair', 'room']);
 		$this->game->actionChoose($actionName);
 		self::ajaxResponse();
 	}
@@ -99,7 +93,7 @@ class action_solarstorm extends APP_GameAction {
 		$this->game->actionSelectResourceForRepair($cardId);
 		self::ajaxResponse();
 	}
-	
+
 	public function moveMeepleToRoom() {
 		self::setAjaxMode();
 		$playerId = (int) self::getArg('playerId', AT_posint, true);
@@ -112,6 +106,13 @@ class action_solarstorm extends APP_GameAction {
 		self::setAjaxMode();
 		$cardId = (int) self::getArg('cardId', AT_posint, true);
 		$this->game->actionPutBackResourceCardInDeck($cardId);
+		self::ajaxResponse();
+	}
+
+	public function putBackDamageCardInDeck() {
+		self::setAjaxMode();
+		$cardId = (int) self::getArg('cardId', AT_posint, true);
+		$this->game->actionPutBackDamageCardInDeck($cardId);
 		self::ajaxResponse();
 	}
 }

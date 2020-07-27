@@ -17,6 +17,12 @@
 		</div>
 	</div>
 
+	<div class="ss-damage-reorder-dialog">
+		<div class="ss-damage-reorder-dialog__title"></div>
+		<div class="ss-damage-reorder-deck" id="ss-damage-reorder-deck">
+		</div>
+	</div>
+
 	<div class="ss-play-area">
 
 		<div class="ss-rooms-wrapper">

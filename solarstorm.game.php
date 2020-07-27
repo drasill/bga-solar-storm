@@ -322,6 +322,10 @@ class SolarStorm extends Table {
 						$this->resourceCards->pickCardsForLocation(5, 'deck', 'reorder');
 						$this->gamestate->nextState('transPlayerRoomCargoHold');
 						break;
+					case 'bridge':
+						$this->damageCards->pickCardsForLocation(3, 'deck', 'reorder');
+						$this->gamestate->nextState('transPlayerRoomBridge');
+						break;
 					default:
 						throw new BgaVisibleSystemException("Room $roomSlug not implemented yet"); // NOI18N
 				}
@@ -661,6 +665,24 @@ class SolarStorm extends Table {
 		}
 	}
 
+	public function actionPutBackDamageCardInDeck($cardId) {
+		self::checkAction('putBackDamageCardInDeck');
+		$player = $this->ssPlayers->getActive();
+		$card = $this->damageCards->getCard($cardId);
+		if ($card['location'] !== 'reorder') {
+			throw new BgaVisibleSystemException('Card not in reorder deck'); // NOI18N
+		}
+		$this->damageCards->moveCard($card['id'], 'deck');
+		$this->damageCards->insertCardOnExtremePosition($card['id'], 'deck', true);
+		self::notifyPlayer($player->getId(), 'putBackDamageCardInDeck', '', [
+			'card' => $card,
+		]);
+		$num = $this->damageCards->countCardInLocation('reorder');
+		if ($num <= 0) {
+			$this->gamestate->nextState('transActionDone');
+		}
+	}
+
 	//////////////////////////////////////////////////////////////////////////////
 	//////////// Game state arguments
 	////////////
@@ -716,6 +738,17 @@ class SolarStorm extends Table {
 		];
 	}
 
+	public function argPlayerRoomBridge() {
+		$nextCards = $this->damageCards->getCardsInLocation('reorder');
+		return [
+			'_private' => [
+				'active' => [
+					'damageCards' => $nextCards,
+				],
+			],
+		];
+	}
+
 	//////////////////////////////////////////////////////////////////////////////
 	//////////// Game state actions
 	////////////
@@ -755,6 +788,12 @@ class SolarStorm extends Table {
 	}
 
 	public function stPlayerRoomCargoHold() {
+		$player = $this->ssPlayers->getActive();
+		$player->incrementActions(-1);
+		$player->save();
+	}
+
+	public function stPlayerRoomBridge() {
 		$player = $this->ssPlayers->getActive();
 		$player->incrementActions(-1);
 		$player->save();

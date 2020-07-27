@@ -31,6 +31,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			this.damageDeck = null
 			this.resourceDeck = null
 			this.reorderResourceDeck = null
+			this.reorderDamageDeck = null
 			this.selectedMeeplePlayer = null
 		},
 
@@ -71,18 +72,18 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 		},
 
 		initializeDamageDeck() {
-			this.damageDeck = new ebg.stock()
 			const damageDeckEl = $first('.ss-damage-deck')
-			this.damageDeck.create(this, damageDeckEl, 160, 117)
+			this.damageDeck = this.createDamageStock(damageDeckEl)
+			this.damageDeck.setOverlap(0.01)
 			this.damageDeck.setSelectionMode(0)
-			this.damageDeck.extraClasses = 'ss-damage-card'
-			this.damageDeck.setOverlap(0.01, 0)
-			for (let i = 0; i < 24; i++) {
-				this.damageDeck.addItemType(i, 1, g_gamethemeurl + 'img/damages.jpg', i + 1)
-			}
 			for (let card of Object.values(this.gamedatas.damageCardsDiscarded)) {
 				this.damageDeck.addToStock(card.type)
 			}
+
+			const reorderDamageDeckEl = $first('.ss-damage-reorder-deck')
+			this.reorderDamageDeck = this.createDamageStock(reorderDamageDeckEl, () =>
+				this.onReorderDamageDeckSelection()
+			)
 		},
 
 		initializeResourceDeck() {
@@ -125,6 +126,19 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			$first('.ss-resource-reorder-dialog').classList.remove('ss-resource-reorder-dialog--visible')
 		},
 
+		showDamageCardsToPutInDeck(damageCards) {
+			$first('.ss-damage-reorder-dialog__title').innerHTML =
+				_('Put back the cards in the deck.') + '<br/>' + _('The last one will be on top.')
+			$first('.ss-damage-reorder-dialog').classList.add('ss-damage-reorder-dialog--visible')
+			for (let card of Object.values(damageCards)) {
+				this.reorderDamageDeck.addToStockWithId(card.type, card.id)
+			}
+		},
+
+		hideDamageCardsToPutInDeck() {
+			$first('.ss-damage-reorder-dialog').classList.remove('ss-damage-reorder-dialog--visible')
+		},
+
 		///////////////////////////////////////////////////
 		//// Game & client states
 
@@ -162,6 +176,9 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				case 'playerRoomCargoHold':
 					this.showResourceCardsToPutInDeck(args.args._private.resourceCards)
 					break
+				case 'playerRoomBridge':
+					this.showDamageCardsToPutInDeck(args.args._private.damageCards)
+					break
 			}
 		},
 
@@ -192,12 +209,12 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				case 'playerRoomCargoHold':
 					this.hideResourceCardsToPutInDeck()
 					break
+				case 'playerRoomBridge':
+					this.hideDamageCardsToPutInDeck()
+					break
 			}
 		},
 
-		// onUpdateActionButtons: in this method you can manage "action buttons" that are displayed in the
-		//                        action status bar (ie: the HTML links in the status bar).
-		//
 		onUpdateActionButtons: function(stateName, args) {
 			console.log('onUpdateActionButtons: ' + stateName, args)
 
@@ -261,7 +278,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 		///////////////////////////////////////////////////
 		//// Utility methods
 
-		createResourceStock(el, onClick) {
+		createResourceStock(el, onClick = null) {
 			const stock = new ebg.stock()
 			stock.create(this, el, 87, 120)
 			stock.setSelectionMode(1)
@@ -270,7 +287,24 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			this.resourceTypes.forEach((type, index) => {
 				stock.addItemType(type.id, index, g_gamethemeurl + 'img/resources.jpg', index)
 			})
+			if (onClick !== null) {
 			dojo.connect(stock, 'onChangeSelection', onClick)
+			}
+			return stock
+		},
+
+		createDamageStock(el, onClick = null) {
+			const stock = new ebg.stock()
+			stock.create(this, el, 160, 117)
+			stock.setSelectionMode(1)
+			stock.extraClasses = 'ss-damage-card'
+			stock.setSelectionAppearance('class')
+			for (let i = 0; i < 24; i++) {
+				stock.addItemType(i, 1, g_gamethemeurl + 'img/damages.jpg', i + 1)
+			}
+			if (onClick !== null) {
+				dojo.connect(stock, 'onChangeSelection', onClick)
+			}
 			return stock
 		},
 
@@ -399,6 +433,18 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			}
 			this.reorderResourceDeck.unselectAll()
 			this.ajaxAction('putBackResourceCardInDeck', {
+				lock: true,
+				cardId: card.id
+			})
+		},
+
+		onReorderDamageDeckSelection() {
+			var card = this.reorderDamageDeck.getSelectedItems()[0]
+			if (!card) {
+				return
+			}
+			this.reorderDamageDeck.unselectAll()
+			this.ajaxAction('putBackDamageCardInDeck', {
 				lock: true,
 				cardId: card.id
 			})

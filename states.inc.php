@@ -27,6 +27,7 @@ if (!defined('ST_PLAYER_TURN')) {
 
 	define('ST_PLAYER_ROOM_CREW_QUARTER', 10);
 	define('ST_PLAYER_ROOM_CARGO_HOLD', 11);
+	define('ST_PLAYER_ROOM_BRIDGE', 16);
 
 	define('ST_PLAYER_ACTION_DONE', 20);
 	define('ST_PLAYER_PICK_RESOURCES_CARDS', 21);
@@ -59,6 +60,7 @@ $machinestates = [
 			'transPlayerRepair' => ST_PLAYER_REPAIR,
 			'transPlayerRoomCrewQuarter' => ST_PLAYER_ROOM_CREW_QUARTER,
 			'transPlayerRoomCargoHold' => ST_PLAYER_ROOM_CARGO_HOLD,
+			'transPlayerRoomBridge' => ST_PLAYER_ROOM_BRIDGE,
 		],
 	],
 
@@ -161,6 +163,19 @@ $machinestates = [
 		'action' => 'stPlayerRoomCargoHold',
 		'args' => 'argPlayerRoomCargoHold',
 		'possibleactions' => ['putBackResourceCardInDeck'],
+		'transitions' => [
+			'transActionDone' => ST_PLAYER_ACTION_DONE,
+		],
+	],
+
+	ST_PLAYER_ROOM_BRIDGE => [
+		'name' => 'playerRoomBridge',
+		'description' => clienttranslate('Bridge: ${actplayer} must reorder the next damage cards'),
+		'descriptionmyturn' => clienttranslate('Bridge: ${you} must reorder the next damage cards'),
+		'type' => 'activeplayer',
+		'action' => 'stPlayerRoomBridge',
+		'args' => 'argPlayerRoomBridge',
+		'possibleactions' => ['putBackDamageCardInDeck'],
 		'transitions' => [
 			'transActionDone' => ST_PLAYER_ACTION_DONE,
 		],

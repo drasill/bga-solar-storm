@@ -314,3 +314,25 @@
 	overflow: visible;
 	height: 200px;
 }
+
+.ss-damage-reorder-dialog {
+	height: 0;
+	background: #ffffffcc;
+	transition: all 1.3s ease-in-out;
+	overflow: hidden;
+	margin: 10px;
+}
+
+.ss-damage-reorder-dialog__title {
+	margin-bottom: 10px;
+	padding: 10px;
+}
+
+.ss-damage-reorder-deck {
+	margin: 10px;
+}
+
+.ss-damage-reorder-dialog--visible {
+	overflow: visible;
+	height: 200px;
+}
