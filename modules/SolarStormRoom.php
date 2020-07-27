@@ -22,7 +22,7 @@ class SolarStormRoom extends APP_GameClass {
 	private $position = null;
 
 	/** @var bool[] */
-	private $damage = [false,false,false];
+	private $damage = [false, false, false];
 
 	/** @var string[] */
 	private $resources = [];
@@ -35,7 +35,11 @@ class SolarStormRoom extends APP_GameClass {
 
 		$this->roomId = (int) $roomData['room'];
 		$this->position = (int) $roomData['position'];
-		$this->damage = [$roomData['damage1'] == 1, $roomData['damage2'] == 1, $roomData['damage3'] == 1];
+		$this->damage = [
+			$roomData['damage1'] == 1,
+			$roomData['damage2'] == 1,
+			$roomData['damage3'] == 1,
+		];
 		$this->diverted = $roomData['diverted'] == 1;
 
 		$roomInfo = $this->table->roomInfos[$this->roomId];
@@ -77,21 +81,26 @@ class SolarStormRoom extends APP_GameClass {
 			$this->damage[$dmgIndex] = true;
 			return;
 		}
-		throw new \Exception("Cannot damage this room more");
+		throw new \Exception('Cannot damage this room more');
 	}
 
 	public function repairWithResource(string $resourceType): void {
+		$resourceInfo = $this->table->resourceTypes[$resourceType];
 		foreach ($this->resources as $resIndex => $resType) {
 			if ($resType !== $resourceType) {
 				continue;
 			}
 			if (!$this->damage[$resIndex]) {
-				throw new \Exception("This rooms is not damaged on $resourceType");
+				throw new BgaUserException(
+					sprintf('This room is not damaged resource %s', $resourceInfo['nametr'])
+				);
 			}
 			$this->damage[$resIndex] = false;
 			return;
 		}
-		throw new \Exception("Cannot repair this room with $resourceType");
+		throw new BgaUserException(
+			sprintf('Cannot repair this room with the resource %s', $resourceInfo['nametr'])
+		);
 	}
 
 	public function setDiverted(bool $diverted): void {

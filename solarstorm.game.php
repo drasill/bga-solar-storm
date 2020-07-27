@@ -693,6 +693,7 @@ class SolarStorm extends Table {
 		}
 
 		$playerToMove->setPosition($position);
+		$playerToMove->save();
 		$player->incrementActions(-1);
 		$player->save();
 		$this->notifyPlayerData(
