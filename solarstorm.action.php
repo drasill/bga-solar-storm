@@ -39,6 +39,7 @@ class action_solarstorm extends APP_GameAction {
 			'move',
 			'scavenge',
 			'share',
+			'repair',
 		]);
 		$this->game->actionChoose($actionName);
 		self::ajaxResponse();

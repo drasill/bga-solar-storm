@@ -246,6 +246,11 @@
 	flex-grow: 1;
 }
 
+.ss-resource-deck__source--highlight {
+	border: 2px solid blue;
+	box-shadow: rgba(0, 0, 255, 0.7) 4px 4px 6px;
+}
+
 .ss-player-board {
 }
 

@@ -297,6 +297,26 @@ class SolarStorm extends Table {
 		return $ids;
 	}
 
+	private function whereDoesPlayerCanPickResourceFrom(): array {
+		$stateName = $this->gamestate->state()['name'];
+		$from = [];
+		if ($stateName === 'pickResources') {
+			// If we are in the 'pickResources' state (phase 2)
+			$from[] = 'deck';
+			$previouslyPickedFromDeck = (bool) self::getGameStateValue(
+				'resourcePickedFromDeck'
+			);
+			if (!$previouslyPickedFromDeck) {
+				$from[] = 'table';
+			}
+		} elseif ($stateName === 'playerScavengePickCards') {
+			// If we are in the 'playerScavengePickCards' state (player action)
+			$from[] = 'deck';
+			$from[] = 'table';
+		}
+		return $from;
+	}
+
 	//////////////////////////////////////////////////////////////////////////////
 	//////////// Player actions
 	////////////
@@ -312,6 +332,9 @@ class SolarStorm extends Table {
 				break;
 			case 'share':
 				$this->gamestate->nextState('transPlayerShare');
+				break;
+			case 'repair':
+				$this->gamestate->nextState('transPlayerRepair');
 				break;
 			default:
 				throw new BgaVisibleSystemException("Invalid action $actionName"); // NOI18N
@@ -403,18 +426,9 @@ class SolarStorm extends Table {
 		self::checkAction('pickResource');
 		$player = $this->ssPlayers->getActive();
 
-		// Depending on state, player can pick from deck (facedown) and/or table (face up)
-		$stateName = $this->gamestate->state()['name'];
-		$canPickFromTable = true;
-		if ($stateName === 'pickResources') {
-			// If we are in the 'pickResources' state (phase 2)
-			$previouslyPickedFromDeck = (bool) self::getGameStateValue(
-				'resourcePickedFromDeck'
-			);
-			if ($previouslyPickedFromDeck) {
-				// Now, can only pick from deck
-				$canPickFromTable = false;
-			}
+		$possibleFrom = $this->whereDoesPlayerCanPickResourceFrom();
+		if (empty($possibleFrom)) {
+			throw new BgaVisibleSystemException('Nowhere to pick from'); // NOI18N
 		}
 
 		$fromDeck = false;
@@ -428,7 +442,7 @@ class SolarStorm extends Table {
 			);
 		} else {
 			// Pick from table
-			if (!$canPickFromTable) {
+			if (!in_array('table', $possibleFrom)) {
 				throw new BgaUserException(
 					self::_('You must pick the second card from the deck')
 				);
@@ -464,7 +478,11 @@ class SolarStorm extends Table {
 
 		$this->assertResourceCardsOnTable(true);
 
+		$stateName = $this->gamestate->state()['name'];
 		if ($stateName === 'pickResources') {
+			$previouslyPickedFromDeck = (bool) self::getGameStateValue(
+				'resourcePickedFromDeck'
+			);
 			if (!$fromDeck || $previouslyPickedFromDeck) {
 				// Picked from table, or second pick from deck: end state now
 				self::setGameStateValue('resourcePickedFromDeck', 0);
@@ -624,6 +642,18 @@ class SolarStorm extends Table {
 		$possibleDestinations = $room->getPossibleDestinations();
 		return [
 			'possibleDestinations' => $possibleDestinations,
+		];
+	}
+
+	public function argPlayerScavengePickCards() {
+		return [
+			'possibleSources' => $this->whereDoesPlayerCanPickResourceFrom()
+		];
+	}
+
+	public function argPlayerPickResourcesCards() {
+		return [
+			'possibleSources' => $this->whereDoesPlayerCanPickResourceFrom()
 		];
 	}
 

@@ -21,6 +21,7 @@ if (!defined('ST_PLAYER_TURN')) {
 	define('ST_PLAYER_SCAVENGE_PICK_CARDS', 5);
 	define('ST_PLAYER_SHARE', 6);
 	define('ST_PLAYER_SHARE_CHOOSE_PLAYER', 7);
+	define('ST_PLAYER_REPAIR', 8);
 	define('ST_PLAYER_ACTION_DONE', 20);
 	define('ST_PLAYER_PICK_RESOURCES_CARDS', 21);
 	define('ST_PLAYER_END_TURN', 40);
@@ -48,6 +49,7 @@ $machinestates = [
 			'transPlayerMove' => ST_PLAYER_MOVE,
 			'transPlayerScavenge' => ST_PLAYER_SCAVENGE,
 			'transPlayerShare' => ST_PLAYER_SHARE,
+			'transPlayerRepair' => ST_PLAYER_REPAIR,
 		],
 	],
 
@@ -94,6 +96,7 @@ $machinestates = [
 			'Scavenge: ${you} must pick resources cards'
 		),
 		'type' => 'activeplayer',
+		'args' => 'argPlayerScavengePickCards',
 		'possibleactions' => ['pickResource'],
 		'transitions' => [
 			'transActionScavengePickCards' => ST_PLAYER_SCAVENGE_PICK_CARDS,
@@ -137,6 +140,22 @@ $machinestates = [
 		],
 	],
 
+	ST_PLAYER_REPAIR => [
+		'name' => 'playerRepair',
+		'description' => clienttranslate(
+			'Repair: ${actplayer} must select a resource'
+		),
+		'descriptionmyturn' => clienttranslate(
+			'Repair: ${you} must select a resource'
+		),
+		'type' => 'activeplayer',
+		'possibleactions' => ['selectResourceForRepair', 'cancel'],
+		'transitions' => [
+			'transActionDone' => ST_PLAYER_ACTION_DONE,
+			'transActionCancel' => ST_PLAYER_TURN,
+		],
+	],
+
 	ST_PLAYER_ACTION_DONE => [
 		'name' => 'actionDone',
 		'type' => 'game',
@@ -156,6 +175,7 @@ $machinestates = [
 			'End of turn: ${you} must pick resources cards'
 		),
 		'type' => 'activeplayer',
+		'args' => 'argPlayerPickResourcesCards',
 		'possibleactions' => ['pickResource'],
 		'transitions' => [
 			'transPlayerEndTurn' => ST_PLAYER_END_TURN,

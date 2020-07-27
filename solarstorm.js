@@ -128,9 +128,18 @@ define([
 				'onResourceDeckSelection'
 			)
 			for (let card of Object.values(this.gamedatas.resourceCardsOnTable)) {
-				console.log('adding resource card', card)
 				this.resourceDeck.addToStockWithId(card.type, card.id)
 			}
+		},
+
+		highlightResourceDeck(which = []) {
+			const sources = ['deck', 'table']
+			sources.forEach(source => {
+				const valid = which.includes(source)
+				$first(`.ss-resource-deck__${source}`).classList[
+					valid ? 'add' : 'remove'
+				]('ss-resource-deck__source--highlight')
+			})
 		},
 
 		onScreenWidthChange(arguments) {
@@ -159,9 +168,16 @@ define([
 				case 'playerMove':
 					this.rooms.highlight(args.args.possibleDestinations)
 					break
+				case 'playerScavengePickCards':
+				case 'pickResources':
+					this.highlightResourceDeck(args.args.possibleSources)
+					break
 				case 'playerShare':
 				case 'playerShareChoosePlayer':
 					this.players.highlightHands(args.args.possiblePlayers)
+					break
+				case 'playerDiscardResources':
+					this.players.highlightHands([+this.getActivePlayerId()])
 					break
 			}
 		},
@@ -176,10 +192,16 @@ define([
 				case 'playerMove':
 					this.rooms.highlight(null)
 					break
+				case 'playerScavengePickCards':
+				case 'pickResources':
+					this.highlightResourceDeck([])
+					break
 				case 'playerShare':
 				case 'playerShareChoosePlayer':
 					this.players.highlightHands(null)
 					break
+				case 'playerDiscardResources':
+					this.players.highlightHands(null)
 			}
 		},
 
@@ -201,38 +223,43 @@ define([
 						this.addActionButton('buttonShare', _('Share'), evt => {
 							this.onPlayerChooseAction(evt, 'share')
 						})
+						this.addActionButton('buttonRepair', _('Repair'), evt => {
+							this.onPlayerChooseAction(evt, 'repair')
+						})
 						break
 					case 'playerMove':
+						this.addActionCancelButton()
+						break
 					case 'playerShare':
+						this.addActionCancelButton()
+						break
 					case 'playerShareChoosePlayer':
-						this.addActionButton(
-							'buttonCancel',
-							_('Cancel'),
-							evt => {
-								this.ajaxAction('cancel', { lock: true })
-							},
-							null,
-							null,
-							'gray'
-						)
+						this.addActionCancelButton()
+						break
+					case 'playerRepair':
+						this.addActionCancelButton()
 						break
 					case 'playerScavenge':
 						this.addActionButton('buttonRollDice', _('Roll dice'), evt => {
 							this.ajaxAction('rollDice', { lock: true })
 						})
-						this.addActionButton(
-							'buttonCancel',
-							_('Cancel'),
-							evt => {
-								this.ajaxAction('cancel', { lock: true })
-							},
-							null,
-							null,
-							'gray'
-						)
+						this.addActionCancelButton()
 						break
 				}
 			}
+		},
+
+		addActionCancelButton() {
+			this.addActionButton(
+				'buttonCancel',
+				_('Cancel'),
+				evt => {
+					this.ajaxAction('cancel', { lock: true })
+				},
+				null,
+				null,
+				'gray'
+			)
 		},
 
 		///////////////////////////////////////////////////
