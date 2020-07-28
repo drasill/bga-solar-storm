@@ -73,7 +73,6 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				this.damageDeck.addToStock(card.type)
 			}
 
-			// TODO
 			const reorderDamageDeckEl = $first('.ss-damage-reorder-deck')
 			this.reorderDamageDeck = this.createDamageStock(reorderDamageDeckEl)
 		},
@@ -106,14 +105,15 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			$first('.ss-resource-reorder-dialog').classList.remove('ss-resource-reorder-dialog--visible')
 		},
 
-		showDamageCardsToPutInDeck(damageCards) {
-			$first('.ss-damage-reorder-dialog__title').innerHTML =
-				_('Put back the cards in the deck.') + '<br/>' + _('The last one will be on top.')
-			$first('.ss-damage-reorder-dialog').classList.add('ss-damage-reorder-dialog--visible')
-			for (let card of Object.values(damageCards)) {
-				this.reorderDamageDeck.addToStockWithId(card.type, card.id)
-			}
-		},
+		// TODO remove
+		// showDamageCardsToPutInDeck(damageCards) {
+		// $first('.ss-damage-reorder-dialog__title').innerHTML =
+		// _('Put back the cards in the deck.') + '<br/>' + _('The last one will be on top.')
+		// $first('.ss-damage-reorder-dialog').classList.add('ss-damage-reorder-dialog--visible')
+		// for (let card of Object.values(damageCards)) {
+		// this.reorderDamageDeck.addToStockWithId(card.type, card.id)
+		// }
+		// },
 
 		hideDamageCardsToPutInDeck() {
 			$first('.ss-damage-reorder-dialog').classList.remove('ss-damage-reorder-dialog--visible')
@@ -154,10 +154,14 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 					this.doPlayerRoomCargoHold(Object.values(args.args._private.resourceCards))
 					break
 				case 'playerRoomBridge':
-					this.showDamageCardsToPutInDeck(args.args._private.damageCards)
+					// this.showDamageCardsToPutInDeck(args.args._private.damageCards)
+					this.doPlayerRoomBridge(Object.values(args.args._private.damageCards))
 					break
 				case 'playerRoomEngineRoom':
 					this.doPlayerRoomEngineRoom(args.args.resourceCards)
+					break
+				case 'playerRoomRepairCentre':
+					this.doPlayerRoomRepairCentre()
 					break
 				case 'pickResources':
 					this.doPlayerPickResources(args.args.possibleSources)
@@ -474,6 +478,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				this.reorderResourceDeck.setSelectionMode(1)
 				handles.push(
 					this.connectStockCardClick(this.reorderResourceDeck, card => {
+						cleanAll()
 						resolve(card)
 					})
 				)
@@ -537,6 +542,63 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			})
 		},
 
+		waitForDamageCardOrderFromDialog(cards, options = {}) {
+			// Default options
+			options = Object.assign({ cancel: false, count: cards.length, title: '' }, options)
+
+			return new Promise((resolve, reject) => {
+				let selectedCards = []
+				const handles = []
+				const dialogEl = $first('.ss-damage-reorder-dialog')
+				const cleanAll = () => {
+					handles.forEach(handle => dojo.disconnect(handle))
+					dialogEl.classList.remove('ss-damage-reorder-dialog--visible')
+					this.removeActionCancelButton()
+					$('buttonAccept').remove()
+					$('buttonReset').remove()
+				}
+
+				if (options.cancel) {
+					this.showActionCancelButton(() => {
+						cleanAll()
+						reject('CANCEL BTN')
+					})
+				}
+
+				this.reorderDamageDeck.unselectAll()
+				this.reorderDamageDeck.removeAll()
+
+				$first('.ss-damage-reorder-dialog__title').innerHTML = options.title
+				dialogEl.classList.add('ss-damage-reorder-dialog--visible')
+				for (let card of Object.values(cards)) {
+					this.reorderDamageDeck.addToStockWithId(card.type, card.id)
+				}
+
+				this.reorderDamageDeck.setSelectionMode(2)
+				this.addActionButton('buttonReset', _('Restart selection'), () => {
+					selectedCards.forEach(card => {
+						this.reorderDamageDeck.addToStockWithId(card.type, card.id)
+					})
+					selectedCards = []
+				})
+				this.addActionButton('buttonAccept', _('Accept'), () => {
+					if (selectedCards.length !== options.count) {
+						gameui.showMessage(_(`You must select ${options.count} cards`), 'error')
+						return
+					}
+					cleanAll()
+					resolve(selectedCards)
+				})
+				this.reorderDamageDeck.setSelectionMode(1)
+				handles.push(
+					this.connectStockCardClick(this.reorderDamageDeck, card => {
+						selectedCards.push(card)
+						this.reorderDamageDeck.removeFromStockById(card.id)
+					})
+				)
+			})
+		},
+
 		waitForResourceType(options = {}) {
 			// Default options
 			options = Object.assign({ cancel: false }, options)
@@ -591,43 +653,19 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			this.ajaxAction('choose', { lock: true, actionName: action })
 		},
 
-		onReorderResourceDeckSelection() {
-			var card = this.reorderResourceDeck.getSelectedItems()[0]
-			if (!card) {
-				return
-			}
-			this.reorderResourceDeck.unselectAll()
-			this.ajaxAction('putBackResourceCardInDeck', {
-				lock: true,
-				cardId: card.id
-			})
-		},
-
-		onReorderDamageDeckSelection() {
-			var card = this.reorderDamageDeck.getSelectedItems()[0]
-			if (!card) {
-				return
-			}
-			this.reorderDamageDeck.unselectAll()
-			this.ajaxAction('putBackDamageCardInDeck', {
-				lock: true,
-				cardId: card.id
-			})
-		},
-
 		async doPlayerActionMove(possibleDestinations) {
 			try {
 				const rooms = possibleDestinations.map(p => this.rooms.getByPosition(p))
 				const room = await this.waitForRoomClick(rooms, { cancel: true })
-				this.ajaxAction('move', { lock: true, position: room.position })
+				await this.ajaxAction('move', { lock: true, position: room.position })
 			} catch (e) {
-				this.ajaxAction('cancel', { lock: true })
+				await this.ajaxAction('cancel', { lock: true })
 			}
 		},
 
 		async doPlayerActionDiscardResource() {
 			const card = (await this.waitForPlayerResource([this.players.getActive()])).card
-			this.ajaxAction('discardResource', { lock: true, cardId: card.id })
+			await this.ajaxAction('discardResource', { lock: true, cardId: card.id })
 		},
 
 		async doPlayerActionGiveResource(sameRoomOnly = true) {
@@ -650,7 +688,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 					playerId: player.id
 				})
 			} catch (e) {
-				this.ajaxAction('cancel', { lock: true })
+				await this.ajaxAction('cancel', { lock: true })
 			}
 		},
 
@@ -669,7 +707,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 					cardId: card.id
 				})
 			} catch (e) {
-				this.ajaxAction('cancel', { lock: true })
+				await this.ajaxAction('cancel', { lock: true })
 			}
 		},
 
@@ -689,7 +727,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 					card2Id: card2.id
 				})
 			} catch (e) {
-				this.ajaxAction('cancel', { lock: true })
+				await this.ajaxAction('cancel', { lock: true })
 			}
 		},
 
@@ -707,16 +745,33 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				})
 			} catch (e) {
 				console.error(e)
-				this.ajaxAction('cancel', { lock: true })
+				await this.ajaxAction('cancel', { lock: true })
 			}
 		},
 
 		async doPlayerRoomCargoHold(cards) {
 			const selectedCards = await this.waitForResourceCardOrderFromDialog(cards, {
-				title: _('Select a card from the discard, to be swap with one from your hand'),
+				title:
+					_('Reorder the next resource cards.') +
+					'<br/>' +
+					'The first ones you select will be on <b>top</b> of the deck.',
 				cancel: false
 			})
-			this.ajaxAction('putBackResourceCardsInDeck', {
+			await this.ajaxAction('putBackResourceCardsInDeck', {
+				lock: true,
+				cardIds: selectedCards.map(c => c.id).join(',')
+			})
+		},
+
+		async doPlayerRoomBridge(cards) {
+			const selectedCards = await this.waitForDamageCardOrderFromDialog(cards, {
+				title:
+					_('Reorder the next damage cards.') +
+					'<br/>' +
+					'The first ones you select will be on <b>top</b> of the deck.',
+				cancel: false
+			})
+			await this.ajaxAction('putBackDamageCardsInDeck', {
 				lock: true,
 				cardIds: selectedCards.map(c => c.id).join(',')
 			})
@@ -731,13 +786,13 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				// Valid rooms are where there are meeples
 				const validRooms = this.players.players.map(p => p.position).map(p => this.rooms.getByPosition(p))
 				const room = await this.waitForRoomClick(validRooms, { cancel: true })
-				this.ajaxAction('moveMeepleToRoom', {
+				await this.ajaxAction('moveMeepleToRoom', {
 					lock: true,
 					playerId: player.id,
 					position: room.position
 				})
 			} catch (e) {
-				this.ajaxAction('cancel', { lock: true })
+				await this.ajaxAction('cancel', { lock: true })
 			}
 		},
 
@@ -745,17 +800,44 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 		async doPlayerRoomEngineRoom(cards) {
 			try {
 				const card = await this.waitForResourceCardFromDialog(cards, {
-					title: _('Select a card from the discard, to be swap with one from your hand'),
+					title: _('Select a card from the discard, to be swapped with one from your hand'),
 					cancel: true
 				})
 				const card2 = (await this.waitForPlayerResource([this.players.getActive()], { cancel: true })).card
-				this.ajaxAction('swapResourceFromDiscard', {
+				await this.ajaxAction('swapResourceFromDiscard', {
 					lock: true,
 					cardId: card.id,
 					card2Id: card2.id
 				})
 			} catch (e) {
-				this.ajaxAction('cancel', { lock: true })
+				await this.ajaxAction('cancel', { lock: true })
+			}
+		},
+
+		// TODO check player has any resource card
+		async doPlayerRoomRepairCentre() {
+			try {
+				const room = await this.waitForRoomClick(this.rooms.rooms, { cancel: true })
+				this.gamedatas.gamestate.descriptionmyturn = dojo.string.substitute(
+					_('Repair Centre: You mush choose a resource to repair: ${room}'),
+					{ room: room.name }
+				)
+				this.updatePageTitle()
+				this.removeActionButtons()
+				const card = (await this.waitForPlayerResource([this.players.getActive()], { cancel: true })).card
+				let resourceTypeId = null
+				if (card.type === 'universal') {
+					resourceTypeId = (await this.waitForResourceType({ cancel: true })).id
+				}
+				await this.ajaxAction('selectResourceForRepair', {
+					lock: true,
+					cardId: card.id,
+					position: room.position,
+					resourceType: resourceTypeId
+				})
+			} catch (e) {
+				console.error(e)
+				await this.ajaxAction('cancel', { lock: true })
 			}
 		},
 
@@ -765,7 +847,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				deck: possibleSources.includes('deck'),
 				table: possibleSources.includes('table')
 			})
-			this.ajaxAction('pickResource', { lock: true, cardId: card.id })
+			await this.ajaxAction('pickResource', { lock: true, cardId: card.id })
 		},
 
 		///////////////////////////////////////////////////

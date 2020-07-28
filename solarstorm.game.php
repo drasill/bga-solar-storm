@@ -160,9 +160,14 @@ class SolarStorm extends Table {
 
 		$this->damageCards->moveCard($card['id'], 'discard');
 		if ($notify) {
-			$this->notifyAllPlayers('updateDamageDiscard', 'drawn damage card', [
-				'cards' => [$card],
-			]);
+			$player = $this->ssPlayers->getActive();
+			$this->notifyAllPlayers(
+				'updateDamageDiscard',
+				'${player_name} draws the next damage card',
+				[
+					'cards' => [$card],
+				] + $player->getNotificationArgs()
+			);
 		}
 
 		$roomsSlugs = $this->damageCardsInfos[$card['type']];
@@ -175,7 +180,7 @@ class SolarStorm extends Table {
 		}
 
 		if ($notify) {
-			$this->notifyAllPlayers('updateRooms', 'room update', [
+			$this->notifyAllPlayers('updateRooms', '', [
 				'rooms' => $updatedRooms,
 			]);
 		}
@@ -328,6 +333,9 @@ class SolarStorm extends Table {
 						break;
 					case 'engine-room':
 						$this->gamestate->nextState('transPlayerRoomEngineRoom');
+						break;
+					case 'repair-centre':
+						$this->gamestate->nextState('transPlayerRoomRepairCentre');
 						break;
 					default:
 						throw new BgaVisibleSystemException("Room $roomSlug not implemented yet"); // NOI18N
@@ -658,7 +666,7 @@ class SolarStorm extends Table {
 		$this->gamestate->nextState('transActionDone');
 	}
 
-	public function actionSelectResourceForRepair(int $cardId, ?string $typeId = null) {
+	public function actionSelectResourceForRepair(int $cardId, ?string $typeId = null, ?int $position = null) {
 		self::checkAction('selectResourceForRepair');
 		$card = $this->resourceCards->getCard($cardId);
 		$player = $this->ssPlayers->getActive();
@@ -666,7 +674,13 @@ class SolarStorm extends Table {
 			throw new BgaVisibleSystemException('Card not in your hand'); // NOI18N
 		}
 
-		$room = $this->rooms->getRoomByPosition($player->getPosition());
+		$stateName = $this->gamestate->state()['name'];
+		if ($stateName === 'playerRoomRepairCentre' && $position !== null) {
+			$room = $this->rooms->getRoomByPosition($position);
+		} else {
+			$room = $this->rooms->getRoomByPosition($player->getPosition());
+		}
+
 		$cardType = $card['type'];
 		if ($cardType === 'universal') {
 			$cardType = $typeId;
@@ -687,7 +701,7 @@ class SolarStorm extends Table {
 			] + $player->getNotificationArgs()
 		);
 
-		$this->notifyAllPlayers('updateRooms', 'room update', [
+		$this->notifyAllPlayers('updateRooms', 'message', [
 			'rooms' => [$room->toArray()],
 		]);
 		$player->incrementActions(-1);
@@ -750,22 +764,28 @@ class SolarStorm extends Table {
 		$this->gamestate->nextState('transActionDone');
 	}
 
-	public function actionPutBackDamageCardInDeck($cardId) {
-		self::checkAction('putBackDamageCardInDeck');
+	public function actionPutBackDamageCardsInDeck(array $cardIds) {
+		self::checkAction('putBackDamageCardsInDeck');
 		$player = $this->ssPlayers->getActive();
-		$card = $this->damageCards->getCard($cardId);
-		if ($card['location'] !== 'reorder') {
-			throw new BgaVisibleSystemException('Card not in reorder deck'); // NOI18N
+		$cardIds = array_reverse($cardIds);
+		foreach ($cardIds as $cardId) {
+			$card = $this->damageCards->getCard($cardId);
+			if ($card['location'] !== 'reorder') {
+				throw new BgaVisibleSystemException('Card not in reorder deck'); // NOI18N
+			}
+			$this->damageCards->insertCardOnExtremePosition($card['id'], 'deck', true);
 		}
-		$this->damageCards->moveCard($card['id'], 'deck');
-		$this->damageCards->insertCardOnExtremePosition($card['id'], 'deck', true);
-		self::notifyPlayer($player->getId(), 'putBackDamageCardInDeck', '', [
-			'card' => $card,
-		]);
-		$num = $this->damageCards->countCardInLocation('reorder');
-		if ($num <= 0) {
-			$this->gamestate->nextState('transActionDone');
+		if ($this->damageCards->countCardInLocation('reorder') != 0) {
+			throw new BgaVisibleSystemException('Reorder deck not empty'); // NOI18N
 		}
+		$this->notifyAllPlayers(
+			'message',
+			clienttranslate('${player_name} has reordered ${num_damages} damages cards on the top of the deck'),
+			[
+				'num_damages' => count($cardIds),
+			] + $player->getNotificationArgs()
+		);
+		$this->gamestate->nextState('transActionDone');
 	}
 
 	//////////////////////////////////////////////////////////////////////////////
@@ -861,6 +881,9 @@ class SolarStorm extends Table {
 			$this->gamestate->nextState('transPlayerDiscardResources');
 			return;
 		}
+
+		// Draw damage card
+		$this->drawDamageCard('top', true);
 
 		$playerId = self::activeNextPlayer();
 		self::giveExtraTime($playerId);

@@ -28,6 +28,7 @@ if (!defined('ST_PLAYER_TURN')) {
 	define('ST_PLAYER_ROOM_CARGO_HOLD', 11);
 	define('ST_PLAYER_ROOM_MESS_HALL', 12);
 	define('ST_PLAYER_ROOM_ENGINE_ROOM', 13);
+	define('ST_PLAYER_ROOM_REPAIR_CENTRE', 14);
 	define('ST_PLAYER_ROOM_BRIDGE', 16);
 
 	define('ST_PLAYER_ACTION_DONE', 20);
@@ -63,6 +64,7 @@ $machinestates = [
 			'transPlayerRoomCargoHold' => ST_PLAYER_ROOM_CARGO_HOLD,
 			'transPlayerRoomMessHall' => ST_PLAYER_ROOM_MESS_HALL,
 			'transPlayerRoomEngineRoom' => ST_PLAYER_ROOM_ENGINE_ROOM,
+			'transPlayerRoomRepairCentre' => ST_PLAYER_ROOM_REPAIR_CENTRE,
 			'transPlayerRoomBridge' => ST_PLAYER_ROOM_BRIDGE,
 		],
 	],
@@ -150,7 +152,7 @@ $machinestates = [
 		'type' => 'activeplayer',
 		'action' => 'stPlayerRoomCargoHold',
 		'args' => 'argPlayerRoomCargoHold',
-		'possibleactions' => ['putBackResourceCardsInDeck'],
+		'possibleactions' => ['putbackresourcecardsindeck'],
 		'transitions' => [
 			'transActionDone' => ST_PLAYER_ACTION_DONE,
 		],
@@ -181,6 +183,18 @@ $machinestates = [
 		],
 	],
 
+	ST_PLAYER_ROOM_REPAIR_CENTRE => [
+		'name' => 'playerRoomRepairCentre',
+		'description' => clienttranslate('Repair centre: ${actplayer} must repair any room'),
+		'descriptionmyturn' => clienttranslate('Repair centre: ${you} must select a room to repair'),
+		'type' => 'activeplayer',
+		'possibleactions' => ['selectResourceForRepair', 'cancel'],
+		'transitions' => [
+			'transActionDone' => ST_PLAYER_ACTION_DONE,
+			'transActionCancel' => ST_PLAYER_TURN,
+		],
+	],
+
 	ST_PLAYER_ROOM_BRIDGE => [
 		'name' => 'playerRoomBridge',
 		'description' => clienttranslate('Bridge: ${actplayer} must reorder the next damage cards'),
@@ -188,7 +202,7 @@ $machinestates = [
 		'type' => 'activeplayer',
 		'action' => 'stPlayerRoomBridge',
 		'args' => 'argPlayerRoomBridge',
-		'possibleactions' => ['putBackDamageCardInDeck'],
+		'possibleactions' => ['putBackDamageCardsInDeck'],
 		'transitions' => [
 			'transActionDone' => ST_PLAYER_ACTION_DONE,
 		],

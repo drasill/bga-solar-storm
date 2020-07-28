@@ -37,6 +37,7 @@
 
 .ss-decks-wrapper {
 	min-width: 280px;
+	max-width: 500px;
 	margin: 20px;
 	display: flex;
 	flex-direction: column;

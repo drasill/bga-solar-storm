@@ -77,7 +77,8 @@ class action_solarstorm extends APP_GameAction {
 		self::setAjaxMode();
 		$cardId = (int) self::getArg('cardId', AT_posint, true);
 		$typeId = self::getArg('resourceType', AT_enum, false, null, ['energy', 'nanobots', 'metal', 'data']);
-		$this->game->actionSelectResourceForRepair($cardId, $typeId);
+		$position = self::getArg('position', AT_posint, false, null);
+		$this->game->actionSelectResourceForRepair($cardId, $typeId, $position);
 		self::ajaxResponse();
 	}
 
@@ -97,10 +98,11 @@ class action_solarstorm extends APP_GameAction {
 		self::ajaxResponse();
 	}
 
-	public function putBackDamageCardInDeck() {
+	public function putBackDamageCardsInDeck() {
 		self::setAjaxMode();
-		$cardId = (int) self::getArg('cardId', AT_posint, true);
-		$this->game->actionPutBackDamageCardInDeck($cardId);
+		$cardIds = self::getArg('cardIds', AT_numberlist, true);
+		$cardIds = preg_split('/\D/', $cardIds, -1, PREG_SPLIT_NO_EMPTY);
+		$this->game->actionPutBackDamageCardsInDeck($cardIds);
 		self::ajaxResponse();
 	}
 
