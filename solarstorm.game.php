@@ -34,8 +34,6 @@ class SolarStorm extends Table {
 			'resourcePickedFromDeck' => 11,
 			// When scavenging, number of cards left to pick
 			'scavengeNumberOfCards' => 12,
-			// When sharing, which card the player selected to give
-			'shareResourceToGive' => 13,
 		]);
 		$this->rooms = new SolarStormRooms($this);
 		$this->ssPlayers = new SolarStormPlayers($this);
@@ -88,7 +86,6 @@ class SolarStorm extends Table {
 
 		self::setGameStateInitialValue('resourcePickedFromDeck', 0);
 		self::setGameStateInitialValue('scavengeNumberOfCards', 0);
-		self::setGameStateInitialValue('shareResourceToGive', 0);
 
 		$this->rooms->generateRooms();
 

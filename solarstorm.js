@@ -33,9 +33,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
       this.damageDeck = null;
       this.resourceDeck = null;
       this.reorderResourceDeck = null;
-      this.reorderDamageDeck = null; // TODO remove
-
-      this.selectedMeeplePlayer = null;
+      this.reorderDamageDeck = null;
     },
     setup: function (gamedatas) {
       this.resourceTypes = gamedatas.resourceTypes;
@@ -59,7 +57,6 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 
     initializePlayersArea() {
       const playersData = this.gamedatas.ssPlayers.sort((p1, p2) => p1.order - p2.order);
-      console.dir(playersData);
       playersData.forEach(data => {
         const player = new SSPlayer(this, data.id, data.name, data.color, data.order, data.position);
         this.players.addPlayer(player);
@@ -231,17 +228,17 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
             });
             break;
 
-          case 'playerShareChoosePlayer':
-            this.addActionCancelButton();
-            break;
-
           case 'playerScavenge':
             this.addActionButton('buttonRollDice', _('Roll dice'), evt => {
               this.ajaxAction('rollDice', {
                 lock: true
               });
             });
-            this.addActionCancelButton();
+            this.showActionCancelButton(() => {
+              this.ajaxAction('cancel', {
+                lock: true
+              });
+            });
             break;
 
           case 'playerRoomMessHall':
@@ -254,18 +251,22 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
             this.addActionButton('messHallSwap', _('Swap a card'), evt => {
               this.doPlayerActionSwapResource();
             });
-            this.addActionCancelButton();
             break;
         }
       }
     },
 
-    addActionCancelButton() {
-      this.addActionButton('buttonCancel', _('Cancel'), evt => {
-        this.ajaxAction('cancel', {
-          lock: true
-        });
-      }, null, null, 'gray');
+    showActionCancelButton(callback) {
+      this.removeActionCancelButton();
+      this.addActionButton('actionCancelButton', _('Cancel'), callback, null, null, 'gray');
+    },
+
+    removeActionCancelButton() {
+      const el = $('actionCancelButton');
+
+      if (el) {
+        el.remove();
+      }
     },
 
     ///////////////////////////////////////////////////
@@ -315,17 +316,16 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
           handles.forEach(handle => dojo.disconnect(handle));
 
           if (options.cancel) {
-            $('buttonCancelWait').remove();
+            this.removeActionCancelButton();
           }
         };
 
         if (options.cancel) {
-          this.addActionButton('buttonCancelWait', _('Cancel'), evt => {
-            console.log('CANCEL BTN');
+          this.showActionCancelButton(() => {
             cleanAll();
             reject('CANCEL BTN');
             this.players.highlightHands(null);
-          }, null, null, 'gray');
+          });
         }
 
         players.forEach(player => {
@@ -334,7 +334,6 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
             const card = cards[0];
 
             if (!card) {
-              console.log('NO CARD');
               reject('NO CARD');
             } else {
               cleanAll();
@@ -360,17 +359,16 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
           handles.forEach(handle => dojo.disconnect(handle));
 
           if (options.cancel) {
-            $('buttonCancelWait').remove();
+            this.removeActionCancelButton();
           }
         };
 
         if (options.cancel) {
-          this.addActionButton('buttonCancelWait', _('Cancel'), evt => {
-            console.log('CANCEL BTN');
+          this.showActionCancelButton(() => {
             cleanAll();
             reject('CANCEL BTN');
             this.rooms.highlightPositions(null);
-          }, null, null, 'gray');
+          });
         }
 
         rooms.forEach(room => {
@@ -391,19 +389,15 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 
         const cleanAll = () => {
           handles.forEach(handle => dojo.disconnect(handle));
-
-          if (options.cancel) {
-            $('buttonCancelWait').remove();
-          }
+          this.removeActionCancelButton();
         };
 
         if (options.cancel) {
-          this.addActionButton('buttonCancelWait', _('Cancel'), evt => {
-            console.log('CANCEL BTN');
+          this.showActionCancelButton(() => {
             cleanAll();
             reject('CANCEL BTN');
             this.players.highlightMeeples(null);
-          }, null, null, 'gray');
+          });
         }
 
         players.forEach(player => {
@@ -435,7 +429,6 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
     },
 
     onPlayerChooseAction(evt, action) {
-      console.log('onPlayerChooseAction', evt, action);
       dojo.stopEvent(evt);
       this.ajaxAction('choose', {
         lock: true,
@@ -444,54 +437,11 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
     },
 
     onPlayAreaClick(evt) {
-      const el = evt.target; // TODO remove
-      // Clicked on a room
-      // if (el.classList.contains('ss-room')) {
-      // dojo.stopEvent(evt)
-      // const room = this.rooms.getByEl(el)
-      // this.onRoomClick(room)
-      // return
-      // }
-      // Clicked on resourceDeck
+      const el = evt.target; // Clicked on resourceDeck
 
       if (el.classList.contains('ss-resource-deck__deck')) {
         dojo.stopEvent(evt);
         this.onResourceDeckClick();
-        return;
-      }
-    },
-
-    // TODO remove
-    onRoomClick(room) {
-      if (this.last_server_state.name === 'playerMove') {
-        this.ajaxAction('move', {
-          lock: true,
-          position: room.position
-        });
-        return;
-      }
-
-      if (this.last_server_state.name === 'playerRoomCrewQuarter' && this.selectedMeeplePlayer) {
-        this.ajaxAction('moveMeepleToRoom', {
-          lock: true,
-          playerId: this.selectedMeeplePlayer.id,
-          position: room.position
-        });
-        return;
-      }
-    },
-
-    // TODO remove
-    onPlayerMeepleClick(player) {
-      console.log('Meeple click', player);
-
-      if (this.last_server_state.name === 'playerRoomCrewQuarter') {
-        // Select meeple
-        this.selectedMeeplePlayer = player; // Highlight rooms with players
-
-        const validPositions = this.players.players.map(p => p.position);
-        this.rooms.highlightPositions(validPositions);
-        this.players.highlightMeeples(null);
         return;
       }
     },
@@ -671,7 +621,10 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
       try {
         const player = await this.waitForPlayerMeepleClick(this.players.players, {
           cancel: true
-        }); // Valid rooms are where there are meeples
+        });
+        this.gamedatas.gamestate.descriptionmyturn = _('Crew Quarters: You mush choose a destination');
+        this.updatePageTitle();
+        this.removeActionButtons(); // Valid rooms are where there are meeples
 
         const validRooms = this.players.players.map(p => p.position).map(p => this.rooms.getByPosition(p));
         const room = await this.waitForRoomClick(validRooms, {
@@ -683,7 +636,6 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
           position: room.position
         });
       } catch (e) {
-        console.log(e);
         this.ajaxAction('cancel', {
           lock: true
         });
@@ -1019,10 +971,7 @@ class SSPlayer {
       class: `ss-player-meeple ss-player-meeple--order-${this.order} ss-player-meeple--id-${this.id}`
     }, playersArea);
     this.gameObject.addTooltipHtml(meepleEl.id, _(`Player ${this.name}`), 250);
-    this.meepleEl = meepleEl; // TODO remove
-    // this.meepleEl.addEventListener('click', () => {
-    // this.gameObject.onPlayerMeepleClick(this)
-    // })
+    this.meepleEl = meepleEl;
   }
 
   createStock() {
