@@ -54,7 +54,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
     initializePlayersArea() {
       const playersData = this.gamedatas.ssPlayers.sort((p1, p2) => p1.order - p2.order);
       playersData.forEach(data => {
-        const player = new SSPlayer(this, data.id, data.name, data.color, data.order, data.position);
+        const player = new SSPlayer(this, data.id, data.name, data.color, data.order, data.position, data.actionsTokens);
         this.players.addPlayer(player);
       });
 
@@ -104,23 +104,6 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
       }
     },
 
-    hideResourceCardsToPutInDeck() {
-      $first('.ss-resource-reorder-dialog').classList.remove('ss-resource-reorder-dialog--visible');
-    },
-
-    // TODO remove
-    // showDamageCardsToPutInDeck(damageCards) {
-    // $first('.ss-damage-reorder-dialog__title').innerHTML =
-    // _('Put back the cards in the deck.') + '<br/>' + _('The last one will be on top.')
-    // $first('.ss-damage-reorder-dialog').classList.add('ss-damage-reorder-dialog--visible')
-    // for (let card of Object.values(damageCards)) {
-    // this.reorderDamageDeck.addToStockWithId(card.type, card.id)
-    // }
-    // },
-    hideDamageCardsToPutInDeck() {
-      $first('.ss-damage-reorder-dialog').classList.remove('ss-damage-reorder-dialog--visible');
-    },
-
     ///////////////////////////////////////////////////
     //// Game & client states
     onEnteringState: function (stateName, args) {
@@ -161,7 +144,6 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
           break;
 
         case 'playerRoomBridge':
-          // this.showDamageCardsToPutInDeck(args.args._private.damageCards)
           this.doPlayerRoomBridge(Object.values(args.args._private.damageCards));
           break;
 
@@ -181,20 +163,14 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
     onLeavingState: function (stateName) {
       console.log('Leaving state: ' + stateName);
 
-      switch (stateName) {
-        case 'playerRoomCargoHold':
-          this.hideResourceCardsToPutInDeck();
-          break;
-
-        case 'playerRoomBridge':
-          this.hideDamageCardsToPutInDeck();
-          break;
-      }
+      switch (stateName) {}
     },
     onUpdateActionButtons: function (stateName, args) {
       console.log('onUpdateActionButtons: ' + stateName, args);
 
       if (this.isCurrentPlayerActive()) {
+        const player = this.players.getActive();
+
         switch (stateName) {
           case 'playerTurn':
             this.addActionButton('buttonMove', _('Move'), evt => {
@@ -212,6 +188,18 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
             this.addActionButton('buttonRoom', _('Room action'), evt => {
               this.onPlayerChooseAction(evt, 'room');
             });
+            this.addActionButton('buttonToken', _('Take action token'), evt => {
+              this.onPlayerChooseAction(evt, 'token');
+            });
+
+            if (player.actionsTokens > 0) {
+              this.addActionButton('buttonUseToken', _('Use action token'), evt => {
+                this.ajaxAction('useToken', {
+                  lock: true
+                });
+              });
+            }
+
             break;
 
           case 'playerShare':
@@ -1013,7 +1001,9 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 
     notif_updatePlayerData(notif) {
       console.log('notif_updatePlayerData', notif);
-      this.players.getPlayerById(notif.args.player_id).setRoomPosition(notif.args.position);
+      const player = this.players.getPlayerById(notif.args.player_id);
+      player.setRoomPosition(notif.args.position);
+      player.setActionsTokens(notif.args.actionsTokens);
     }
 
   });
@@ -1189,7 +1179,7 @@ class SSPlayers {
 }
 
 class SSPlayer {
-  constructor(gameObject, id, name, color, order, position) {
+  constructor(gameObject, id, name, color, order, position, actionsTokens) {
     _defineProperty(this, "gameObject", null);
 
     _defineProperty(this, "id", null);
@@ -1208,6 +1198,8 @@ class SSPlayer {
 
     _defineProperty(this, "position", null);
 
+    _defineProperty(this, "actionsTokens", 0);
+
     this.gameObject = gameObject;
     this.id = +id;
     this.name = name;
@@ -1217,6 +1209,7 @@ class SSPlayer {
     this.assertMeepleEl();
     this.createStock();
     this.setRoomPosition(position, false, true);
+    this.setActionsTokens(actionsTokens);
   }
 
   isCurrentActive() {
@@ -1241,6 +1234,9 @@ class SSPlayer {
         backgroundColor: '#' + this.color
       },
       innerHTML: `Hand of ${this.name}`
+    }, boardEl);
+    this.actionsTokensEl = dojo.create('div', {
+      class: 'ss-player-board__action-tokens'
     }, boardEl);
     this.boardEl = boardEl;
   }
@@ -1312,6 +1308,11 @@ class SSPlayer {
 
   highlightMeeple(value) {
     this.gameObject.highlightEl(this.meepleEl, value);
+  }
+
+  setActionsTokens(value) {
+    this.actionsTokens = value;
+    this.actionsTokensEl.innerHTML = "TOKENS x" + value;
   }
 
 }

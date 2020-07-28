@@ -115,6 +115,7 @@ class SolarStormPlayer extends APP_GameClass {
 			'color' => $this->color,
 			'order' => $this->order,
 			'position' => $this->position,
+			'actionsTokens' => $this->actionsTokens,
 		];
 	}
 

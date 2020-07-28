@@ -35,7 +35,7 @@ class action_solarstorm extends APP_GameAction {
 
 	public function choose() {
 		self::setAjaxMode();
-		$actionName = self::getArg('actionName', AT_enum, true, null, ['move', 'scavenge', 'share', 'repair', 'room']);
+		$actionName = self::getArg('actionName', AT_enum, true, null, ['move', 'scavenge', 'share', 'repair', 'room', 'token']);
 		$this->game->actionChoose($actionName);
 		self::ajaxResponse();
 	}
@@ -134,6 +134,11 @@ class action_solarstorm extends APP_GameAction {
 		$cardId = (int) self::getArg('cardId', AT_posint, true);
 		$card2Id = (int) self::getArg('card2Id', AT_posint, true);
 		$this->game->actionSwapResourceFromDiscard($cardId, $card2Id);
+		self::ajaxResponse();
+	}
+	public function useToken() {
+		self::setAjaxMode();
+		$this->game->actionUseToken();
 		self::ajaxResponse();
 	}
 }

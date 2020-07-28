@@ -256,6 +256,7 @@ class SolarStorm extends Table {
 			$message,
 			[
 				'position' => $player->getPosition(),
+				'actionsTokens' => $player->getActionsTokens(),
 			] +
 				$args +
 				$player->getNotificationArgs()
@@ -311,6 +312,9 @@ class SolarStorm extends Table {
 				break;
 			case 'repair':
 				$this->gamestate->nextState('transPlayerRepair');
+				break;
+			case 'token':
+				$this->actionGetActionToken();
 				break;
 			case 'room':
 				$player = $this->ssPlayers->getActive();
@@ -788,6 +792,30 @@ class SolarStorm extends Table {
 		$this->gamestate->nextState('transActionDone');
 	}
 
+	public function actionGetActionToken() {
+		$player = $this->ssPlayers->getActive();
+		// TODO check there are token left
+		$tokens = $player->getActionsTokens();
+		$player->setActionsTokens($tokens + 1);
+		$player->incrementActions(-1);
+		$player->save();
+		$this->notifyPlayerData($player, clienttranslate('${player_name} takes an action token'), []);
+		$this->gamestate->nextState('transActionDone');
+	}
+
+	public function actionUseToken() {
+		$player = $this->ssPlayers->getActive();
+		$tokens = $player->getActionsTokens();
+		if ($tokens <= 0) {
+			throw new BgaVisibleSystemException('No action token available'); // NOI18N
+		}
+		$player->setActionsTokens($tokens - 1);
+		$player->incrementActions(1);
+		$player->save();
+		$this->notifyPlayerData($player, clienttranslate('${player_name} uses an action token'), []);
+		$this->gamestate->nextState('transActionDone');
+	}
+
 	//////////////////////////////////////////////////////////////////////////////
 	//////////// Game state arguments
 	////////////
@@ -853,6 +881,19 @@ class SolarStorm extends Table {
 	//////////// Game state actions
 	////////////
 
+	public function stStartOfTurn() {
+		$player = $this->ssPlayers->getActive();
+		$room = $this->rooms->getRoomByPosition($player->getPosition());
+		if ($room->getSlug() === 'medical-bay') {
+			// TODO check there are token left
+			$tokens = $player->getActionsTokens();
+			$player->setActionsTokens($tokens + 2);
+			$player->save();
+			$this->notifyPlayerData($player, clienttranslate('Medical Bay: ${player_name} takes 2 action tokens'), []);
+		}
+		$this->gamestate->nextState('transPlayerTurn');
+	}
+
 	public function stActionShare() {
 		$ids = $this->getPlayersIdsInTheSameRoom(true);
 		if (empty($ids)) {
@@ -887,7 +928,7 @@ class SolarStorm extends Table {
 
 		$playerId = self::activeNextPlayer();
 		self::giveExtraTime($playerId);
-		$this->gamestate->nextState('transPlayerTurn');
+		$this->gamestate->nextState('transPlayerStartOfTurn');
 	}
 
 	public function stPlayerRoomCargoHold() {

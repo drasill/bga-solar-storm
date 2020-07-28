@@ -16,13 +16,14 @@
  */
 
 if (!defined('ST_PLAYER_TURN')) {
-	define('ST_PLAYER_TURN', 2);
+	define('ST_PLAYER_START_OF_TURN', 2);
+	define('ST_PLAYER_TURN', 3);
 
-	define('ST_PLAYER_MOVE', 3);
-	define('ST_PLAYER_SCAVENGE', 4);
-	define('ST_PLAYER_SCAVENGE_PICK_CARDS', 5);
-	define('ST_PLAYER_SHARE', 6);
-	define('ST_PLAYER_REPAIR', 7);
+	define('ST_PLAYER_MOVE', 4);
+	define('ST_PLAYER_SCAVENGE', 5);
+	define('ST_PLAYER_SCAVENGE_PICK_CARDS', 6);
+	define('ST_PLAYER_SHARE', 7);
+	define('ST_PLAYER_REPAIR', 8);
 
 	define('ST_PLAYER_ROOM_CREW_QUARTER', 10);
 	define('ST_PLAYER_ROOM_CARGO_HOLD', 11);
@@ -48,13 +49,22 @@ $machinestates = [
 		'transitions' => ['' => 2],
 	],
 
+	ST_PLAYER_START_OF_TURN => [
+		'name' => 'playerStartOfTurn',
+		'type' => 'game',
+		'action' => 'stStartOfTurn',
+		'transitions' => [
+			'transPlayerTurn' => ST_PLAYER_TURN,
+		],
+	],
+
 	ST_PLAYER_TURN => [
 		'name' => 'playerTurn',
 		'description' => clienttranslate('${actplayer} must choose an action'),
 		'descriptionmyturn' => clienttranslate('${you} must choose an action'),
 		'type' => 'activeplayer',
 		'args' => 'argPlayerTurn',
-		'possibleactions' => ['choose'],
+		'possibleactions' => ['choose', 'useToken'],
 		'transitions' => [
 			'transPlayerMove' => ST_PLAYER_MOVE,
 			'transPlayerScavenge' => ST_PLAYER_SCAVENGE,
@@ -66,6 +76,7 @@ $machinestates = [
 			'transPlayerRoomEngineRoom' => ST_PLAYER_ROOM_ENGINE_ROOM,
 			'transPlayerRoomRepairCentre' => ST_PLAYER_ROOM_REPAIR_CENTRE,
 			'transPlayerRoomBridge' => ST_PLAYER_ROOM_BRIDGE,
+			'transActionDone' => ST_PLAYER_ACTION_DONE,
 		],
 	],
 
@@ -237,7 +248,7 @@ $machinestates = [
 		'action' => 'stEndTurn',
 		'updateGameProgression' => true,
 		'transitions' => [
-			'transPlayerTurn' => ST_PLAYER_TURN,
+			'transPlayerStartOfTurn' => ST_PLAYER_START_OF_TURN,
 			'transPlayerDiscardResources' => ST_PLAYER_DISCARD_RESOURCES,
 		],
 	],
