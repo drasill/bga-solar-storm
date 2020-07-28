@@ -326,6 +326,9 @@ class SolarStorm extends Table {
 						$this->damageCards->pickCardsForLocation(3, 'deck', 'reorder');
 						$this->gamestate->nextState('transPlayerRoomBridge');
 						break;
+					case 'mess-hall':
+						$this->gamestate->nextState('transPlayerRoomMessHall');
+						break;
 					default:
 						throw new BgaVisibleSystemException("Room $roomSlug not implemented yet"); // NOI18N
 				}
@@ -506,65 +509,20 @@ class SolarStorm extends Table {
 		$this->gamestate->nextState('transPlayerEndTurn');
 	}
 
-	public function actionShareResource($cardId) {
-		self::checkAction('shareResource');
+	public function actionGiveResourceToAnotherPlayer(int $cardId, int $playerId) {
+		self::checkAction('giveResourceToAnotherPlayer');
+		$player = $this->ssPlayers->getActive();
 		$card = $this->resourceCards->getCard($cardId);
-		$player = $this->ssPlayers->getActive();
-		if ($card['location'] !== 'hand') {
-			throw new BgaVisibleSystemException('Card not in player hand'); // NOI18N
-		}
-
-		// Check the resource is either in the active player's hand, or in a
-		// players in the same room.
-		$cardPlayer = $this->ssPlayers->getPlayer((int) $card['location_arg']);
-		$shareAction = null;
-		if ($cardPlayer->getId() === $player->getId()) {
-			$shareAction = 'give';
-		} else {
-			$shareAction = 'take';
-			if ($cardPlayer->getPosition() !== $player->getPosition()) {
-				throw new BgaUserException(self::_('This player is not is the same room'));
-			}
-		}
-
-		if ($shareAction === 'take') {
-			$this->resourceCards->moveCard($card['id'], 'hand', $player->getId());
-			$player->incrementActions(-1);
-			$player->save();
-			$resourceName = $this->resourceTypes[$card['type']]['name'];
-			$this->notifyAllPlayers(
-				'playerShareResource',
-				clienttranslate('${player_name} takes a resource : ${resourceName} from ${from_player_name}'),
-				[
-					'card' => $card,
-					'resourceName' => $resourceName,
-					'shareAction' => 'take',
-					'from_player_name' => $cardPlayer->getName(),
-					'from_player_id' => $cardPlayer->getId(),
-				] + $player->getNotificationArgs()
-			);
-			$this->gamestate->nextState('transActionDone');
-			return;
-		}
-
-		// Want to give card
-		self::setGameStateValue('shareResourceToGive', $card['id']);
-		$this->gamestate->nextState('transPlayerShareChoosePlayer');
-		return;
-	}
-
-	public function actionGiveResource(int $playerId) {
-		self::checkAction('giveResource');
-		$card = $this->resourceCards->getCard((int) $this->getGameStateValue('shareResourceToGive'));
-		$player = $this->ssPlayers->getActive();
 		$toPlayer = $this->ssPlayers->getPlayer($playerId);
 		if ($card['location'] !== 'hand' || $card['location_arg'] != $player->getId()) {
 			throw new BgaVisibleSystemException('Card not in player hand'); // NOI18N
 		}
-		if ($toPlayer->getPosition() !== $player->getPosition()) {
-			throw new BgaUserException(self::_('This player is not is the same room'));
+		$stateName = $this->gamestate->state()['name'];
+		if ($stateName !== 'playerRoomMessHall') {
+			if ($toPlayer->getPosition() !== $player->getPosition()) {
+				throw new BgaUserException(self::_('This player is not is the same room'));
+			}
 		}
-
 		$this->resourceCards->moveCard($card['id'], 'hand', $toPlayer->getId());
 		$player->incrementActions(-1);
 		$player->save();
@@ -578,6 +536,84 @@ class SolarStorm extends Table {
 				'shareAction' => 'give',
 				'to_player_name' => $toPlayer->getName(),
 				'to_player_id' => $toPlayer->getId(),
+			] + $player->getNotificationArgs()
+		);
+		$this->gamestate->nextState('transActionDone');
+	}
+
+	public function actionPickResourceFromAnotherPlayer(int $cardId) {
+		self::checkAction('pickResourceFromAnotherPlayer');
+		$player = $this->ssPlayers->getActive();
+		$card = $this->resourceCards->getCard($cardId);
+		if ($card['location'] !== 'hand') {
+			throw new BgaVisibleSystemException('Card not in a player hand'); // NOI18N
+		}
+		$fromPlayer = $this->ssPlayers->getPlayer((int) $card['location_arg']);
+		if ($fromPlayer->getId() === $player->getId()) {
+			throw new BgaVisibleSystemException('Card cannot be in player hand'); // NOI18N
+		}
+		$stateName = $this->gamestate->state()['name'];
+		if ($stateName !== 'playerRoomMessHall') {
+			if ($fromPlayer->getPosition() !== $player->getPosition()) {
+				throw new BgaUserException(self::_('This player is not is the same room'));
+			}
+		}
+		$this->resourceCards->moveCard($card['id'], 'hand', $player->getId());
+		$player->incrementActions(-1);
+		$player->save();
+		$resourceName = $this->resourceTypes[$card['type']]['name'];
+		$this->notifyAllPlayers(
+			'playerShareResource',
+			clienttranslate('${player_name} takes a resource : ${resourceName} from ${from_player_name}'),
+			[
+				'card' => $card,
+				'resourceName' => $resourceName,
+				'shareAction' => 'take',
+				'from_player_name' => $fromPlayer->getName(),
+				'from_player_id' => $fromPlayer->getId(),
+			] + $player->getNotificationArgs()
+		);
+		$this->gamestate->nextState('transActionDone');
+	}
+
+	public function actionSwapResourceWithAnotherPlayer(int $cardId, int $card2Id) {
+		self::checkAction('swapResourceWithAnotherPlayer');
+		$player = $this->ssPlayers->getActive();
+		$card = $this->resourceCards->getCard($cardId);
+		$card2 = $this->resourceCards->getCard($card2Id);
+		if ($card['location'] !== 'hand' || $card2['location'] !== 'hand') {
+			throw new BgaVisibleSystemException('Card not in a player hand'); // NOI18N
+		}
+		$withPlayer = $this->ssPlayers->getPlayer((int) $card2['location_arg']);
+		if ($withPlayer->getId() === $player->getId()) {
+			throw new BgaVisibleSystemException('Card self swap'); // NOI18N
+		}
+		$this->resourceCards->moveCard($card['id'], 'hand', $withPlayer->getId());
+		$this->resourceCards->moveCard($card2['id'], 'hand', $player->getId());
+		$player->incrementActions(-1);
+		$player->save();
+		$resourceName = $this->resourceTypes[$card['type']]['name'];
+		$this->notifyAllPlayers(
+			'playerShareResource',
+			clienttranslate('${player_name} gives a resource : ${resourceName} to ${to_player_name}'),
+			[
+				'card' => $card,
+				'resourceName' => $resourceName,
+				'shareAction' => 'give',
+				'to_player_name' => $withPlayer->getName(),
+				'to_player_id' => $withPlayer->getId(),
+			] + $player->getNotificationArgs()
+		);
+		$resourceName = $this->resourceTypes[$card2['type']]['name'];
+		$this->notifyAllPlayers(
+			'playerShareResource',
+			clienttranslate('${player_name} takes a resource : ${resourceName} from ${from_player_name}'),
+			[
+				'card' => $card2,
+				'resourceName' => $resourceName,
+				'shareAction' => 'take',
+				'from_player_name' => $withPlayer->getName(),
+				'from_player_id' => $withPlayer->getId(),
 			] + $player->getNotificationArgs()
 		);
 		$this->gamestate->nextState('transActionDone');
@@ -712,18 +748,6 @@ class SolarStorm extends Table {
 	public function argPlayerPickResourcesCards() {
 		return [
 			'possibleSources' => $this->whereDoesPlayerCanPickResourceFrom(),
-		];
-	}
-
-	public function argPlayerShare() {
-		return [
-			'possiblePlayers' => $this->getPlayersIdsInTheSameRoom(false),
-		];
-	}
-
-	public function argPlayerShareChoosePlayer() {
-		return [
-			'possiblePlayers' => $this->getPlayersIdsInTheSameRoom(true),
 		];
 	}
 

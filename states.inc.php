@@ -22,11 +22,11 @@ if (!defined('ST_PLAYER_TURN')) {
 	define('ST_PLAYER_SCAVENGE', 4);
 	define('ST_PLAYER_SCAVENGE_PICK_CARDS', 5);
 	define('ST_PLAYER_SHARE', 6);
-	define('ST_PLAYER_SHARE_CHOOSE_PLAYER', 7);
-	define('ST_PLAYER_REPAIR', 8);
+	define('ST_PLAYER_REPAIR', 7);
 
 	define('ST_PLAYER_ROOM_CREW_QUARTER', 10);
 	define('ST_PLAYER_ROOM_CARGO_HOLD', 11);
+	define('ST_PLAYER_ROOM_MESS_HALL', 12);
 	define('ST_PLAYER_ROOM_BRIDGE', 16);
 
 	define('ST_PLAYER_ACTION_DONE', 20);
@@ -60,6 +60,7 @@ $machinestates = [
 			'transPlayerRepair' => ST_PLAYER_REPAIR,
 			'transPlayerRoomCrewQuarter' => ST_PLAYER_ROOM_CREW_QUARTER,
 			'transPlayerRoomCargoHold' => ST_PLAYER_ROOM_CARGO_HOLD,
+			'transPlayerRoomMessHall' => ST_PLAYER_ROOM_MESS_HALL,
 			'transPlayerRoomBridge' => ST_PLAYER_ROOM_BRIDGE,
 		],
 	],
@@ -105,26 +106,11 @@ $machinestates = [
 
 	ST_PLAYER_SHARE => [
 		'name' => 'playerShare',
-		'description' => clienttranslate('${actplayer} must select a card to share, or to take from another player'),
-		'descriptionmyturn' => clienttranslate('${you} must select a card to share, or to take from another player'),
+		'description' => clienttranslate('${actplayer} must share a resource'),
+		'descriptionmyturn' => clienttranslate('${you} must share a resource'),
 		'type' => 'activeplayer',
 		'action' => 'stActionShare',
-		'args' => 'argPlayerShare',
-		'possibleactions' => ['shareResource', 'cancel'],
-		'transitions' => [
-			'transPlayerShareChoosePlayer' => ST_PLAYER_SHARE_CHOOSE_PLAYER,
-			'transActionDone' => ST_PLAYER_ACTION_DONE,
-			'transActionCancel' => ST_PLAYER_TURN,
-		],
-	],
-
-	ST_PLAYER_SHARE_CHOOSE_PLAYER => [
-		'name' => 'playerShareChoosePlayer',
-		'description' => clienttranslate('${actplayer} must select a player to give a card to'),
-		'descriptionmyturn' => clienttranslate('${you} must select a player to give a card to'),
-		'type' => 'activeplayer',
-		'args' => 'argPlayerShareChoosePlayer',
-		'possibleactions' => ['giveResource', 'cancel'],
+		'possibleactions' => ['pickResourceFromAnotherPlayer', 'giveResourceToAnotherPlayer', 'cancel'],
 		'transitions' => [
 			'transActionDone' => ST_PLAYER_ACTION_DONE,
 			'transActionCancel' => ST_PLAYER_TURN,
@@ -165,6 +151,18 @@ $machinestates = [
 		'possibleactions' => ['putBackResourceCardInDeck'],
 		'transitions' => [
 			'transActionDone' => ST_PLAYER_ACTION_DONE,
+		],
+	],
+
+	ST_PLAYER_ROOM_MESS_HALL => [
+		'name' => 'playerRoomMessHall',
+		'description' => clienttranslate('Mess Hall: ${actplayer} must take, give or swap a card with another player'),
+		'descriptionmyturn' => clienttranslate('Mess Hall: ${you} must take, give or swap a card with another player'),
+		'type' => 'activeplayer',
+		'possibleactions' => ['pickResourceFromAnotherPlayer', 'giveResourceToAnotherPlayer', 'swapResourceWithAnotherPlayer', 'cancel'],
+		'transitions' => [
+			'transActionDone' => ST_PLAYER_ACTION_DONE,
+			'transActionCancel' => ST_PLAYER_TURN,
 		],
 	],
 

@@ -73,20 +73,6 @@ class action_solarstorm extends APP_GameAction {
 		self::ajaxResponse();
 	}
 
-	public function shareResource() {
-		self::setAjaxMode();
-		$cardId = (int) self::getArg('cardId', AT_posint, true);
-		$this->game->actionShareResource($cardId);
-		self::ajaxResponse();
-	}
-
-	public function giveResource() {
-		self::setAjaxMode();
-		$playerId = (int) self::getArg('playerId', AT_posint, true);
-		$this->game->actionGiveResource($playerId);
-		self::ajaxResponse();
-	}
-
 	public function selectResourceForRepair() {
 		self::setAjaxMode();
 		$cardId = (int) self::getArg('cardId', AT_posint, true);
@@ -113,6 +99,29 @@ class action_solarstorm extends APP_GameAction {
 		self::setAjaxMode();
 		$cardId = (int) self::getArg('cardId', AT_posint, true);
 		$this->game->actionPutBackDamageCardInDeck($cardId);
+		self::ajaxResponse();
+	}
+
+	public function pickResourceFromAnotherPlayer() {
+		self::setAjaxMode();
+		$cardId = (int) self::getArg('cardId', AT_posint, true);
+		$this->game->actionPickResourceFromAnotherPlayer($cardId);
+		self::ajaxResponse();
+	}
+
+	public function giveResourceToAnotherPlayer() {
+		self::setAjaxMode();
+		$cardId = (int) self::getArg('cardId', AT_posint, true);
+		$playerId = (int) self::getArg('playerId', AT_posint, true);
+		$this->game->actionGiveResourceToAnotherPlayer($cardId, $playerId);
+		self::ajaxResponse();
+	}
+
+	public function swapResourceWithAnotherPlayer() {
+		self::setAjaxMode();
+		$cardId = (int) self::getArg('cardId', AT_posint, true);
+		$card2Id = (int) self::getArg('card2Id', AT_posint, true);
+		$this->game->actionSwapResourceWithAnotherPlayer($cardId, $card2Id);
 		self::ajaxResponse();
 	}
 }
