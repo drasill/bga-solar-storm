@@ -73,10 +73,11 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 
       for (let card of Object.values(this.gamedatas.damageCardsDiscarded)) {
         this.damageDeck.addToStock(card.type);
-      }
+      } // TODO
+
 
       const reorderDamageDeckEl = $first('.ss-damage-reorder-deck');
-      this.reorderDamageDeck = this.createDamageStock(reorderDamageDeckEl, () => this.onReorderDamageDeckSelection());
+      this.reorderDamageDeck = this.createDamageStock(reorderDamageDeckEl);
     },
 
     initializeResourceDeck() {
@@ -138,6 +139,10 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 
         case 'playerMove':
           this.doPlayerActionMove(args.args.possibleDestinations);
+          break;
+
+        case 'playerScavengePickCards':
+          this.doPlayerPickResources(args.args.possibleSources);
           break;
 
         case 'playerDiscardResources':
@@ -257,7 +262,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 
     ///////////////////////////////////////////////////
     //// Utility methods
-    createResourceStock(el, onClick = null) {
+    createResourceStock(el) {
       const stock = new ebg.stock();
       stock.create(this, el, 87, 120);
       stock.setSelectionMode(1);
@@ -266,15 +271,10 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
       this.resourceTypes.forEach((type, index) => {
         stock.addItemType(type.id, index, g_gamethemeurl + 'img/resources.jpg', index);
       });
-
-      if (onClick !== null) {
-        dojo.connect(stock, 'onChangeSelection', onClick);
-      }
-
       return stock;
     },
 
-    createDamageStock(el, onClick = null) {
+    createDamageStock(el) {
       const stock = new ebg.stock();
       stock.create(this, el, 160, 117);
       stock.setSelectionMode(1);
@@ -283,10 +283,6 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 
       for (let i = 0; i < 24; i++) {
         stock.addItemType(i, 1, g_gamethemeurl + 'img/damages.jpg', i + 1);
-      }
-
-      if (onClick !== null) {
-        dojo.connect(stock, 'onChangeSelection', onClick);
       }
 
       return stock;
@@ -298,6 +294,18 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
       }
 
       el.classList[value ? 'add' : 'remove']('ss-highlight');
+    },
+
+    connectStockCardClick(stock, callback) {
+      return dojo.connect(stock, 'onChangeSelection', () => {
+        const cards = stock.getSelectedItems();
+        const card = cards[0];
+
+        if (card) {
+          stock.unselectAll();
+          callback(card);
+        }
+      });
     },
 
     waitForResourceFromDeck(options = {}) {
@@ -336,17 +344,9 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 
         if (options.table) {
           this.resourceDeck.setSelectionMode(1);
-          handles.push(dojo.connect(this.resourceDeck, 'onChangeSelection', () => {
-            const cards = this.resourceDeck.getSelectedItems();
-            const card = cards[0];
+          handles.push(this.connectStockCardClick(this.resourceDeck, card => {
             cleanAll();
-
-            if (!card) {
-              reject('NO CARD');
-            } else {
-              this.resourceDeck.unselectAll();
-              resolve(card);
-            }
+            resolve(card);
           }));
         }
 
@@ -388,20 +388,12 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
         }
 
         players.forEach(player => {
-          handles.push(dojo.connect(player.stock, 'onChangeSelection', () => {
-            const cards = player.stock.getSelectedItems();
-            const card = cards[0];
+          handles.push(this.connectStockCardClick(player.stock, card => {
             cleanAll();
-
-            if (!card) {
-              reject('NO CARD');
-            } else {
-              player.stock.unselectAll();
-              resolve({
-                card,
-                player
-              });
-            }
+            resolve({
+              card,
+              player
+            });
           }));
         });
       });
@@ -508,16 +500,8 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
         }
 
         this.reorderResourceDeck.setSelectionMode(1);
-        handles.push(dojo.connect(this.reorderResourceDeck, 'onChangeSelection', () => {
-          const cards = this.reorderResourceDeck.getSelectedItems();
-          const card = cards[0];
-          cleanAll();
-
-          if (!card) {
-            reject('NO CARD');
-          } else {
-            resolve(card);
-          }
+        handles.push(this.connectStockCardClick(this.reorderResourceDeck, card => {
+          resolve(card);
         }));
       });
     },
@@ -575,14 +559,9 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
           resolve(selectedCards);
         });
         this.reorderResourceDeck.setSelectionMode(1);
-        handles.push(dojo.connect(this.reorderResourceDeck, 'onChangeSelection', () => {
-          const cards = this.reorderResourceDeck.getSelectedItems();
-          const card = cards[0];
-
-          if (card) {
-            selectedCards.push(card);
-            this.reorderResourceDeck.removeFromStockById(card.id);
-          }
+        handles.push(this.connectStockCardClick(this.reorderResourceDeck, card => {
+          selectedCards.push(card);
+          this.reorderResourceDeck.removeFromStockById(card.id);
         }));
       });
     },
@@ -1168,7 +1147,7 @@ class SSPlayer {
       class: 'ss-player-hand',
       id: `ss-player-hand--${this.id}`
     }, this.boardEl);
-    this.stock = this.gameObject.createResourceStock(handEl, null);
+    this.stock = this.gameObject.createResourceStock(handEl);
     this.stock.setOverlap(30, 5);
     this.gameObject.resourceTypes.forEach((type, index) => {
       this.stock.addItemType(type.id, index, g_gamethemeurl + 'img/resources.jpg', index);
