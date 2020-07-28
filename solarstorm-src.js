@@ -27,7 +27,6 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			this.rooms = new SSRooms()
 			this.players = new SSPlayers(this)
 			this.resourceTypes = []
-			this.playAreaEl = null
 			this.damageDeck = null
 			this.resourceDeck = null
 			this.reorderResourceDeck = null
@@ -49,10 +48,6 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				const room = new SSRoom(this, roomData)
 				this.rooms.addRoom(room)
 			})
-
-			this.playAreaEl = $first('.ss-play-area')
-			// Global area on click
-			this.playAreaEl.addEventListener('click', this.onPlayAreaClick.bind(this))
 		},
 
 		initializePlayersArea() {
@@ -84,23 +79,13 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 
 		initializeResourceDeck() {
 			const resourceDeckEl = $first('.ss-resource-deck__table')
-			this.resourceDeck = this.createResourceStock(resourceDeckEl, () => this.onResourceDeckSelection())
+			this.resourceDeck = this.createResourceStock(resourceDeckEl)
 			for (let card of Object.values(this.gamedatas.resourceCardsOnTable)) {
 				this.resourceDeck.addToStockWithId(card.type, card.id)
 			}
 
 			const reorderResourceDeckEl = $first('.ss-resource-reorder-deck')
 			this.reorderResourceDeck = this.createResourceStock(reorderResourceDeckEl)
-		},
-
-		highlightResourceDeck(which = []) {
-			const sources = ['deck', 'table']
-			sources.forEach(source => {
-				const valid = which.includes(source)
-				$first(`.ss-resource-deck__${source}`).classList[valid ? 'add' : 'remove'](
-					'ss-resource-deck__source--highlight'
-				)
-			})
 		},
 
 		onScreenWidthChange() {
@@ -152,10 +137,6 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				case 'playerMove':
 					this.doPlayerActionMove(args.args.possibleDestinations)
 					break
-				case 'playerScavengePickCards':
-				case 'pickResources':
-					this.highlightResourceDeck(args.args.possibleSources)
-					break
 				case 'playerDiscardResources':
 					this.doPlayerActionDiscardResource()
 					break
@@ -174,6 +155,9 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				case 'playerRoomEngineRoom':
 					this.doPlayerRoomEngineRoom(args.args.resourceCards)
 					break
+				case 'pickResources':
+					this.doPlayerPickResources(args.args.possibleSources)
+					break
 			}
 		},
 
@@ -181,10 +165,6 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			console.log('Leaving state: ' + stateName)
 
 			switch (stateName) {
-				case 'playerScavengePickCards':
-				case 'pickResources':
-					this.highlightResourceDeck([])
-					break
 				case 'playerRoomCargoHold':
 					this.hideResourceCardsToPutInDeck()
 					break
@@ -292,7 +272,74 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			return stock
 		},
 
-		waitForResourceCardClick(players, options = {}) {
+		highlightEl(el, value) {
+			if (typeof el === 'string') {
+				el = $first(el)
+			}
+			el.classList[value ? 'add' : 'remove']('ss-highlight')
+		},
+
+		waitForResourceFromDeck(options = {}) {
+			// Default options
+			options = Object.assign({ table: true, deck: true, cancel: false }, options)
+
+			return new Promise((resolve, reject) => {
+				const handles = []
+				const types = ['table', 'deck']
+
+				const cleanAll = () => {
+					// De-Highlight
+					types.forEach(type => {
+						this.highlightEl(`.ss-resource-deck__${type}`, false)
+					})
+					handles.forEach(handle => dojo.disconnect(handle))
+					this.resourceDeck.setSelectionMode(0)
+					this.removeActionCancelButton()
+				}
+				// Highlight
+				types.forEach(type => {
+					this.highlightEl(`.ss-resource-deck__${type}`, options[type])
+				})
+
+				if (options.cancel) {
+					this.showActionCancelButton(() => {
+						cleanAll()
+						reject('CANCEL BTN')
+					})
+				}
+
+				// Wait for click
+				if (options.table) {
+					this.resourceDeck.setSelectionMode(1)
+					handles.push(
+						dojo.connect(this.resourceDeck, 'onChangeSelection', () => {
+							const cards = this.resourceDeck.getSelectedItems()
+							const card = cards[0]
+							cleanAll()
+							if (!card) {
+								reject('NO CARD')
+							} else {
+								this.resourceDeck.unselectAll()
+								resolve(card)
+							}
+						})
+					)
+				}
+				if (options.deck) {
+					handles.push(
+						dojo.connect($first('.ss-resource-deck__source'), 'onclick', () => {
+							cleanAll()
+							resolve({ id: 9999 })
+						})
+					)
+				}
+			})
+		},
+
+		waitForPlayerResource(players, options = {}) {
+			// Default options
+			options = Object.assign({  cancel: false }, options)
+
 			const ids = players.map(p => p.id)
 			this.players.highlightHands(ids)
 
@@ -332,6 +379,9 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 		},
 
 		waitForRoomClick(rooms, options = {}) {
+			// Default options
+			options = Object.assign({  cancel: false }, options)
+
 			const positions = rooms.map(r => r.position)
 			this.rooms.highlightPositions(positions)
 
@@ -365,6 +415,9 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 		},
 
 		waitForPlayerMeepleClick(players, options = {}) {
+			// Default options
+			options = Object.assign({  cancel: false }, options)
+
 			const ids = players.map(p => p.id)
 			this.players.highlightMeeples(ids)
 
@@ -395,6 +448,9 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 		},
 
 		waitForResourceCardFromDialog(cards, options = {}) {
+			// Default options
+			options = Object.assign({  cancel: false, title: '' }, options)
+
 			return new Promise((resolve, reject) => {
 				const handles = []
 				const dialogEl = $first('.ss-resource-reorder-dialog')
@@ -414,7 +470,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				this.reorderResourceDeck.unselectAll()
 				this.reorderResourceDeck.removeAll()
 
-				$first('.ss-resource-reorder-dialog__title').innerHTML = options.title || ''
+				$first('.ss-resource-reorder-dialog__title').innerHTML = options.title
 				dialogEl.classList.add('ss-resource-reorder-dialog--visible')
 				for (let card of Object.values(cards)) {
 					this.reorderResourceDeck.addToStockWithId(card.type, card.id)
@@ -437,13 +493,13 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 		},
 
 		waitForResourceCardOrderFromDialog(cards, options = {}) {
+			// Default options
+			options = Object.assign({  cancel: false, count: cards.length, title: '' }, options)
+
 			return new Promise((resolve, reject) => {
 				let selectedCards = []
 				const handles = []
 				const dialogEl = $first('.ss-resource-reorder-dialog')
-				if (!options.count) {
-					options.count = cards.length
-				}
 				const cleanAll = () => {
 					handles.forEach(handle => dojo.disconnect(handle))
 					dialogEl.classList.remove('ss-resource-reorder-dialog--visible')
@@ -462,7 +518,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				this.reorderResourceDeck.unselectAll()
 				this.reorderResourceDeck.removeAll()
 
-				$first('.ss-resource-reorder-dialog__title').innerHTML = options.title || ''
+				$first('.ss-resource-reorder-dialog__title').innerHTML = options.title
 				dialogEl.classList.add('ss-resource-reorder-dialog--visible')
 				for (let card of Object.values(cards)) {
 					this.reorderResourceDeck.addToStockWithId(card.type, card.id)
@@ -525,33 +581,6 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			this.ajaxAction('choose', { lock: true, actionName: action })
 		},
 
-		onPlayAreaClick(evt) {
-			const el = evt.target
-
-			// Clicked on resourceDeck
-			if (el.classList.contains('ss-resource-deck__deck')) {
-				dojo.stopEvent(evt)
-				this.onResourceDeckClick()
-				return
-			}
-		},
-
-		// Clicked on resource deck (hidden)
-		onResourceDeckClick() {
-			this.resourceDeck.unselectAll()
-			this.ajaxAction('pickResource', { lock: true, cardId: 9999 })
-		},
-
-		// Clicked on resource deck (visible)
-		onResourceDeckSelection() {
-			var card = this.resourceDeck.getSelectedItems()[0]
-			if (!card) {
-				return
-			}
-			this.resourceDeck.unselectAll()
-			this.ajaxAction('pickResource', { lock: true, cardId: card.id })
-		},
-
 		onReorderResourceDeckSelection() {
 			var card = this.reorderResourceDeck.getSelectedItems()[0]
 			if (!card) {
@@ -587,7 +616,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 		},
 
 		async doPlayerActionDiscardResource() {
-			const card = (await this.waitForResourceCardClick([this.players.getActive()])).card
+			const card = (await this.waitForPlayerResource([this.players.getActive()])).card
 			this.ajaxAction('discardResource', { lock: true, cardId: card.id })
 		},
 
@@ -597,14 +626,14 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			this.removeActionButtons()
 			try {
 				const activePlayer = this.players.getActive()
-				const card = (await this.waitForResourceCardClick([activePlayer], { cancel: true })).card
+				const card = (await this.waitForPlayerResource([activePlayer], { cancel: true })).card
 				this.gamedatas.gamestate.descriptionmyturn = _('You mush choose a player to give the card to')
 				this.updatePageTitle()
 				this.removeActionButtons()
 				const targetPlayers = this.players
 					.getInactive()
 					.filter(p => !sameRoomOnly || p.position === activePlayer.position)
-				const player = (await this.waitForResourceCardClick(targetPlayers, { cancel: true })).player
+				const player = (await this.waitForPlayerResource(targetPlayers, { cancel: true })).player
 				await this.ajaxAction('giveResourceToAnotherPlayer', {
 					lock: true,
 					cardId: card.id,
@@ -624,7 +653,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				const targetPlayers = this.players
 					.getInactive()
 					.filter(p => !sameRoomOnly || p.position === activePlayer.position)
-				const card = (await this.waitForResourceCardClick(targetPlayers, { cancel: true })).card
+				const card = (await this.waitForPlayerResource(targetPlayers, { cancel: true })).card
 				await this.ajaxAction('pickResourceFromAnotherPlayer', {
 					lock: true,
 					cardId: card.id
@@ -639,11 +668,11 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			this.updatePageTitle()
 			this.removeActionButtons()
 			try {
-				const card1 = (await this.waitForResourceCardClick([this.players.getActive()], { cancel: true })).card
+				const card1 = (await this.waitForPlayerResource([this.players.getActive()], { cancel: true })).card
 				this.gamedatas.gamestate.descriptionmyturn = _('Swap cards : You mush choose a card to exchange')
 				this.updatePageTitle()
 				this.removeActionButtons()
-				const card2 = (await this.waitForResourceCardClick(this.players.getInactive(), { cancel: true })).card
+				const card2 = (await this.waitForPlayerResource(this.players.getInactive(), { cancel: true })).card
 				await this.ajaxAction('swapResourceWithAnotherPlayer', {
 					lock: true,
 					cardId: card1.id,
@@ -656,7 +685,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 
 		async doPlayerActionRepair() {
 			try {
-				const card = (await this.waitForResourceCardClick([this.players.getActive()], { cancel: true })).card
+				const card = (await this.waitForPlayerResource([this.players.getActive()], { cancel: true })).card
 				await this.ajaxAction('selectResourceForRepair', {
 					lock: true,
 					cardId: card.id
@@ -703,7 +732,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 					title: _('Select a card from the discard, to be swap with one from your hand'),
 					cancel: true
 				})
-				const card2 = (await this.waitForResourceCardClick([this.players.getActive()], { cancel: true })).card
+				const card2 = (await this.waitForPlayerResource([this.players.getActive()], { cancel: true })).card
 				this.ajaxAction('swapResourceFromDiscard', {
 					lock: true,
 					cardId: card.id,
@@ -712,6 +741,15 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			} catch (e) {
 				this.ajaxAction('cancel', { lock: true })
 			}
+		},
+
+		async doPlayerPickResources(possibleSources) {
+			const card = await this.waitForResourceFromDeck({
+				cancel: false,
+				deck: possibleSources.includes('deck'),
+				table: possibleSources.includes('table')
+			})
+			this.ajaxAction('pickResource', { lock: true, cardId: card.id })
 		},
 
 		///////////////////////////////////////////////////
@@ -907,7 +945,7 @@ class SSRoom {
 	}
 
 	highlight(value) {
-		this.el.classList[value ? 'add' : 'remove']('ss-room-highlight')
+		this.gameObject.highlightEl(this.el, value)
 	}
 }
 
@@ -1085,10 +1123,10 @@ class SSPlayer {
 	}
 
 	highlightHand(value) {
-		this.boardEl.classList[value ? 'add' : 'remove']('ss-player-board--highlight')
+		this.gameObject.highlightEl(this.boardEl, value)
 	}
 
 	highlightMeeple(value) {
-		this.meepleEl.classList[value ? 'add' : 'remove']('ss-player-meeple--highlight')
+		this.gameObject.highlightEl(this.meepleEl, value)
 	}
 }

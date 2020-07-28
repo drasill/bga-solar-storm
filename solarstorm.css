@@ -57,7 +57,7 @@
 	box-shadow: rgba(0, 0, 0, 0.7) 3px 3px 5px;
 }
 
-.ss-room-highlight {
+.ss-room.ss-highlight {
 	border: 2px solid blue;
 	cursor: pointer;
 	box-shadow: rgba(0, 0, 255, 0.7) 4px 4px 6px;
@@ -229,7 +229,7 @@
 	flex-grow: 1;
 }
 
-.ss-resource-deck__source--highlight {
+.ss-resource-deck__source.ss-highlight {
 	border: 2px solid blue;
 	box-shadow: rgba(0, 0, 255, 0.7) 4px 4px 6px;
 }
@@ -237,7 +237,7 @@
 .ss-player-board {
 }
 
-.ss-player-board--highlight {
+.ss-player-board.ss-highlight {
 	border: 2px solid blue;
 	box-shadow: rgba(0, 0, 255, 0.7) 4px 4px 6px;
 }
@@ -268,13 +268,13 @@
 		drop-shadow(-1px 1px 1px rgba(191, 191, 191, 0.7)) drop-shadow(1px -1px 1px rgba(191, 191, 191, 0.7));
 }
 
-.ss-player-meeple--highlight {
+.ss-player-meeple.ss-highlight {
 	cursor: pointer;
 	filter: drop-shadow(1px 1px 1px rgba(0, 0, 255, 0.7)) drop-shadow(-1px -1px 1px rgba(0, 0, 255, 0.7))
 		drop-shadow(-1px 1px 1px rgba(0, 0, 255, 0.7)) drop-shadow(1px -1px 1px rgba(0, 0, 255, 0.7));
 }
 
-.ss-player-meeple--highlight:hover {
+.ss-player-meeple.ss-highlight:hover {
 	cursor: pointer;
 	filter: drop-shadow(1px 1px 1px rgba(127, 127, 255, 0.7)) drop-shadow(-1px -1px 1px rgba(127, 127, 255, 0.7))
 		drop-shadow(-1px 1px 1px rgba(127, 127, 255, 0.7)) drop-shadow(1px -1px 1px rgba(127, 127, 255, 0.7));
