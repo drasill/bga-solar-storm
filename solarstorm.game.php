@@ -638,7 +638,9 @@ class SolarStorm extends Table {
 		$resourceName2 = $this->resourceTypes[$card2['type']]['name'];
 		$this->notifyAllPlayers(
 			'playerPickResource',
-			clienttranslate('${player_name} swap a resource : ${resourceName2} from their hand with a ${resourceName} from the discard pile'),
+			clienttranslate(
+				'${player_name} swap a resource : ${resourceName2} from their hand with a ${resourceName} from the discard pile'
+			),
 			[
 				'card' => $card,
 				'resourceName' => $resourceName,
@@ -656,7 +658,7 @@ class SolarStorm extends Table {
 		$this->gamestate->nextState('transActionDone');
 	}
 
-	public function actionSelectResourceForRepair($cardId) {
+	public function actionSelectResourceForRepair(int $cardId, ?string $typeId = null) {
 		self::checkAction('selectResourceForRepair');
 		$card = $this->resourceCards->getCard($cardId);
 		$player = $this->ssPlayers->getActive();
@@ -665,7 +667,11 @@ class SolarStorm extends Table {
 		}
 
 		$room = $this->rooms->getRoomByPosition($player->getPosition());
-		$room->repairWithResource($card['type']);
+		$cardType = $card['type'];
+		if ($cardType === 'universal') {
+			$cardType = $typeId;
+		}
+		$room->repairWithResource($cardType);
 		$room->save();
 
 		$this->resourceCards->moveCard($card['id'], 'discard');

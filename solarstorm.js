@@ -566,6 +566,33 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
       });
     },
 
+    waitForResourceType(options = {}) {
+      // Default options
+      options = Object.assign({
+        cancel: false
+      }, options);
+
+      const cleanAll = () => {
+        this.removeActionButtons();
+      };
+
+      return new Promise((resolve, reject) => {
+        this.resourceTypes.filter(r => r.id !== 'universal').forEach(resourceType => {
+          this.addActionButton(`buttonResourceType__${resourceType.id}`, resourceType.name, () => {
+            cleanAll();
+            resolve(resourceType);
+          });
+        });
+
+        if (options.cancel) {
+          this.showActionCancelButton(() => {
+            cleanAll();
+            reject('CANCEL BTN');
+          });
+        }
+      });
+    },
+
     ///////////////////////////////////////////////////
     //// Player's action
     ajaxAction(action, args, check = true) {
@@ -728,11 +755,21 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
         const card = (await this.waitForPlayerResource([this.players.getActive()], {
           cancel: true
         })).card;
+        let resourceTypeId = null;
+
+        if (card.type === 'universal') {
+          resourceTypeId = (await this.waitForResourceType({
+            cancel: true
+          })).id;
+        }
+
         await this.ajaxAction('selectResourceForRepair', {
           lock: true,
-          cardId: card.id
+          cardId: card.id,
+          resourceType: resourceTypeId
         });
       } catch (e) {
+        console.error(e);
         this.ajaxAction('cancel', {
           lock: true
         });

@@ -76,7 +76,8 @@ class action_solarstorm extends APP_GameAction {
 	public function selectResourceForRepair() {
 		self::setAjaxMode();
 		$cardId = (int) self::getArg('cardId', AT_posint, true);
-		$this->game->actionSelectResourceForRepair($cardId);
+		$typeId = self::getArg('resourceType', AT_enum, false, null, ['energy', 'nanobots', 'metal', 'data']);
+		$this->game->actionSelectResourceForRepair($cardId, $typeId);
 		self::ajaxResponse();
 	}
 
