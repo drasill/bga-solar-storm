@@ -90,9 +90,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			}
 
 			const reorderResourceDeckEl = $first('.ss-resource-reorder-deck')
-			this.reorderResourceDeck = this.createResourceStock(reorderResourceDeckEl, () =>
-				this.onReorderResourceDeckSelection()
-			)
+			this.reorderResourceDeck = this.createResourceStock(reorderResourceDeckEl)
 		},
 
 		highlightResourceDeck(which = []) {
@@ -168,10 +166,13 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 					this.doPlayerRoomCrewQuarter()
 					break
 				case 'playerRoomCargoHold':
-					this.showResourceCardsToPutInDeck(args.args._private.resourceCards)
+					this.doPlayerRoomCargoHold(Object.values(args.args._private.resourceCards))
 					break
 				case 'playerRoomBridge':
 					this.showDamageCardsToPutInDeck(args.args._private.damageCards)
+					break
+				case 'playerRoomEngineRoom':
+					this.doPlayerRoomEngineRoom(args.args.resourceCards)
 					break
 			}
 		},
@@ -298,6 +299,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			return new Promise((resolve, reject) => {
 				const handles = []
 				const cleanAll = () => {
+					this.players.highlightHands(null)
 					handles.forEach(handle => dojo.disconnect(handle))
 					if (options.cancel) {
 						this.removeActionCancelButton()
@@ -308,7 +310,6 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 					this.showActionCancelButton(() => {
 						cleanAll()
 						reject('CANCEL BTN')
-						this.players.highlightHands(null)
 					})
 				}
 
@@ -317,11 +318,10 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 						dojo.connect(player.stock, 'onChangeSelection', () => {
 							const cards = player.stock.getSelectedItems()
 							const card = cards[0]
+							cleanAll()
 							if (!card) {
 								reject('NO CARD')
 							} else {
-								cleanAll()
-								this.players.highlightHands(null)
 								player.stock.unselectAll()
 								resolve({ card, player })
 							}
@@ -373,25 +373,127 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				const cleanAll = () => {
 					handles.forEach(handle => dojo.disconnect(handle))
 					this.removeActionCancelButton()
+					this.players.highlightMeeples(null)
 				}
 
 				if (options.cancel) {
 					this.showActionCancelButton(() => {
 						cleanAll()
 						reject('CANCEL BTN')
-						this.players.highlightMeeples(null)
 					})
 				}
 
 				players.forEach(player => {
 					handles.push(
 						dojo.connect(player.meepleEl, 'onclick', () => {
-							this.players.highlightMeeples(null)
 							cleanAll()
 							resolve(player)
 						})
 					)
 				})
+			})
+		},
+
+		waitForResourceCardFromDialog(cards, options = {}) {
+			return new Promise((resolve, reject) => {
+				const handles = []
+				const dialogEl = $first('.ss-resource-reorder-dialog')
+				const cleanAll = () => {
+					handles.forEach(handle => dojo.disconnect(handle))
+					dialogEl.classList.remove('ss-resource-reorder-dialog--visible')
+					this.removeActionCancelButton()
+				}
+
+				if (options.cancel) {
+					this.showActionCancelButton(() => {
+						cleanAll()
+						reject('CANCEL BTN')
+					})
+				}
+
+				this.reorderResourceDeck.unselectAll()
+				this.reorderResourceDeck.removeAll()
+
+				$first('.ss-resource-reorder-dialog__title').innerHTML = options.title || ''
+				dialogEl.classList.add('ss-resource-reorder-dialog--visible')
+				for (let card of Object.values(cards)) {
+					this.reorderResourceDeck.addToStockWithId(card.type, card.id)
+				}
+
+				this.reorderResourceDeck.setSelectionMode(1)
+				handles.push(
+					dojo.connect(this.reorderResourceDeck, 'onChangeSelection', () => {
+						const cards = this.reorderResourceDeck.getSelectedItems()
+						const card = cards[0]
+						cleanAll()
+						if (!card) {
+							reject('NO CARD')
+						} else {
+							resolve(card)
+						}
+					})
+				)
+			})
+		},
+
+		waitForResourceCardOrderFromDialog(cards, options = {}) {
+			return new Promise((resolve, reject) => {
+				let selectedCards = []
+				const handles = []
+				const dialogEl = $first('.ss-resource-reorder-dialog')
+				if (!options.count) {
+					options.count = cards.length
+				}
+				const cleanAll = () => {
+					handles.forEach(handle => dojo.disconnect(handle))
+					dialogEl.classList.remove('ss-resource-reorder-dialog--visible')
+					this.removeActionCancelButton()
+					$('buttonAccept').remove()
+					$('buttonReset').remove()
+				}
+
+				if (options.cancel) {
+					this.showActionCancelButton(() => {
+						cleanAll()
+						reject('CANCEL BTN')
+					})
+				}
+
+				this.reorderResourceDeck.unselectAll()
+				this.reorderResourceDeck.removeAll()
+
+				$first('.ss-resource-reorder-dialog__title').innerHTML = options.title || ''
+				dialogEl.classList.add('ss-resource-reorder-dialog--visible')
+				for (let card of Object.values(cards)) {
+					this.reorderResourceDeck.addToStockWithId(card.type, card.id)
+				}
+
+				this.reorderResourceDeck.setSelectionMode(2)
+				this.addActionButton('buttonReset', _('Restart selection'), () => {
+					selectedCards.forEach(card => {
+						this.reorderResourceDeck.addToStockWithId(card.type, card.id)
+					})
+					selectedCards = []
+				})
+				this.addActionButton('buttonAccept', _('Accept'), () => {
+					if (selectedCards.length !== options.count) {
+						gameui.showMessage(_(`You must select ${options.count} cards`), 'error')
+						return
+					}
+					cleanAll()
+					resolve(selectedCards)
+				})
+				this.reorderResourceDeck.setSelectionMode(1)
+				handles.push(
+					dojo.connect(this.reorderResourceDeck, 'onChangeSelection', () => {
+						const cards = this.reorderResourceDeck.getSelectedItems()
+						const card = cards[0]
+						if (card) {
+							selectedCards.push(card)
+							this.reorderResourceDeck.removeFromStockById(card.id)
+						}
+					})
+				)
 			})
 		},
 
@@ -564,6 +666,17 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			}
 		},
 
+		async doPlayerRoomCargoHold(cards) {
+			const selectedCards = await this.waitForResourceCardOrderFromDialog(cards, {
+				title: _('Select a card from the discard, to be swap with one from your hand'),
+				cancel: false
+			})
+			this.ajaxAction('putBackResourceCardsInDeck', {
+				lock: true,
+				cardIds: selectedCards.map(c => c.id).join(',')
+			})
+		},
+
 		async doPlayerRoomCrewQuarter() {
 			try {
 				const player = await this.waitForPlayerMeepleClick(this.players.players, { cancel: true })
@@ -577,6 +690,24 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 					lock: true,
 					playerId: player.id,
 					position: room.position
+				})
+			} catch (e) {
+				this.ajaxAction('cancel', { lock: true })
+			}
+		},
+
+		// TODO check server side discard/hand are not empty
+		async doPlayerRoomEngineRoom(cards) {
+			try {
+				const card = await this.waitForResourceCardFromDialog(cards, {
+					title: _('Select a card from the discard, to be swap with one from your hand'),
+					cancel: true
+				})
+				const card2 = (await this.waitForResourceCardClick([this.players.getActive()], { cancel: true })).card
+				this.ajaxAction('swapResourceFromDiscard', {
+					lock: true,
+					cardId: card.id,
+					card2Id: card2.id
 				})
 			} catch (e) {
 				this.ajaxAction('cancel', { lock: true })

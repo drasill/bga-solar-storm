@@ -326,6 +326,9 @@ class SolarStorm extends Table {
 					case 'mess-hall':
 						$this->gamestate->nextState('transPlayerRoomMessHall');
 						break;
+					case 'engine-room':
+						$this->gamestate->nextState('transPlayerRoomEngineRoom');
+						break;
 					default:
 						throw new BgaVisibleSystemException("Room $roomSlug not implemented yet"); // NOI18N
 				}
@@ -616,6 +619,43 @@ class SolarStorm extends Table {
 		$this->gamestate->nextState('transActionDone');
 	}
 
+	public function actionSwapResourceFromDiscard(int $cardId, int $card2Id) {
+		self::checkAction('swapResourceFromDiscard');
+		$player = $this->ssPlayers->getActive();
+		$card = $this->resourceCards->getCard($cardId);
+		$card2 = $this->resourceCards->getCard($card2Id);
+		if ($card['location'] !== 'discard') {
+			throw new BgaVisibleSystemException('Card not in a discard'); // NOI18N
+		}
+		if ($card2['location'] !== 'hand' && $card2['location_arg'] != $player->getId()) {
+			throw new BgaVisibleSystemException('Card not in your hand'); // NOI18N
+		}
+		$this->resourceCards->moveCard($card['id'], 'hand', $player->getId());
+		$this->resourceCards->moveCard($card2['id'], 'discard');
+		$player->incrementActions(-1);
+		$player->save();
+		$resourceName = $this->resourceTypes[$card['type']]['name'];
+		$resourceName2 = $this->resourceTypes[$card2['type']]['name'];
+		$this->notifyAllPlayers(
+			'playerPickResource',
+			clienttranslate('${player_name} swap a resource : ${resourceName2} from their hand with a ${resourceName} from the discard pile'),
+			[
+				'card' => $card,
+				'resourceName' => $resourceName,
+				'resourceName2' => $resourceName2,
+			] + $player->getNotificationArgs()
+		);
+		$this->notifyAllPlayers(
+			'playerDiscardResource',
+			'',
+			[
+				'card' => $card2,
+				'resourceName' => $resourceName,
+			] + $player->getNotificationArgs()
+		);
+		$this->gamestate->nextState('transActionDone');
+	}
+
 	public function actionSelectResourceForRepair($cardId) {
 		self::checkAction('selectResourceForRepair');
 		$card = $this->resourceCards->getCard($cardId);
@@ -680,22 +720,28 @@ class SolarStorm extends Table {
 		$this->gamestate->nextState('transActionDone');
 	}
 
-	public function actionPutBackResourceCardInDeck($cardId) {
-		self::checkAction('putBackResourceCardInDeck');
+	public function actionPutBackResourceCardsInDeck(array $cardIds) {
+		self::checkAction('putBackResourceCardsInDeck');
 		$player = $this->ssPlayers->getActive();
-		$card = $this->resourceCards->getCard($cardId);
-		if ($card['location'] !== 'reorder') {
-			throw new BgaVisibleSystemException('Card not in reorder deck'); // NOI18N
+		$cardIds = array_reverse($cardIds);
+		foreach ($cardIds as $cardId) {
+			$card = $this->resourceCards->getCard($cardId);
+			if ($card['location'] !== 'reorder') {
+				throw new BgaVisibleSystemException('Card not in reorder deck'); // NOI18N
+			}
+			$this->resourceCards->insertCardOnExtremePosition($card['id'], 'deck', true);
 		}
-		$this->resourceCards->moveCard($card['id'], 'deck');
-		$this->resourceCards->insertCardOnExtremePosition($card['id'], 'deck', true);
-		self::notifyPlayer($player->getId(), 'putBackResourceCardInDeck', '', [
-			'card' => $card,
-		]);
-		$num = $this->resourceCards->countCardInLocation('reorder');
-		if ($num <= 0) {
-			$this->gamestate->nextState('transActionDone');
+		if ($this->resourceCards->countCardInLocation('reorder') != 0) {
+			throw new BgaVisibleSystemException('Reorder deck not empty'); // NOI18N
 		}
+		$this->notifyAllPlayers(
+			'message',
+			clienttranslate('${player_name} has reordered ${num_resources} resources on the top of the deck'),
+			[
+				'num_resources' => count($cardIds),
+			] + $player->getNotificationArgs()
+		);
+		$this->gamestate->nextState('transActionDone');
 	}
 
 	public function actionPutBackDamageCardInDeck($cardId) {
@@ -767,6 +813,13 @@ class SolarStorm extends Table {
 					'damageCards' => $nextCards,
 				],
 			],
+		];
+	}
+
+	public function argPlayerRoomEngineRoom() {
+		$discardedCards = $this->resourceCards->getCardsInLocation('discard');
+		return [
+			'resourceCards' => $discardedCards,
 		];
 	}
 

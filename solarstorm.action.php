@@ -88,10 +88,11 @@ class action_solarstorm extends APP_GameAction {
 		self::ajaxResponse();
 	}
 
-	public function putBackResourceCardInDeck() {
+	public function putBackResourceCardsInDeck() {
 		self::setAjaxMode();
-		$cardId = (int) self::getArg('cardId', AT_posint, true);
-		$this->game->actionPutBackResourceCardInDeck($cardId);
+		$cardIds = self::getArg('cardIds', AT_numberlist, true);
+		$cardIds = preg_split('/\D/', $cardIds, -1, PREG_SPLIT_NO_EMPTY);
+		$this->game->actionPutBackResourceCardsInDeck($cardIds);
 		self::ajaxResponse();
 	}
 
@@ -122,6 +123,14 @@ class action_solarstorm extends APP_GameAction {
 		$cardId = (int) self::getArg('cardId', AT_posint, true);
 		$card2Id = (int) self::getArg('card2Id', AT_posint, true);
 		$this->game->actionSwapResourceWithAnotherPlayer($cardId, $card2Id);
+		self::ajaxResponse();
+	}
+
+	public function swapResourceFromDiscard() {
+		self::setAjaxMode();
+		$cardId = (int) self::getArg('cardId', AT_posint, true);
+		$card2Id = (int) self::getArg('card2Id', AT_posint, true);
+		$this->game->actionSwapResourceFromDiscard($cardId, $card2Id);
 		self::ajaxResponse();
 	}
 }

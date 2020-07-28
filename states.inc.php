@@ -27,6 +27,7 @@ if (!defined('ST_PLAYER_TURN')) {
 	define('ST_PLAYER_ROOM_CREW_QUARTER', 10);
 	define('ST_PLAYER_ROOM_CARGO_HOLD', 11);
 	define('ST_PLAYER_ROOM_MESS_HALL', 12);
+	define('ST_PLAYER_ROOM_ENGINE_ROOM', 13);
 	define('ST_PLAYER_ROOM_BRIDGE', 16);
 
 	define('ST_PLAYER_ACTION_DONE', 20);
@@ -61,6 +62,7 @@ $machinestates = [
 			'transPlayerRoomCrewQuarter' => ST_PLAYER_ROOM_CREW_QUARTER,
 			'transPlayerRoomCargoHold' => ST_PLAYER_ROOM_CARGO_HOLD,
 			'transPlayerRoomMessHall' => ST_PLAYER_ROOM_MESS_HALL,
+			'transPlayerRoomEngineRoom' => ST_PLAYER_ROOM_ENGINE_ROOM,
 			'transPlayerRoomBridge' => ST_PLAYER_ROOM_BRIDGE,
 		],
 	],
@@ -148,7 +150,7 @@ $machinestates = [
 		'type' => 'activeplayer',
 		'action' => 'stPlayerRoomCargoHold',
 		'args' => 'argPlayerRoomCargoHold',
-		'possibleactions' => ['putBackResourceCardInDeck'],
+		'possibleactions' => ['putBackResourceCardsInDeck'],
 		'transitions' => [
 			'transActionDone' => ST_PLAYER_ACTION_DONE,
 		],
@@ -160,6 +162,19 @@ $machinestates = [
 		'descriptionmyturn' => clienttranslate('Mess Hall: ${you} must take, give or swap a card with another player'),
 		'type' => 'activeplayer',
 		'possibleactions' => ['pickResourceFromAnotherPlayer', 'giveResourceToAnotherPlayer', 'swapResourceWithAnotherPlayer', 'cancel'],
+		'transitions' => [
+			'transActionDone' => ST_PLAYER_ACTION_DONE,
+			'transActionCancel' => ST_PLAYER_TURN,
+		],
+	],
+
+	ST_PLAYER_ROOM_ENGINE_ROOM => [
+		'name' => 'playerRoomEngineRoom',
+		'description' => clienttranslate('Engine room: ${actplayer} must swap a resource card from the discard pile'),
+		'descriptionmyturn' => clienttranslate('Engine room: ${you} must swap a resource card from the discard pile'),
+		'type' => 'activeplayer',
+		'args' => 'argPlayerRoomEngineRoom',
+		'possibleactions' => ['swapResourceFromDiscard', 'cancel'],
 		'transitions' => [
 			'transActionDone' => ST_PLAYER_ACTION_DONE,
 			'transActionCancel' => ST_PLAYER_TURN,
