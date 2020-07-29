@@ -24,6 +24,7 @@ if (!defined('ST_PLAYER_TURN')) {
 	define('ST_PLAYER_SCAVENGE_PICK_CARDS', 6);
 	define('ST_PLAYER_SHARE', 7);
 	define('ST_PLAYER_REPAIR', 8);
+	define('ST_PLAYER_DIVERT', 9);
 
 	define('ST_PLAYER_ROOM_CREW_QUARTER', 10);
 	define('ST_PLAYER_ROOM_CARGO_HOLD', 11);
@@ -72,6 +73,7 @@ $machinestates = [
 			'transPlayerScavenge' => ST_PLAYER_SCAVENGE,
 			'transPlayerShare' => ST_PLAYER_SHARE,
 			'transPlayerRepair' => ST_PLAYER_REPAIR,
+			'transPlayerDivert' => ST_PLAYER_DIVERT,
 			'transPlayerRoomCrewQuarter' => ST_PLAYER_ROOM_CREW_QUARTER,
 			'transPlayerRoomCargoHold' => ST_PLAYER_ROOM_CARGO_HOLD,
 			'transPlayerRoomMessHall' => ST_PLAYER_ROOM_MESS_HALL,
@@ -147,6 +149,18 @@ $machinestates = [
 		],
 	],
 
+	ST_PLAYER_DIVERT => [
+		'name' => 'playerDivert',
+		'description' => clienttranslate('Divert power: ${actplayer} must select resources'),
+		'descriptionmyturn' => clienttranslate('Divert power: ${you} must select resources'),
+		'type' => 'activeplayer',
+		'possibleactions' => ['selectResourcesForDivert', 'cancel'],
+		'transitions' => [
+			'transActionDone' => ST_PLAYER_ACTION_DONE,
+			'transActionCancel' => ST_PLAYER_ACTION_CANCEL,
+		],
+	],
+
 	ST_PLAYER_ROOM_CREW_QUARTER => [
 		'name' => 'playerRoomCrewQuarter',
 		'description' => clienttranslate('Crew Quarters: ${actplayer} must select a meeple to move'),
@@ -166,7 +180,7 @@ $machinestates = [
 		'type' => 'activeplayer',
 		'action' => 'stPlayerRoomCargoHold',
 		'args' => 'argPlayerRoomCargoHold',
-		'possibleactions' => ['putbackresourcecardsindeck'],
+		'possibleactions' => ['putBackResourceCardsInDeck'],
 		'transitions' => [
 			'transActionDone' => ST_PLAYER_ACTION_DONE,
 		],

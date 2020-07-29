@@ -35,7 +35,7 @@ class action_solarstorm extends APP_GameAction {
 
 	public function choose() {
 		self::setAjaxMode();
-		$actionName = self::getArg('actionName', AT_enum, true, null, ['move', 'scavenge', 'share', 'repair', 'room', 'token']);
+		$actionName = self::getArg('actionName', AT_enum, true, null, ['move', 'scavenge', 'share', 'repair', 'room', 'divert', 'token']);
 		$this->game->actionChoose($actionName);
 		self::ajaxResponse();
 	}
@@ -79,6 +79,14 @@ class action_solarstorm extends APP_GameAction {
 		$typeId = self::getArg('resourceType', AT_enum, false, null, ['energy', 'nanobots', 'metal', 'data']);
 		$position = self::getArg('position', AT_posint, false, null);
 		$this->game->actionSelectResourceForRepair($cardId, $typeId, $position);
+		self::ajaxResponse();
+	}
+
+	public function selectResourcesForDivert() {
+		self::setAjaxMode();
+		$cardIds = self::getArg('cardIds', AT_numberlist, true);
+		$cardIds = preg_split('/\D/', $cardIds, -1, PREG_SPLIT_NO_EMPTY);
+		$this->game->actionSelectResourcesForDivert($cardIds);
 		self::ajaxResponse();
 	}
 

@@ -84,6 +84,8 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
     initializeResourceDeck() {
       const resourceDeckEl = $first('.ss-resource-deck__table');
       this.resourceDeck = this.createResourceStock(resourceDeckEl);
+      this.resourceDeck.setOverlap(50);
+      this.resourceDeck.setSelectionMode(0);
 
       for (let card of Object.values(this.gamedatas.resourceCardsOnTable)) {
         this.resourceDeck.addToStockWithId(card.type, card.id);
@@ -133,6 +135,10 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 
         case 'playerRepair':
           this.doPlayerActionRepair();
+          break;
+
+        case 'playerDivert':
+          this.doPlayerActionDivert();
           break;
 
         case 'playerRoomCrewQuarter':
@@ -191,6 +197,9 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
             });
             this.addActionButton('buttonRoom', _('Room action'), evt => {
               this.onPlayerChooseAction(evt, 'room');
+            });
+            this.addActionButton('buttonDivert', _('Divert'), evt => {
+              this.onPlayerChooseAction(evt, 'divert');
             });
             this.addActionButton('buttonToken', _('Take action token'), evt => {
               this.onPlayerChooseAction(evt, 'token');
@@ -260,7 +269,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
     //// Utility methods
     createResourceStock(el) {
       const stock = new ebg.stock();
-      stock.create(this, el, 87, 120);
+      stock.create(this, el, 72, 100);
       stock.setSelectionMode(1);
       stock.extraClasses = 'ss-resource-card';
       stock.setSelectionAppearance('class');
@@ -378,6 +387,9 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
         const cleanAll = () => {
           this.players.highlightHands(null);
           handles.forEach(handle => dojo.disconnect(handle));
+          players.forEach(player => {
+            player.stock.setSelectionMode(0);
+          });
 
           if (options.cancel) {
             this.removeActionCancelButton();
@@ -392,6 +404,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
         }
 
         players.forEach(player => {
+          player.stock.setSelectionMode(1);
           handles.push(this.connectStockCardClick(player.stock, card => {
             cleanAll();
             resolve({
@@ -400,6 +413,47 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
             });
           }));
         });
+      });
+    },
+
+    waitForPlayerResources(options = {}) {
+      // Default options
+      options = Object.assign({
+        count: 1,
+        cancel: false
+      }, options);
+      return new Promise((resolve, reject) => {
+        const handles = [];
+        const player = this.players.getActive();
+        player.highlightHand(true);
+
+        const cleanAll = () => {
+          player.highlightHand(false);
+          player.stock.setSelectionMode(0);
+          handles.forEach(handle => dojo.disconnect(handle));
+          this.removeActionCancelButton();
+          $('buttonAccept').remove();
+        };
+
+        player.stock.setSelectionMode(2);
+        this.addActionButton('buttonAccept', _('Accept'), () => {
+          const cards = player.stock.getSelectedItems();
+
+          if (cards.length !== options.count) {
+            gameui.showMessage(_(`You must select ${options.count} cards`), 'error');
+            return;
+          }
+
+          cleanAll();
+          resolve(cards);
+        });
+
+        if (options.cancel) {
+          this.showActionCancelButton(() => {
+            cleanAll();
+            reject('CANCEL BTN');
+          });
+        }
       });
     },
 
@@ -813,6 +867,24 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
       }
     },
 
+    async doPlayerActionDivert() {
+      try {
+        const cards = await this.waitForPlayerResources({
+          count: 3,
+          cancel: true
+        });
+        await this.ajaxAction('selectResourcesForDivert', {
+          lock: true,
+          cardIds: cards.map(c => c.id).join(',')
+        });
+      } catch (e) {
+        console.error(e);
+        await this.ajaxAction('cancel', {
+          lock: true
+        });
+      }
+    },
+
     async doPlayerRoomCargoHold(cards) {
       const selectedCards = await this.waitForResourceCardOrderFromDialog(cards, {
         title: _('Reorder the next resource cards.') + '<br/>' + 'The first ones you select will be on <b>top</b> of the deck.',
@@ -966,7 +1038,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
       dojo.subscribe('playerPickResource', this, 'notif_playerPickResource');
       dojo.subscribe('playerDiscardResource', this, 'notif_playerDiscardResource');
       dojo.subscribe('playerShareResource', this, 'notif_playerShareResource');
-      dojo.subscribe('putBackResourceCardInDeck', this, 'notif_putBackResourceCardInDeck');
+      dojo.subscribe('putBackResourcesCardInDeck', this, 'notif_putBackResourcesCardInDeck');
     },
 
     notif_updateRooms(notif) {
@@ -1025,8 +1097,8 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 
     },
 
-    notif_putBackResourceCardInDeck(notif) {
-      console.log('notif_putBackResourceCardInDeck', notif);
+    notif_putBackResourcesCardInDeck(notif) {
+      console.log('notif_putBackResourcesCardInDeck', notif);
       const card = notif.args.card;
       this.reorderResourceDeck.removeFromStockById(card.id, $first('.ss-resource-deck__deck'));
     },
@@ -1383,7 +1455,7 @@ class SSPlayer {
     // .findIndex(p => p.id === this.id)
 
     const index = this.order;
-    const offsetX = index * 30;
+    const offsetX = index * 30 + 20;
     const offsetY = roomPos.h * 0.2;
     this.gameObject.slideToObjectPos(this.meepleEl, roomEl, offsetX, offsetY, duration, 0).play();
 

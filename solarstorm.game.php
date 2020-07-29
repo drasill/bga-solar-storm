@@ -321,6 +321,73 @@ class SolarStorm extends Table {
 		return $from;
 	}
 
+	public function repairRoomWithResource(SolarStormRoom $room, string $resourceType): void {
+		$resourceInfo = $this->resourceTypes[$resourceType];
+
+		if ($room->isDiverted()) {
+		}
+
+		foreach ($room->getResources() as $resIndex => $resType) {
+			if ($resType !== $resourceType) {
+				continue;
+			}
+			$damage = $room->getDamage();
+			if (!$room->isDiverted() && !$damage[$resIndex]) {
+				throw new BgaUserException(
+					sprintf(self::_('This room cannot be repaired with resource %s'), $resourceInfo['nametr'])
+				);
+			}
+
+			if ($room->isDiverted()) {
+				$room->setDamage([false, false, false]);
+			} else {
+				$damage[$resIndex] = false;
+				$room->setDamage($damage);
+			}
+			return;
+		}
+		throw new BgaUserException(
+			sprintf(self::_('Cannot repair this room with the resource %s'), $resourceInfo['nametr'])
+		);
+	}
+
+	private function divertRoomWithResources(SolarStormRoom $room, array $cards): void {
+		if ($room->isDiverted()) {
+			throw new BgaUserException(self::_('This room already has its power diverted'));
+		}
+		if ($room->hasDamage()) {
+			throw new BgaUserException(self::_('This room is damaged and can\'t have its power diverted'));
+		}
+
+		$cards = array_combine(array_column($cards, 'id'), $cards);
+
+		// For each needed resource ...
+		foreach ($room->getDivertResources() as $needed) {
+			$resourceInfo = $this->resourceTypes[$needed];
+			// Find first matching resource
+			$card = current(
+				array_filter($cards, function ($card) use ($needed) {
+					return $card['type'] === $needed;
+				})
+			);
+			// Fallback on first universal resource
+			if (!$card) {
+				$card = current(
+					array_filter($cards, function ($card) {
+						return $card['type'] === 'universal';
+					})
+				);
+			}
+			if (!$card) {
+				throw new BgaUserException(
+					sprintf(self::_('This room needs a resource %s to be diverted'), $resourceInfo['nametr'])
+				);
+			}
+			unset($cards[$card['id']]);
+		}
+		$room->setDiverted(true);
+	}
+
 	//////////////////////////////////////////////////////////////////////////////
 	//////////// Player actions
 	////////////
@@ -339,6 +406,9 @@ class SolarStorm extends Table {
 				break;
 			case 'repair':
 				$this->gamestate->nextState('transPlayerRepair');
+				break;
+			case 'divert':
+				$this->gamestate->nextState('transPlayerDivert');
 				break;
 			case 'token':
 				$this->actionGetActionToken();
@@ -369,7 +439,7 @@ class SolarStorm extends Table {
 						if ($tokensLeft <= 0) {
 							throw new BgaUserException(self::_('No protection token available'));
 						}
-						self::setGameStateValue('protectionTokensToPut', max(2, $tokensLeft));
+						self::setGameStateValue('protectionTokensToPut', min(2, $tokensLeft));
 						$this->gamestate->nextState('transPlayerRoomArmoury');
 						break;
 					case 'bridge':
@@ -724,7 +794,7 @@ class SolarStorm extends Table {
 		if ($cardType === 'universal') {
 			$cardType = $typeId;
 		}
-		$room->repairWithResource($cardType);
+		$this->repairRoomWithResource($room, $cardType);
 		$room->save();
 
 		$this->resourceCards->moveCard($card['id'], 'discard');
@@ -740,7 +810,48 @@ class SolarStorm extends Table {
 			] + $player->getNotificationArgs()
 		);
 
-		$this->notifyAllPlayers('updateRooms', 'message', [
+		$this->notifyAllPlayers('updateRooms', '', [
+			'rooms' => [$room->toArray()],
+		]);
+		$player->incrementActions(-1);
+		$player->save();
+		$this->gamestate->nextState('transActionDone');
+	}
+
+	public function actionSelectResourcesForDivert(array $cardIds): void {
+		self::checkAction('selectResourcesForDivert');
+		$player = $this->ssPlayers->getActive();
+
+		$cards = [];
+		foreach ($cardIds as $cardId) {
+			$card = $this->resourceCards->getCard($cardId);
+			if ($card['location'] !== 'hand' || $card['location_arg'] != $player->getId()) {
+				throw new BgaVisibleSystemException('Card not in your hand'); // NOI18N
+			}
+			$cards[] = $card;
+		}
+
+		$room = $this->rooms->getRoomByPosition($player->getPosition());
+		$this->divertRoomWithResources($room, $cards);
+		$room->save();
+
+		$resourceNames = [];
+		foreach ($cards as $card) {
+			$this->resourceCards->moveCard($card['id'], 'discard');
+			$resourceNames[] = $this->resourceTypes[$card['type']]['name'];
+		}
+
+		$this->notifyAllPlayers(
+			'playerDiscardResources',
+			clienttranslate('${player_name} diverts power in ${roomName} with resources : ${resourceNames}'),
+			[
+				'cards' => $cards,
+				'resourceNames' => $resourceNames,
+				'roomName' => $room->getName(),
+			] + $player->getNotificationArgs()
+		);
+
+		$this->notifyAllPlayers('updateRooms', '', [
 			'rooms' => [$room->toArray()],
 		]);
 		$player->incrementActions(-1);

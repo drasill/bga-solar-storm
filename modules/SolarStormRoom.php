@@ -1,4 +1,5 @@
 <?php
+// vim: tw=120:
 
 declare(strict_types=1);
 
@@ -30,6 +31,9 @@ class SolarStormRoom extends APP_GameClass {
 	/** @var string[] */
 	private $resources = [];
 
+	/** @var string[] */
+	private $divertResources = [];
+
 	/** @var bool */
 	private $diverted = null;
 
@@ -54,6 +58,7 @@ class SolarStormRoom extends APP_GameClass {
 		$this->name = $roomInfo['name'];
 		$this->description = $roomInfo['description'];
 		$this->resources = $roomInfo['resources'];
+		$this->divertResources = $roomInfo['divertResources'];
 	}
 
 	public function getRoomId(): int {
@@ -72,8 +77,20 @@ class SolarStormRoom extends APP_GameClass {
 		return $this->slug;
 	}
 
+	public function getResources(): array {
+		return $this->resources;
+	}
+
+	public function getDivertResources(): array {
+		return $this->divertResources;
+	}
+
 	public function getPosition(): int {
 		return $this->position;
+	}
+
+	public function getDamage(): array {
+		return $this->damage;
 	}
 
 	public function getProtection(): array {
@@ -102,6 +119,14 @@ class SolarStormRoom extends APP_GameClass {
 		return $this->diverted;
 	}
 
+	public function hasDamage(): bool {
+		return count(array_filter($this->damage)) > 0;
+	}
+
+	public function setDamage(array $damage) {
+		$this->damage = $damage;
+	}
+
 	public function doDamage(): void {
 		foreach ($this->damage as $dmgIndex => $dmgValue) {
 			if ($dmgValue) {
@@ -111,21 +136,6 @@ class SolarStormRoom extends APP_GameClass {
 			return;
 		}
 		throw new \Exception('Cannot damage this room more');
-	}
-
-	public function repairWithResource(string $resourceType): void {
-		$resourceInfo = $this->table->resourceTypes[$resourceType];
-		foreach ($this->resources as $resIndex => $resType) {
-			if ($resType !== $resourceType) {
-				continue;
-			}
-			if (!$this->damage[$resIndex]) {
-				throw new BgaUserException(sprintf('This room is not damaged resource %s', $resourceInfo['nametr']));
-			}
-			$this->damage[$resIndex] = false;
-			return;
-		}
-		throw new BgaUserException(sprintf('Cannot repair this room with the resource %s', $resourceInfo['nametr']));
 	}
 
 	public function setDiverted(bool $diverted): void {

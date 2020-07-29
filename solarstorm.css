@@ -37,10 +37,20 @@
 
 .ss-decks-wrapper {
 	min-width: 280px;
-	max-width: 500px;
+	max-width: 550px;
 	margin: 20px;
 	display: flex;
 	flex-direction: column;
+	flex: 1;
+}
+
+.ss-decks-wrapper-top {
+	display: flex;
+	flex-wrap: wrap;
+}
+
+.ss-damage-deck {
+	min-width: 280px;
 	flex: 1;
 }
 
@@ -189,7 +199,7 @@
 .ss-room__diverted-token.ss-visible {
 	top: 45%;
 	left: 5%;
-	height: 30%;
+	height: 27%;
 	width: 20%;
 	opacity: 1;
 	pointer-events: all;
@@ -216,28 +226,45 @@
 	display: flex;
 	flex-direction: row;
 	flex-wrap: nowrap;
+	flex: 1;
+	min-width: 230px;
 }
 
 .ss-resource-deck__deck {
-	width: 87px;
-	height: 120px;
+	width: 72px;
+	height: 100px;
 	background-image: url('img/resources.jpg');
 	background-position: 100% 0;
 	margin-right: 5px;
+}
+.ss-resource-deck__deck.ss-highlight {
+	outline: 2px solid blue;
+	box-shadow: rgba(0, 0, 255, 0.7) 4px 4px 6px;
+	cursor: pointer;
 }
 
 .ss-resource-deck__table {
 	flex-grow: 1;
 }
 
-.ss-resource-deck__source.ss-highlight {
-	border: 2px solid blue;
+.ss-resource-deck__table.ss-highlight .ss-resource-card {
+	outline: 2px solid blue;
 	box-shadow: rgba(0, 0, 255, 0.7) 4px 4px 6px;
 }
 
-.ss-player-board {
+.ss-players-hands {
 	display: flex;
 	flex-wrap: wrap;
+	margin-top: 10px;
+}
+
+.ss-player-board {
+	min-width: 230px;
+	flex: 1;
+	display: flex;
+	flex-wrap: wrap;
+	margin-right: 10px;
+	margin-bottom: 10px;
 }
 
 .ss-player-board.ss-highlight {

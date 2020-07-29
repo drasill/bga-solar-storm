@@ -67,6 +67,7 @@ $this->roomInfos = [
 			'When all rooms have diverted power, get here and use 1 action to reactivate the Energy Core'
 		),
 		'resources' => [],
+		'divertResources' => [],
 	],
 	1 => [
 		'slug' => 'mess-hall',
@@ -75,6 +76,7 @@ $this->roomInfos = [
 			'Give, take or exchange a resource card with another player'
 		),
 		'resources' => ['nanobots', 'energy', 'data'],
+		'divertResources' => ['data','data','metal'],
 	],
 	2 => [
 		'slug' => 'repair-centre',
@@ -83,6 +85,7 @@ $this->roomInfos = [
 			'Repair a damaged room by one space on the Repair Track. Discard the matching card.'
 		),
 		'resources' => ['metal', 'energy', 'data'],
+		'divertResources' => ['data','energy','nanobots'],
 	],
 	3 => [
 		'slug' => 'medical-bay',
@@ -91,6 +94,7 @@ $this->roomInfos = [
 			'Take two actions tokens when starting in this room'
 		),
 		'resources' => ['metal', 'nanobots', 'energy'],
+		'divertResources' => ['data','energy','energy'],
 	],
 	4 => [
 		'slug' => 'engine-room',
@@ -99,6 +103,7 @@ $this->roomInfos = [
 			'Swap a card from your hand with one from the discard pile'
 		),
 		'resources' => ['data', 'metal', 'nanobots'],
+		'divertResources' => ['metal','nanobots','nanobots'],
 	],
 	5 => [
 		'slug' => 'crew-quarters',
@@ -107,6 +112,7 @@ $this->roomInfos = [
 			"Move a player's meeple to a room that has another meeple in it"
 		),
 		'resources' => ['energy', 'data', 'metal'],
+		'divertResources' => ['metal','metal','nanobots'],
 	],
 	6 => [
 		'slug' => 'cargo-hold',
@@ -115,6 +121,7 @@ $this->roomInfos = [
 			'Look at the next 5 resources cards. Then put them back in any order.'
 		),
 		'resources' => ['energy', 'metal', 'data'],
+		'divertResources' => ['data','metal','nanobots'],
 	],
 	7 => [
 		'slug' => 'armoury',
@@ -123,6 +130,7 @@ $this->roomInfos = [
 			'Place 2 protection tokens on any rooms(s) (this ends at the start of your next turn)'
 		),
 		'resources' => ['data', 'nanobots', 'metal'],
+		'divertResources' => ['metal','energy','nanobots'],
 	],
 	8 => [
 		'slug' => 'bridge',
@@ -131,6 +139,7 @@ $this->roomInfos = [
 			'Look at the next 3 Damage cards and put them back in any order.'
 		),
 		'resources' => ['nanobots', 'data', 'energy'],
+		'divertResources' => ['data','metal','energy'],
 	],
 ];
 
