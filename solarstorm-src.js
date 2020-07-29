@@ -62,6 +62,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 					this.players.getPlayerById(playerId).stock.addToStockWithId(resourceCard.type, resourceCard.id)
 				})
 			}
+			this.rooms.rooms.forEach(r => r.updateProtectionTokens())
 		},
 
 		initializeDamageDeck() {
@@ -92,31 +93,29 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			this.players.assertPositions()
 		},
 
-		showResourceCardsToPutInDeck(resourceCards) {
-			$first('.ss-resource-reorder-dialog__title').innerHTML =
-				_('Put back the cards in the deck.') + '<br/>' + _('The last one will be on top.')
-			$first('.ss-resource-reorder-dialog').classList.add('ss-resource-reorder-dialog--visible')
-			for (let card of Object.values(resourceCards)) {
-				this.reorderResourceDeck.addToStockWithId(card.type, card.id)
-			}
-		},
-
 		///////////////////////////////////////////////////
 		//// Game & client states
 
 		onEnteringState: function(stateName, args) {
 			console.log('Entering state: ' + stateName, args)
 
-			switch (stateName) {
-				case 'playerTurn':
-					const leftStr = dojo.string.substitute(_('(${n} left)'), {
-						n: args.args.actions
-					})
-					this.gamedatas.gamestate.descriptionmyturn += ' ' + leftStr
-					this.gamedatas.gamestate.description += ' ' + leftStr
-					this.updatePageTitle()
+			if (stateName === 'playerTurn') {
+				// Display for all players
+				const leftStr = dojo.string.substitute(_('(${n} left)'), {
+					n: args.args.actions
+				})
+				this.gamedatas.gamestate.descriptionmyturn += ' ' + leftStr
+				this.gamedatas.gamestate.description += ' ' + leftStr
+				this.updatePageTitle()
+				return
+			}
 
-					break
+			// Now, only for active player
+			if (!this.isCurrentPlayerActive()) {
+				return
+			}
+
+			switch (stateName) {
 				case 'playerMove':
 					this.doPlayerActionMove(args.args.possibleDestinations)
 					break
@@ -135,14 +134,17 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				case 'playerRoomCargoHold':
 					this.doPlayerRoomCargoHold(Object.values(args.args._private.resourceCards))
 					break
-				case 'playerRoomBridge':
-					this.doPlayerRoomBridge(Object.values(args.args._private.damageCards))
-					break
 				case 'playerRoomEngineRoom':
 					this.doPlayerRoomEngineRoom(args.args.resourceCards)
 					break
 				case 'playerRoomRepairCentre':
 					this.doPlayerRoomRepairCentre()
+					break
+				case 'playerRoomArmoury':
+					this.doPlayerRoomArmoury()
+					break
+				case 'playerRoomBridge':
+					this.doPlayerRoomBridge(Object.values(args.args._private.damageCards))
 					break
 				case 'pickResources':
 					this.doPlayerPickResources(args.args.possibleSources)
@@ -263,6 +265,13 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				el = $first(el)
 			}
 			el.classList[value ? 'add' : 'remove']('ss-highlight')
+		},
+
+		setVisibleEl(el, value) {
+			if (typeof el === 'string') {
+				el = $first(el)
+			}
+			el.classList[value ? 'add' : 'remove']('ss-visible')
 		},
 
 		connectStockCardClick(stock, callback) {
@@ -439,7 +448,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				const dialogEl = $first('.ss-resource-reorder-dialog')
 				const cleanAll = () => {
 					handles.forEach(handle => dojo.disconnect(handle))
-					dialogEl.classList.remove('ss-resource-reorder-dialog--visible')
+					this.setVisibleEl(dialogEl, false)
 					this.removeActionCancelButton()
 				}
 
@@ -454,7 +463,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				this.reorderResourceDeck.removeAll()
 
 				$first('.ss-resource-reorder-dialog__title').innerHTML = options.title
-				dialogEl.classList.add('ss-resource-reorder-dialog--visible')
+				this.setVisibleEl(dialogEl, true)
 				for (let card of Object.values(cards)) {
 					this.reorderResourceDeck.addToStockWithId(card.type, card.id)
 				}
@@ -479,7 +488,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				const dialogEl = $first('.ss-resource-reorder-dialog')
 				const cleanAll = () => {
 					handles.forEach(handle => dojo.disconnect(handle))
-					dialogEl.classList.remove('ss-resource-reorder-dialog--visible')
+					this.setVisibleEl(dialogEl, false)
 					this.removeActionCancelButton()
 					$('buttonAccept').remove()
 					$('buttonReset').remove()
@@ -496,7 +505,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				this.reorderResourceDeck.removeAll()
 
 				$first('.ss-resource-reorder-dialog__title').innerHTML = options.title
-				dialogEl.classList.add('ss-resource-reorder-dialog--visible')
+				this.setVisibleEl(dialogEl, true)
 				for (let card of Object.values(cards)) {
 					this.reorderResourceDeck.addToStockWithId(card.type, card.id)
 				}
@@ -536,7 +545,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				const dialogEl = $first('.ss-damage-reorder-dialog')
 				const cleanAll = () => {
 					handles.forEach(handle => dojo.disconnect(handle))
-					dialogEl.classList.remove('ss-damage-reorder-dialog--visible')
+					this.setVisibleEl(dialogEl, false)
 					this.removeActionCancelButton()
 					$('buttonAccept').remove()
 					$('buttonReset').remove()
@@ -553,7 +562,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				this.reorderDamageDeck.removeAll()
 
 				$first('.ss-damage-reorder-dialog__title').innerHTML = options.title
-				dialogEl.classList.add('ss-damage-reorder-dialog--visible')
+				this.setVisibleEl(dialogEl, true)
 				for (let card of Object.values(cards)) {
 					this.reorderDamageDeck.addToStockWithId(card.type, card.id)
 				}
@@ -825,6 +834,21 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			}
 		},
 
+		// TODO alert if there is only one token left ?
+		async doPlayerRoomArmoury() {
+			try {
+				const validRooms = this.rooms.rooms.filter(r => r.slug !== 'energy-core')
+				const room = await this.waitForRoomClick(validRooms, { cancel: false })
+				await this.ajaxAction('putProtectionToken', {
+					lock: true,
+					position: room.position,
+				})
+			} catch (e) {
+				console.error(e)
+				await this.ajaxAction('cancel', { lock: true })
+			}
+		},
+
 		async doPlayerPickResources(possibleSources) {
 			const card = await this.waitForResourceFromDeck({
 				cancel: false,
@@ -863,6 +887,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				const room = this.rooms.getBySlug(roomData.slug)
 				room.setDamage(roomData.damage)
 				room.setDiverted(roomData.diverted)
+				room.setProtection(roomData.protection)
 			})
 		},
 
@@ -965,6 +990,7 @@ class SSRoom {
 	position = null
 	damage = [false, false, false]
 	diverted = false
+	protection = []
 
 	el = null
 	divertedTokenEl = null
@@ -979,6 +1005,7 @@ class SSRoom {
 		this.assertEl()
 		this.setDamage(data.damage)
 		this.setDiverted(data.diverted)
+		this.setProtection(data.protection)
 	}
 
 	assertEl() {
@@ -1025,7 +1052,50 @@ class SSRoom {
 			return
 		}
 		this.diverted = diverted
-		this.divertedTokenEl.classList[diverted ? 'add' : 'remove']('ss-room__diverted-token--visible')
+		this.gameObject.setVisibleEl(this.divertedTokenEl, diverted)
+	}
+
+	setProtection(protection) {
+		if (this.id === 0) {
+			return
+		}
+		if (!Array.isArray(protection)) {
+			protection = []
+		}
+		// Assert numbers, and sort
+		protection = protection.map(p => +p).sort()
+		const doUpdate = protection.toString() !== this.protection.toString()
+		this.protection = protection
+		if (doUpdate) {
+			this.updateProtectionTokens()
+		}
+	}
+
+	updateProtectionTokens() {
+		// Remove all
+		dojo.query('.ss-protection-token', this.el).forEach(el => {
+			el.remove()
+			this.gameObject.removeTooltip(el.id)
+		})
+		// Add them
+		let index = 0
+		this.protection.forEach(playerId => {
+			const id = `ss-protection-token--${this.position}-${index}`
+			const player = this.gameObject.players.getPlayerById(playerId)
+			if (!player) {
+				return
+			}
+			const order = player.order
+			dojo.create('div', { class: `ss-protection-token ss-protection-token--${order}`, id }, this.el)
+			const tooltip = dojo.string.substitute(
+				_(
+					"Protection token put by ${player_name}.${newline}It will be removed when a damage is received on this room, or at the <b>start</b> of ${player_name}'s turn"
+				),
+				{ player_name: player.name, newline: '<br/>' }
+			)
+			this.gameObject.addTooltipHtml(id, tooltip, 250)
+			index++
+		})
 	}
 
 	highlight(value) {
@@ -1087,12 +1157,14 @@ class SSPlayer {
 	id = null
 	name = null
 	color = null
-	boardEl = null
 	stock = null
-	meepleEl = null
 	order = null
 	position = null
 	actionsTokens = 0
+	boardEl = null
+	meepleEl = null
+	actionsTokensEl = null
+	actionsTokensNumberEl = null
 
 	constructor(gameObject, id, name, color, order, position, actionsTokens) {
 		this.gameObject = gameObject
@@ -1118,32 +1190,25 @@ class SSPlayer {
 			return
 		}
 		const playersHandsEl = $first('.ss-players-hands')
-		boardEl = dojo.create(
-			'div',
-			{
-				class: `ss-player-board ss-players-board--id-${this.id}`
-			},
-			playersHandsEl
-		)
-		const handEl = dojo.create(
+		boardEl = dojo.create('div', { class: `ss-player-board ss-players-board--id-${this.id}` }, playersHandsEl)
+		this.boardEl = boardEl
+		const nameEl = dojo.create(
 			'div',
 			{
 				class: 'ss-player-board__name',
-				style: {
-					backgroundColor: '#' + this.color
-				},
+				style: { backgroundColor: '#' + this.color },
 				innerHTML: `Hand of ${this.name}`
 			},
 			boardEl
 		)
-		this.actionsTokensEl = dojo.create(
+		this.handEl = dojo.create('div', { class: 'ss-player-hand', id: `ss-player-hand--${this.id}` }, this.boardEl)
+		this.actionsTokensEl = dojo.create('div', { class: 'ss-player-board__action-tokens' }, boardEl)
+		dojo.create('div', { class: 'ss-player-board__action-tokens__token ss-action-token' }, this.actionsTokensEl)
+		this.actionsTokensNumberEl = dojo.create(
 			'div',
-			{
-				class: 'ss-player-board__action-tokens',
-			},
-			boardEl
+			{ class: 'ss-player-board__action-tokens__number' },
+			this.actionsTokensEl
 		)
-		this.boardEl = boardEl
 	}
 
 	assertMeepleEl() {
@@ -1167,15 +1232,7 @@ class SSPlayer {
 
 	createStock() {
 		this.stock = new ebg.stock()
-		const handEl = dojo.create(
-			'div',
-			{
-				class: 'ss-player-hand',
-				id: `ss-player-hand--${this.id}`
-			},
-			this.boardEl
-		)
-		this.stock = this.gameObject.createResourceStock(handEl)
+		this.stock = this.gameObject.createResourceStock(this.handEl)
 		this.stock.setOverlap(30, 5)
 		this.gameObject.resourceTypes.forEach((type, index) => {
 			this.stock.addItemType(type.id, index, g_gamethemeurl + 'img/resources.jpg', index)
@@ -1225,6 +1282,7 @@ class SSPlayer {
 
 	setActionsTokens(value) {
 		this.actionsTokens = value
-		this.actionsTokensEl.innerHTML = "TOKENS x" + value
+		this.actionsTokensNumberEl.innerHTML = '×' + value
+		this.gameObject.setVisibleEl(this.actionsTokensEl, value > 0)
 	}
 }

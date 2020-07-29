@@ -32,7 +32,7 @@ class SolarStormRooms extends APP_GameClass {
 
 	public function load() {
 		$this->rooms = [];
-		$sql = 'SELECT id, position, room, damage1, damage2, damage3, diverted FROM rooms';
+		$sql = 'SELECT id, position, room, damage1, damage2, damage3, diverted, protection1, protection2, protection3, protection4 FROM rooms';
 		$roomsData = self::getCollectionFromDb($sql);
 		foreach ($roomsData as $roomData) {
 			$room = new SolarStormRoom($this->table, $roomData);
@@ -47,6 +47,10 @@ class SolarStormRooms extends APP_GameClass {
 			}
 		}
 		throw new \Exception("Room id '$roomId' not found");
+	}
+
+	public function getRooms(): array {
+		return $this->rooms;
 	}
 
 	public function getRoomBySlug(string $slug): SolarStormRoom {
@@ -65,6 +69,14 @@ class SolarStormRooms extends APP_GameClass {
 			}
 		}
 		throw new \Exception("Room @ '$position' not found");
+	}
+
+	public function countTotalProtectionTokens(): int {
+		$total = 0;
+		foreach ($this->rooms as $room) {
+			$total += count($room->getProtection());
+		}
+		return $total;
 	}
 
 	public function toArray() {

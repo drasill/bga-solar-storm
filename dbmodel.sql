@@ -16,6 +16,10 @@ CREATE TABLE IF NOT EXISTS `rooms` (
   `damage2` boolean NOT NULL,
   `damage3` boolean NOT NULL,
   `diverted` boolean NOT NULL DEFAULT false,
+  `protection1` int(10) unsigned DEFAULT NULL,
+  `protection2` int(10) unsigned DEFAULT NULL,
+  `protection3` int(10) unsigned DEFAULT NULL,
+  `protection4` int(10) unsigned DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
 

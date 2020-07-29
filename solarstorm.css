@@ -173,9 +173,9 @@
 	bottom: 0%;
 	left: 0%;
 	right: 0%;
-	background-image: url(img/diverted-token.png);
-	background-position: 50% 50%;
-	background-size: contain;
+	background-image: url(img/tokens.png);
+	background-position: 0% 0%;
+	background-size: 600% 100%;
 	background-repeat: no-repeat;
 	filter: drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.5)) drop-shadow(-1px -1px 1px rgba(0, 0, 0, 0.5));
 	top: 0%;
@@ -186,7 +186,7 @@
 	pointer-events: none;
 	transition: all 1.3s ease-in-out;
 }
-.ss-room__diverted-token--visible {
+.ss-room__diverted-token.ss-visible {
 	top: 45%;
 	left: 5%;
 	height: 30%;
@@ -236,6 +236,8 @@
 }
 
 .ss-player-board {
+	display: flex;
+	flex-wrap: wrap;
 }
 
 .ss-player-board.ss-highlight {
@@ -246,9 +248,12 @@
 .ss-player-board__name {
 	padding: 5px 10px;
 	margin-bottom: 5px;
+	width: 100%;
 }
 
 .ss-player-board .ss-player-hand {
+	flex: 1;
+	min-width: 10px;
 }
 
 .ss-player-meeple {
@@ -311,7 +316,7 @@
 	margin: 10px;
 }
 
-.ss-resource-reorder-dialog--visible {
+.ss-resource-reorder-dialog.ss-visible {
 	overflow: visible;
 	height: 200px;
 }
@@ -333,7 +338,69 @@
 	margin: 10px;
 }
 
-.ss-damage-reorder-dialog--visible {
+.ss-damage-reorder-dialog.ss-visible {
 	overflow: visible;
 	height: 200px;
+}
+
+.ss-action-token {
+	width: 30px;
+	height: 30px;
+	background-image: url(img/tokens.png);
+	background-position: 100% 0%;
+	background-size: 600% 100%;
+	background-repeat: no-repeat;
+	filter: drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.5)) drop-shadow(-1px -1px 1px rgba(0, 0, 0, 0.5));
+}
+.ss-player-board__action-tokens {
+	opacity: 0;
+	width: 0px;
+	height: 0px;
+	transition: all 1.3s ease-in-out;
+	text-align: center;
+}
+.ss-player-board__action-tokens.ss-visible {
+	opacity: 1;
+	width: 30px;
+	height: 30px;
+}
+
+.ss-player-board__action-tokens__number {
+	font-weight: bold;
+}
+
+.ss-protection-token {
+	position: absolute;
+	bottom: 0%;
+	left: 0%;
+	background-image: url(img/tokens.png);
+	background-position: 20% 0%;
+	background-size: 600% 100%;
+	background-repeat: no-repeat;
+	filter: drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.5)) drop-shadow(-1px -1px 1px rgba(0, 0, 0, 0.5));
+	width: 15%;
+	height: 20%;
+}
+
+.ss-protection-token + .ss-protection-token {
+	left: 10%;
+}
+.ss-protection-token + .ss-protection-token + .ss-protection-token {
+	left: 20%;
+}
+.ss-protection-token + .ss-protection-token + .ss-protection-token + .ss-protection-token {
+	left: 30%;
+}
+
+.ss-protection-token--1 {
+	background-position: 20% 0%;
+}
+.ss-protection-token--2 {
+	background-position: 40% 0%;
+}
+.ss-protection-token--3 {
+	background-position: 60% 0%;
+}
+.ss-protection-token--4 {
+	background-position: 80% 0%;
 }

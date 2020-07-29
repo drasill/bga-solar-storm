@@ -24,6 +24,9 @@ class SolarStormRoom extends APP_GameClass {
 	/** @var bool[] */
 	private $damage = [false, false, false];
 
+	/** @var int[] */
+	private $protection = [];
+
 	/** @var string[] */
 	private $resources = [];
 
@@ -35,11 +38,15 @@ class SolarStormRoom extends APP_GameClass {
 
 		$this->roomId = (int) $roomData['room'];
 		$this->position = (int) $roomData['position'];
-		$this->damage = [
-			$roomData['damage1'] == 1,
-			$roomData['damage2'] == 1,
-			$roomData['damage3'] == 1,
-		];
+		$this->damage = [$roomData['damage1'] == 1, $roomData['damage2'] == 1, $roomData['damage3'] == 1];
+		$this->protection = array_values(
+			array_filter([
+				(int) $roomData['protection1'],
+				(int) $roomData['protection2'],
+				(int) $roomData['protection3'],
+				(int) $roomData['protection4'],
+			])
+		);
 		$this->diverted = $roomData['diverted'] == 1;
 
 		$roomInfo = $this->table->roomInfos[$this->roomId];
@@ -69,6 +76,28 @@ class SolarStormRoom extends APP_GameClass {
 		return $this->position;
 	}
 
+	public function getProtection(): array {
+		return $this->protection;
+	}
+
+	public function isProtected(): bool {
+		return !empty($this->protection);
+	}
+
+	public function setProtection(array $protection): void {
+		$this->protection = $protection;
+	}
+
+	/**
+	 * @return int playerId owning the protection token
+	 */
+	public function removeOldestProtectionToken(): int {
+		if (!$this->isProtected()) {
+			throw new \Exception('Cannot remove protection token');
+		}
+		return array_shift($this->protection);
+	}
+
 	public function isDiverted(): bool {
 		return $this->diverted;
 	}
@@ -91,16 +120,12 @@ class SolarStormRoom extends APP_GameClass {
 				continue;
 			}
 			if (!$this->damage[$resIndex]) {
-				throw new BgaUserException(
-					sprintf('This room is not damaged resource %s', $resourceInfo['nametr'])
-				);
+				throw new BgaUserException(sprintf('This room is not damaged resource %s', $resourceInfo['nametr']));
 			}
 			$this->damage[$resIndex] = false;
 			return;
 		}
-		throw new BgaUserException(
-			sprintf('Cannot repair this room with the resource %s', $resourceInfo['nametr'])
-		);
+		throw new BgaUserException(sprintf('Cannot repair this room with the resource %s', $resourceInfo['nametr']));
 	}
 
 	public function setDiverted(bool $diverted): void {
@@ -126,13 +151,29 @@ class SolarStormRoom extends APP_GameClass {
 		return $positionMap[$this->position];
 	}
 
+	public function addProtection(SolarStormPlayer $player) {
+		$this->protection[] = $player->getId();
+	}
+
 	public function save() {
 		$roomId = $this->getRoomId();
-		$damage1 = $this->damage[0] ? '1' : '0';
-		$damage2 = $this->damage[1] ? '1' : '0';
-		$damage3 = $this->damage[2] ? '1' : '0';
-		$diverted = $this->diverted ? '1' : '0';
-		$sql = "UPDATE rooms SET damage1 = $damage1, damage2 = $damage2, damage3 = $damage3, diverted = $diverted WHERE room = $roomId";
+
+		$data = [
+			'damage1' => $this->damage[0] ? '1' : '0',
+			'damage2' => $this->damage[1] ? '1' : '0',
+			'damage3' => $this->damage[2] ? '1' : '0',
+			'diverted' => $this->diverted ? '1' : '0',
+			'protection1' => $this->protection[0] ?? 'NULL',
+			'protection2' => $this->protection[1] ?? 'NULL',
+			'protection3' => $this->protection[2] ?? 'NULL',
+			'protection4' => $this->protection[3] ?? 'NULL',
+		];
+
+		$updStr = [];
+		foreach ($data as $key => $value) {
+			$updStr[] = "$key = $value";
+		}
+		$sql = 'UPDATE rooms SET ' . join(', ', $updStr) . " WHERE room = $roomId";
 		self::DbQuery($sql);
 	}
 
@@ -145,6 +186,7 @@ class SolarStormRoom extends APP_GameClass {
 			'position' => $this->position,
 			'diverted' => $this->diverted,
 			'damage' => $this->damage,
+			'protection' => $this->protection,
 		];
 	}
 }

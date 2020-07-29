@@ -34,6 +34,8 @@ class SolarStorm extends Table {
 			'resourcePickedFromDeck' => 11,
 			// When scavenging, number of cards left to pick
 			'scavengeNumberOfCards' => 12,
+			// When puting protection tokens, how many left to put
+			'protectionTokensToPut' => 13,
 		]);
 		$this->rooms = new SolarStormRooms($this);
 		$this->ssPlayers = new SolarStormPlayers($this);
@@ -86,6 +88,7 @@ class SolarStorm extends Table {
 
 		self::setGameStateInitialValue('resourcePickedFromDeck', 0);
 		self::setGameStateInitialValue('scavengeNumberOfCards', 0);
+		self::setGameStateInitialValue('protectionTokensToPut', 0);
 
 		$this->rooms->generateRooms();
 
@@ -172,16 +175,40 @@ class SolarStorm extends Table {
 
 		$roomsSlugs = $this->damageCardsInfos[$card['type']];
 		$updatedRooms = [];
+		$protectedRooms = [];
 		foreach ($roomsSlugs as $roomsSlug) {
 			$room = $this->rooms->getRoomBySlug($roomsSlug);
-			$room->doDamage();
+			if ($room->isProtected()) {
+				$room->removeOldestProtectionToken();
+				$protectedRooms[] = $room->toArray();
+			} else {
+				$room->doDamage();
+			}
 			$room->save();
 			$updatedRooms[] = $room->toArray();
 		}
 
-		if ($notify) {
-			$this->notifyAllPlayers('updateRooms', '', [
+		if (!empty($updatedRooms) && $notify) {
+			$roomNames = join(
+				', ',
+				array_map(function ($r) {
+					return $r['name'];
+				}, $updatedRooms)
+			);
+			$this->notifyAllPlayers('updateRooms', clienttranslate('The room(s) ${roomNames} receive damage'), [
 				'rooms' => $updatedRooms,
+				'roomNames' => $roomNames,
+			]);
+		}
+		if (!empty($protectedRooms) && $notify) {
+			$roomNames = join(
+				', ',
+				array_map(function ($r) {
+					return $r['name'];
+				}, $protectedRooms)
+			);
+			$this->notifyAllPlayers('message', clienttranslate('The room(s) ${roomNames} were protected !'), [
+				'roomNames' => $roomNames,
 			]);
 		}
 	}
@@ -328,10 +355,6 @@ class SolarStorm extends Table {
 						$this->resourceCards->pickCardsForLocation(5, 'deck', 'reorder');
 						$this->gamestate->nextState('transPlayerRoomCargoHold');
 						break;
-					case 'bridge':
-						$this->damageCards->pickCardsForLocation(3, 'deck', 'reorder');
-						$this->gamestate->nextState('transPlayerRoomBridge');
-						break;
 					case 'mess-hall':
 						$this->gamestate->nextState('transPlayerRoomMessHall');
 						break;
@@ -340,6 +363,18 @@ class SolarStorm extends Table {
 						break;
 					case 'repair-centre':
 						$this->gamestate->nextState('transPlayerRoomRepairCentre');
+						break;
+					case 'armoury':
+						$tokensLeft = 4 - $this->rooms->countTotalProtectionTokens();
+						if ($tokensLeft <= 0) {
+							throw new BgaUserException(self::_('No protection token available'));
+						}
+						self::setGameStateValue('protectionTokensToPut', max(2, $tokensLeft));
+						$this->gamestate->nextState('transPlayerRoomArmoury');
+						break;
+					case 'bridge':
+						$this->damageCards->pickCardsForLocation(3, 'deck', 'reorder');
+						$this->gamestate->nextState('transPlayerRoomBridge');
 						break;
 					default:
 						throw new BgaVisibleSystemException("Room $roomSlug not implemented yet"); // NOI18N
@@ -816,6 +851,37 @@ class SolarStorm extends Table {
 		$this->gamestate->nextState('transActionDone');
 	}
 
+	public function actionPutProtectionToken(int $position) {
+		$tokensLeft = (int) self::getGameStateValue('protectionTokensToPut');
+		if ($tokensLeft === 0) {
+			throw new BgaVisibleSystemException('No protection token left to put'); // NOI18N
+		}
+
+		$room = $this->rooms->getRoomByPosition($position);
+		$player = $this->ssPlayers->getActive();
+		$room->addProtection($player);
+		$room->save();
+		$this->notifyAllPlayers(
+			'updateRooms',
+			clienttranslate('${player_name} puts a protection token in ${roomName}'),
+			[
+				'rooms' => [$room->toArray()],
+				'roomName' => $room->getName(),
+			] + $player->getNotificationArgs()
+		);
+
+		$tokensLeft--;
+		self::setGameStateValue('protectionTokensToPut', $tokensLeft);
+
+		if ($tokensLeft <= 0) {
+			$player->incrementActions(-1);
+			$player->save();
+			$this->gamestate->nextState('transActionDone');
+			return;
+		}
+		$this->gamestate->nextState('transPlayerRoomArmoury');
+	}
+
 	//////////////////////////////////////////////////////////////////////////////
 	//////////// Game state arguments
 	////////////
@@ -884,13 +950,41 @@ class SolarStorm extends Table {
 	public function stStartOfTurn() {
 		$player = $this->ssPlayers->getActive();
 		$room = $this->rooms->getRoomByPosition($player->getPosition());
+
 		if ($room->getSlug() === 'medical-bay') {
-			// TODO check there are token left
+			// TODO check there are actions token left
 			$tokens = $player->getActionsTokens();
 			$player->setActionsTokens($tokens + 2);
 			$player->save();
 			$this->notifyPlayerData($player, clienttranslate('Medical Bay: ${player_name} takes 2 action tokens'), []);
 		}
+
+		// Remove protection tokens from this player
+		$updatedRooms = [];
+		foreach ($this->rooms->getRooms() as $room) {
+			$protection = $room->getProtection();
+			if (in_array($player->getId(), $protection)) {
+				$room->setProtection(
+					array_values(
+						array_filter($protection, function ($p) use ($player) {
+							return $p !== $player->getId();
+						})
+					)
+				);
+				$room->save();
+				$updatedRooms[] = $room->toArray();
+			}
+		}
+		if (!empty($updatedRooms)) {
+			$this->notifyAllPlayers(
+				'updateRooms',
+				'Protection tokens from ${player_name} are removed.',
+				[
+					'rooms' => $updatedRooms,
+				] + $player->getNotificationArgs()
+			);
+		}
+
 		$this->gamestate->nextState('transPlayerTurn');
 	}
 
@@ -909,6 +1003,10 @@ class SolarStorm extends Table {
 		} else {
 			$this->gamestate->nextState('transPlayerTurn');
 		}
+	}
+
+	public function stActionCancel() {
+		$this->gamestate->nextState('transPlayerTurn');
 	}
 
 	public function stEndTurn() {

@@ -30,8 +30,10 @@ if (!defined('ST_PLAYER_TURN')) {
 	define('ST_PLAYER_ROOM_MESS_HALL', 12);
 	define('ST_PLAYER_ROOM_ENGINE_ROOM', 13);
 	define('ST_PLAYER_ROOM_REPAIR_CENTRE', 14);
+	define('ST_PLAYER_ROOM_ARMOURY', 15);
 	define('ST_PLAYER_ROOM_BRIDGE', 16);
 
+	define('ST_PLAYER_ACTION_CANCEL', 19);
 	define('ST_PLAYER_ACTION_DONE', 20);
 	define('ST_PLAYER_PICK_RESOURCES_CARDS', 21);
 
@@ -75,6 +77,7 @@ $machinestates = [
 			'transPlayerRoomMessHall' => ST_PLAYER_ROOM_MESS_HALL,
 			'transPlayerRoomEngineRoom' => ST_PLAYER_ROOM_ENGINE_ROOM,
 			'transPlayerRoomRepairCentre' => ST_PLAYER_ROOM_REPAIR_CENTRE,
+			'transPlayerRoomArmoury' => ST_PLAYER_ROOM_ARMOURY,
 			'transPlayerRoomBridge' => ST_PLAYER_ROOM_BRIDGE,
 			'transActionDone' => ST_PLAYER_ACTION_DONE,
 		],
@@ -89,7 +92,7 @@ $machinestates = [
 		'possibleactions' => ['move', 'cancel'],
 		'transitions' => [
 			'transActionDone' => ST_PLAYER_ACTION_DONE,
-			'transActionCancel' => ST_PLAYER_TURN,
+			'transActionCancel' => ST_PLAYER_ACTION_CANCEL,
 		],
 	],
 
@@ -102,7 +105,7 @@ $machinestates = [
 		'transitions' => [
 			'transActionScavengePickCards' => ST_PLAYER_SCAVENGE_PICK_CARDS,
 			'transActionScavengePickNothing' => ST_PLAYER_ACTION_DONE,
-			'transActionCancel' => ST_PLAYER_TURN,
+			'transActionCancel' => ST_PLAYER_ACTION_CANCEL,
 		],
 	],
 
@@ -128,7 +131,7 @@ $machinestates = [
 		'possibleactions' => ['pickResourceFromAnotherPlayer', 'giveResourceToAnotherPlayer', 'cancel'],
 		'transitions' => [
 			'transActionDone' => ST_PLAYER_ACTION_DONE,
-			'transActionCancel' => ST_PLAYER_TURN,
+			'transActionCancel' => ST_PLAYER_ACTION_CANCEL,
 		],
 	],
 
@@ -140,7 +143,7 @@ $machinestates = [
 		'possibleactions' => ['selectResourceForRepair', 'cancel'],
 		'transitions' => [
 			'transActionDone' => ST_PLAYER_ACTION_DONE,
-			'transActionCancel' => ST_PLAYER_TURN,
+			'transActionCancel' => ST_PLAYER_ACTION_CANCEL,
 		],
 	],
 
@@ -152,7 +155,7 @@ $machinestates = [
 		'possibleactions' => ['moveMeepleToRoom', 'cancel'],
 		'transitions' => [
 			'transActionDone' => ST_PLAYER_ACTION_DONE,
-			'transActionCancel' => ST_PLAYER_TURN,
+			'transActionCancel' => ST_PLAYER_ACTION_CANCEL,
 		],
 	],
 
@@ -174,10 +177,15 @@ $machinestates = [
 		'description' => clienttranslate('Mess Hall: ${actplayer} must take, give or swap a card with another player'),
 		'descriptionmyturn' => clienttranslate('Mess Hall: ${you} must take, give or swap a card with another player'),
 		'type' => 'activeplayer',
-		'possibleactions' => ['pickResourceFromAnotherPlayer', 'giveResourceToAnotherPlayer', 'swapResourceWithAnotherPlayer', 'cancel'],
+		'possibleactions' => [
+			'pickResourceFromAnotherPlayer',
+			'giveResourceToAnotherPlayer',
+			'swapResourceWithAnotherPlayer',
+			'cancel',
+		],
 		'transitions' => [
 			'transActionDone' => ST_PLAYER_ACTION_DONE,
-			'transActionCancel' => ST_PLAYER_TURN,
+			'transActionCancel' => ST_PLAYER_ACTION_CANCEL,
 		],
 	],
 
@@ -190,7 +198,7 @@ $machinestates = [
 		'possibleactions' => ['swapResourceFromDiscard', 'cancel'],
 		'transitions' => [
 			'transActionDone' => ST_PLAYER_ACTION_DONE,
-			'transActionCancel' => ST_PLAYER_TURN,
+			'transActionCancel' => ST_PLAYER_ACTION_CANCEL,
 		],
 	],
 
@@ -202,7 +210,19 @@ $machinestates = [
 		'possibleactions' => ['selectResourceForRepair', 'cancel'],
 		'transitions' => [
 			'transActionDone' => ST_PLAYER_ACTION_DONE,
-			'transActionCancel' => ST_PLAYER_TURN,
+			'transActionCancel' => ST_PLAYER_ACTION_CANCEL,
+		],
+	],
+
+	ST_PLAYER_ROOM_ARMOURY => [
+		'name' => 'playerRoomArmoury',
+		'description' => clienttranslate('Armoury: ${actplayer} must place protection tokens'),
+		'descriptionmyturn' => clienttranslate('Armoury: ${you} must place protection tokens'),
+		'type' => 'activeplayer',
+		'possibleactions' => ['putProtectionToken'],
+		'transitions' => [
+			'transActionDone' => ST_PLAYER_ACTION_DONE,
+			'transPlayerRoomArmoury' => ST_PLAYER_ROOM_ARMOURY,
 		],
 	],
 
@@ -216,6 +236,15 @@ $machinestates = [
 		'possibleactions' => ['putBackDamageCardsInDeck'],
 		'transitions' => [
 			'transActionDone' => ST_PLAYER_ACTION_DONE,
+		],
+	],
+
+	ST_PLAYER_ACTION_CANCEL => [
+		'name' => 'actionCancel',
+		'type' => 'game',
+		'action' => 'stActionCancel',
+		'transitions' => [
+			'transPlayerTurn' => ST_PLAYER_TURN,
 		],
 	],
 

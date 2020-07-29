@@ -136,9 +136,17 @@ class action_solarstorm extends APP_GameAction {
 		$this->game->actionSwapResourceFromDiscard($cardId, $card2Id);
 		self::ajaxResponse();
 	}
+
 	public function useToken() {
 		self::setAjaxMode();
 		$this->game->actionUseToken();
+		self::ajaxResponse();
+	}
+
+	public function putProtectionToken() {
+		self::setAjaxMode();
+		$position = (int) self::getArg('position', AT_posint, true);
+		$this->game->actionPutProtectionToken($position);
 		self::ajaxResponse();
 	}
 }
