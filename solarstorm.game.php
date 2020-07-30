@@ -292,7 +292,6 @@ class SolarStorm extends Table {
 		return $result;
 	}
 
-	// TODO adjust lose/failure
 	private function triggerEndOfGame(string $reason): void {
 		$message = '';
 		switch ($reason) {
@@ -304,7 +303,7 @@ class SolarStorm extends Table {
 				break;
 			case 'energy-core':
 				$message = clienttranslate('End of game ! All players win, congratulations !.');
-				$sql = "UPDATE player SET player_score = 1";
+				$sql = 'UPDATE player SET player_score = 1';
 				self::DbQuery($sql);
 				break;
 		}
@@ -1021,7 +1020,10 @@ class SolarStorm extends Table {
 
 	public function actionGetActionToken() {
 		$player = $this->ssPlayers->getActive();
-		// TODO check there are token left
+		$tokensLeft = 8 - $this->ssPlayers->countTotalActionTokens();
+		if ($tokensLeft <= 0) {
+			throw new BgaUserException(self::_('No action token left'));
+		}
 		$tokens = $player->getActionsTokens();
 		$player->setActionsTokens($tokens + 1);
 		$player->incrementActions(-1);
@@ -1156,11 +1158,14 @@ class SolarStorm extends Table {
 		$room = $this->rooms->getRoomByPosition($player->getPosition());
 
 		if ($room->getSlug() === 'medical-bay') {
-			// TODO check there are actions token left
+			$tokensLeft = 8 - $this->ssPlayers->countTotalActionTokens();
+			$tokensMax = min(2, $tokensLeft);
 			$tokens = $player->getActionsTokens();
-			$player->setActionsTokens($tokens + 2);
+			$player->setActionsTokens($tokens + $tokensMax);
 			$player->save();
-			$this->notifyPlayerData($player, clienttranslate('Medical Bay: ${player_name} takes 2 action tokens'), []);
+			$this->notifyPlayerData($player, clienttranslate('Medical Bay: ${player_name} takes ${num} action token(s)'), [
+				'num' => $tokensMax,
+			]);
 		}
 
 		// Remove protection tokens from this player
@@ -1278,9 +1283,9 @@ class SolarStorm extends Table {
 	/**
 	 * Give lotta actions
 	 */
-	public function debugNitro() {
+	public function debugNitro($num = 10) {
 		$player = $this->ssPlayers->getActive();
-		$player->incrementActions(5);
+		$player->incrementActions((int) $num);
 		$player->save();
 	}
 

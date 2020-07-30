@@ -82,8 +82,8 @@ class SolarStormPlayer extends APP_GameClass {
 	}
 
 	public function setActions(int $actions): void {
-		if ($actions < 0 || $actions > 10) {
-			throw new \Exception('Invalid actions');
+		if ($actions < 0) {
+			throw new \Exception('Invalid actions number');
 		}
 		$this->actions = $actions;
 	}

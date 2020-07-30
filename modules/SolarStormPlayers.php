@@ -56,6 +56,14 @@ class SolarStormPlayers extends APP_GameClass {
 		return $this->players[$playerId];
 	}
 
+	public function countTotalActionTokens() : int{
+		$total = 0;
+		foreach ($this->players as $player) {
+			$total += $player->getActionsTokens();
+		}
+		return $total;
+	}
+
 	public function toArray(): array {
 		return array_values(
 			array_map(function ($p) {
