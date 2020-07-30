@@ -1036,7 +1036,6 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			notif.args.cards.forEach(cardData => {
 				this.damageDeck.addToStock(cardData.type)
 			})
-			// TODO update damageCardsNbr
 		},
 
 		notif_addResourcesCardsOnTable(notif) {
@@ -1044,7 +1043,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			notif.args.cards.forEach(cardData => {
 				this.resourceDeck.addToStockWithId(cardData.type, cardData.id)
 			})
-			// TODO update damageCardsNbr
+			this.updateResourceCardsNbr(notif.args.resourceCardsNbr)
 		},
 
 		notif_playerPickResource(notif) {

@@ -1121,14 +1121,15 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
       console.log('notif_updateDamageDiscard', notif);
       notif.args.cards.forEach(cardData => {
         this.damageDeck.addToStock(cardData.type);
-      }); // TODO update damageCardsNbr
+      });
     },
 
     notif_addResourcesCardsOnTable(notif) {
       console.log('notif_addResourcesCardsOnTable', notif);
       notif.args.cards.forEach(cardData => {
         this.resourceDeck.addToStockWithId(cardData.type, cardData.id);
-      }); // TODO update damageCardsNbr
+      });
+      this.updateResourceCardsNbr(notif.args.resourceCardsNbr);
     },
 
     notif_playerPickResource(notif) {

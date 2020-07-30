@@ -254,9 +254,11 @@ class SolarStorm extends Table {
 		}
 
 		if ($notify) {
+			$resourceCardsNbr = $this->resourceCards->countCardInLocation('deck');
 			if ($notify) {
 				$this->notifyAllPlayers('addResourcesCardsOnTable', '', [
 					'cards' => $cards,
+					'resourceCardsNbr' => $resourceCardsNbr,
 				]);
 			}
 		}
