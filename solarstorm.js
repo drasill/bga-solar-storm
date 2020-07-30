@@ -68,6 +68,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
     },
 
     initializeDamageDeck() {
+      $first('.ss-damage-deck__title').innerHTML = '<span>' + _('Damage cards') + '</span>';
       const damageDeckEl = $first('.ss-damage-deck');
       this.damageDeck = this.createDamageStock(damageDeckEl);
       this.damageDeck.setOverlap(0.01);
@@ -77,12 +78,13 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
         this.damageDeck.addToStock(card.type);
       }
 
-      this.addTooltipMarkdown(damageDeckEl, _('Damage deck.\n----\nAt then **end of turn** of each player, a new card is revealed, indicating rooms which are damaged.\nThe deck is ordered like this :\n+ 8 damage cards with 1 room\n+ 8 damage cards with 2 rooms\n+ 8 damage cards with 3 rooms.\nWhen the deck is empty, the ship\' hull starts taking damage, and resources will be discarded from the deck, accelerating the end of the game !\n----\n+ Note: at the start of the game, two damage cards are revealed from the bottom (applying 6 damages).\n+ Note 2: if a room has a *protection* token, instead of taking damage, the protection token is removed.'), {}, 1000);
+      this.addTooltipMarkdown(damageDeckEl, _("Damage deck.\n----\nAt then **end of turn** of each player, a new card is revealed, indicating rooms which are damaged.\nThe deck is ordered like this :\n+ 8 damage cards with 1 room\n+ 8 damage cards with 2 rooms\n+ 8 damage cards with 3 rooms.\nWhen the deck is empty, the ship' hull starts taking damage, and resources will be discarded from the deck, accelerating the end of the game !\n----\n+ Note: at the start of the game, two damage cards are revealed from the bottom (applying 6 damages).\n+ Note 2: if a room has a *protection* token, instead of taking damage, the protection token is removed."), {}, 1000);
       const reorderDamageDeckEl = $first('.ss-damage-reorder-deck');
       this.reorderDamageDeck = this.createDamageStock(reorderDamageDeckEl);
     },
 
     initializeResourceDeck() {
+      $first('.ss-resource-deck__title').innerHTML = '<span>' + _('Resource cards') + '</span>';
       const resourceDeckEl = $first('.ss-resource-deck__table');
       this.resourceDeck = this.createResourceStock(resourceDeckEl);
       this.resourceDeck.setOverlap(50);
@@ -311,7 +313,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 
     createDamageStock(el) {
       const stock = new ebg.stock();
-      stock.create(this, el, 160, 117);
+      stock.create(this, el, 123, 90);
       stock.setSelectionMode(1);
       stock.extraClasses = 'ss-damage-card';
       stock.setSelectionAppearance('class');
@@ -1458,15 +1460,15 @@ class SSPlayer {
     }, playersHandsEl);
     this.boardEl = boardEl;
     const nameEl = dojo.create('div', {
-      class: 'ss-player-board__name',
-      style: {
-        backgroundColor: '#' + this.color
-      },
-      innerHTML: `Hand of ${this.name}`
+      class: 'ss-player-board__name ss-section-title',
+      innerHTML: `<span>Hand of <span style="color: #${this.color}">${this.name}</span></span>`
     }, boardEl);
     this.handEl = dojo.create('div', {
       class: 'ss-player-hand',
-      id: `ss-player-hand--${this.id}`
+      id: `ss-player-hand--${this.id}`,
+      style: {
+        backgroundColor: `#${this.color}55`
+      }
     }, this.boardEl);
     this.actionsTokensEl = dojo.create('div', {
       class: 'ss-player-board__action-tokens'
