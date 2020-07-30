@@ -40,6 +40,8 @@ if (!defined('ST_PLAYER_TURN')) {
 
 	define('ST_PLAYER_END_TURN', 40);
 	define('ST_PLAYER_DISCARD_RESOURCES', 41);
+
+	define('ST_END_OF_GAME', 99);
 }
 
 $machinestates = [
@@ -82,6 +84,7 @@ $machinestates = [
 			'transPlayerRoomArmoury' => ST_PLAYER_ROOM_ARMOURY,
 			'transPlayerRoomBridge' => ST_PLAYER_ROOM_BRIDGE,
 			'transActionDone' => ST_PLAYER_ACTION_DONE,
+			'transEndOfGame' => ST_END_OF_GAME,
 		],
 	],
 
@@ -121,6 +124,7 @@ $machinestates = [
 		'transitions' => [
 			'transActionScavengePickCards' => ST_PLAYER_SCAVENGE_PICK_CARDS,
 			'transActionScavengeEnd' => ST_PLAYER_ACTION_DONE,
+			'transEndOfGame' => ST_END_OF_GAME,
 		],
 	],
 
@@ -282,6 +286,7 @@ $machinestates = [
 		'transitions' => [
 			'transPlayerEndTurn' => ST_PLAYER_END_TURN,
 			'transPlayerPickResourcesCards' => ST_PLAYER_PICK_RESOURCES_CARDS,
+			'transEndOfGame' => ST_END_OF_GAME,
 		],
 	],
 
@@ -293,6 +298,7 @@ $machinestates = [
 		'transitions' => [
 			'transPlayerStartOfTurn' => ST_PLAYER_START_OF_TURN,
 			'transPlayerDiscardResources' => ST_PLAYER_DISCARD_RESOURCES,
+			'transEndOfGame' => ST_END_OF_GAME,
 		],
 	],
 
@@ -306,29 +312,6 @@ $machinestates = [
 			'transPlayerEndTurn' => ST_PLAYER_END_TURN,
 		],
 	],
-
-	/*
-    Examples:
-    
-    2 => [
-        "name" => "nextPlayer",
-        "description" => '',
-        "type" => "game",
-        "action" => "stNextPlayer",
-        "updateGameProgression" => true,   
-        "transitions" => [ "endGame" => 99, "nextPlayer" => 10 ]
-    ],
-    
-    10 => [
-        "name" => "playerTurn",
-        "description" => clienttranslate('${actplayer} must play a card or pass'),
-        "descriptionmyturn" => clienttranslate('${you} must play a card or pass'),
-        "type" => "activeplayer",
-        "possibleactions" => [ "playCard", "pass" ],
-        "transitions" => [ "playCard" => 2, "pass" => 2 ]
-    ], 
-
-*/
 
 	// Final state.
 	// Please do not modify (and do not overload action/args methods).

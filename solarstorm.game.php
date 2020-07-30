@@ -36,6 +36,12 @@ class SolarStorm extends Table {
 			'scavengeNumberOfCards' => 12,
 			// When puting protection tokens, how many left to put
 			'protectionTokensToPut' => 13,
+			// Initial resource deck size
+			'initialResourceDeckSize' => 14,
+
+			// Options
+			// Game difficulty (number of universal cards)
+			'gameDifficulty' => 100,
 		]);
 		$this->rooms = new SolarStormRooms($this);
 		$this->ssPlayers = new SolarStormPlayers($this);
@@ -89,6 +95,7 @@ class SolarStorm extends Table {
 		self::setGameStateInitialValue('resourcePickedFromDeck', 0);
 		self::setGameStateInitialValue('scavengeNumberOfCards', 0);
 		self::setGameStateInitialValue('protectionTokensToPut', 0);
+		self::setGameStateInitialValue('initialResourceDeckSize', 0);
 
 		$this->rooms->generateRooms();
 
@@ -103,18 +110,32 @@ class SolarStorm extends Table {
 	private function initializeDecks() {
 		// Resource cards
 		$cards = [];
+		$difficultyMap = [
+			1 => 8,
+			2 => 6,
+			3 => 4,
+			4 => 2,
+			5 => 0,
+		];
+		$gameDifficulty = self::getGameStateValue('gameDifficulty');
+		$total = 0;
 		foreach ($this->resourceTypes as $resourceType) {
 			$nbr = 15;
 			if ($resourceType['id'] === 'universal') {
-				// TODO:DIFFICULTY change nbr according to difficulty
-				$nbr = 8;
+				$nbr = $difficultyMap[$gameDifficulty] ?? 0;
+			}
+			if ($nbr <= 0) {
+				continue;
 			}
 			$cards[] = [
 				'type' => $resourceType['id'],
 				'type_arg' => null,
 				'nbr' => $nbr,
 			];
+			$total += $nbr;
 		}
+
+		self::setGameStateValue('initialResourceDeckSize', $total);
 		$this->resourceCards->createCards($cards, 'deck');
 		$this->resourceCards->shuffle('deck');
 
@@ -182,6 +203,10 @@ class SolarStorm extends Table {
 				$room->removeOldestProtectionToken();
 				$protectedRooms[] = $room->toArray();
 			} else {
+				if ($room->getDamageCount() === 3) {
+					$this->triggerEndOfGame('damage');
+					return;
+				}
 				$room->doDamage();
 			}
 			$room->save();
@@ -226,6 +251,10 @@ class SolarStorm extends Table {
 		}
 
 		$cards = $this->resourceCards->pickCardsForLocation($needToDrawCnt, 'deck', 'table');
+		if ($this->resourceCards->countCardInLocation('deck') == 0) {
+			$this->triggerEndOfGame('resources');
+			return;
+		}
 
 		if ($notify) {
 			if ($notify) {
@@ -241,6 +270,7 @@ class SolarStorm extends Table {
 
 		$result['rooms'] = $this->rooms->toArray();
 		$result['ssPlayers'] = $this->ssPlayers->toArray();
+		$result['resourceCardsNbrInitial'] = (int)self::getGameStateValue('initialResourceDeckSize');
 		$result['resourceCardsNbr'] = $this->resourceCards->countCardInLocation('deck');
 		$result['resourceTypes'] = array_values($this->resourceTypes);
 
@@ -255,6 +285,25 @@ class SolarStorm extends Table {
 		$result['resourceCards'] = $data;
 
 		return $result;
+	}
+
+	// TODO supports a "win" reason
+	// TODO adjust lose/failure
+	private function triggerEndOfGame(string $reason): void {
+		$message = '';
+		switch ($reason) {
+			case 'damage':
+				$message = clienttranslate('End of game ! All players lose, as a fully damaged room receives new damage.');
+				break;
+			case 'resources':
+				$message = clienttranslate('End of game ! All players lose, as the resources deck is empty.');
+				break;
+			case 'energy-core':
+				$message = clienttranslate('End of game ! All players win, congratulations !.');
+				break;
+		}
+		$this->notifyAllPlayers('endOfGame', $message, []);
+		$this->gamestate->nextState('transEndOfGame');
 	}
 
 	/*
@@ -355,7 +404,7 @@ class SolarStorm extends Table {
 		if ($room->isDiverted()) {
 			throw new BgaUserException(self::_('This room already has its power diverted'));
 		}
-		if ($room->hasDamage()) {
+		if ($room->getDamageCount() > 0) {
 			throw new BgaUserException(self::_('This room is damaged and can\'t have its power diverted'));
 		}
 
@@ -393,6 +442,7 @@ class SolarStorm extends Table {
 	////////////
 
 	public function actionChoose($actionName): void {
+		$player = $this->ssPlayers->getActive();
 		self::checkAction('choose');
 		switch ($actionName) {
 			case 'move':
@@ -414,7 +464,6 @@ class SolarStorm extends Table {
 				$this->actionGetActionToken();
 				break;
 			case 'room':
-				$player = $this->ssPlayers->getActive();
 				$room = $this->rooms->getRoomByPosition($player->getPosition());
 				$roomSlug = $room->getSlug();
 				switch ($roomSlug) {
@@ -429,6 +478,12 @@ class SolarStorm extends Table {
 						$this->gamestate->nextState('transPlayerRoomMessHall');
 						break;
 					case 'engine-room':
+						if ($this->resourceCards->countCardInLocation('discard') <= 0) {
+							throw new BgaUserException(self::_('No resource card have been discared'));
+						}
+						if ($this->resourceCards->countCardInLocation('hand', $player->getId()) <= 0) {
+							throw new BgaUserException(self::_('You have no resource card'));
+						}
 						$this->gamestate->nextState('transPlayerRoomEngineRoom');
 						break;
 					case 'repair-centre':
@@ -445,6 +500,12 @@ class SolarStorm extends Table {
 					case 'bridge':
 						$this->damageCards->pickCardsForLocation(3, 'deck', 'reorder');
 						$this->gamestate->nextState('transPlayerRoomBridge');
+						break;
+					case 'energy-core':
+						if ($this->rooms->countTotalDiverted() < 8) {
+							throw new BgaUserException(self::_('All rooms need to have their power diverted first'));
+						}
+						$this->triggerEndOfGame('energy-core');
 						break;
 					default:
 						throw new BgaVisibleSystemException("Room $roomSlug not implemented yet"); // NOI18N
@@ -544,6 +605,10 @@ class SolarStorm extends Table {
 			$fromDeck = true;
 			// Pick from deck
 			$card = $this->resourceCards->pickCardForLocation('deck', 'hand', $player->getId());
+			if ($this->resourceCards->countCardInLocation('deck') == 0) {
+				$this->triggerEndOfGame('resources');
+				return;
+			}
 		} else {
 			// Pick from table
 			if (!in_array('table', $possibleFrom)) {
@@ -1150,6 +1215,36 @@ class SolarStorm extends Table {
 		$player = $this->ssPlayers->getActive();
 		$player->incrementActions(-1);
 		$player->save();
+	}
+
+	//////////////////////////////////////////////////////////////////////////////
+	//////////// DEBUG
+	//////////// Methods to be called from the chat window in dev studio
+
+	/**
+	 * Leave one card in the resource decks, so any deck pick will end the game
+	 */
+	public function debugEmptyResourceDeck() {
+		$cnt = $this->resourceCards->countCardInLocation('deck');
+		$this->resourceCards->pickCardsForLocation($cnt - 1, 'deck', 'discard');
+	}
+
+	/**
+	 * Divert all rooms so we can win :)
+	 */
+	public function debugDivertAllRooms() {
+		$updatedRooms = [];
+		foreach ($this->rooms->getRooms() as $room) {
+			if ($room->getSlug() === 'energy-core') {
+				continue;
+			}
+			$room->setDiverted(true);
+			$room->save();
+			$updatedRooms[] = $room->toArray();
+		}
+		$this->notifyAllPlayers('updateRooms', 'cheater !', [
+			'rooms' => $updatedRooms,
+		]);
 	}
 
 	//////////////////////////////////////////////////////////////////////////////

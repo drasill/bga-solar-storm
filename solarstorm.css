@@ -431,3 +431,23 @@
 .ss-protection-token--4 {
 	background-position: 80% 0%;
 }
+
+/* Un-reset css for list & co */
+.ss-tooltip-markdown li ul,
+.ss-tooltip-markdown li ol {
+	margin: 0 1.5em;
+}
+.ss-tooltip-markdown ul,
+.ss-tooltip-markdown ol {
+	margin: 0 1.5em 1.5em 1.5em;
+}
+.ss-tooltip-markdown ul,
+.ss-tooltip-markdown li {
+	list-style-type: disc;
+}
+.ss-tooltip-markdown em,
+.ss-tooltip-markdown i {
+	font-style: italic;
+}
+.ss-tooltip-markdown p {
+}

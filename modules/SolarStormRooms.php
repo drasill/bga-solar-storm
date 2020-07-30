@@ -32,7 +32,8 @@ class SolarStormRooms extends APP_GameClass {
 
 	public function load() {
 		$this->rooms = [];
-		$sql = 'SELECT id, position, room, damage1, damage2, damage3, diverted, protection1, protection2, protection3, protection4 FROM rooms';
+		$sql =
+			'SELECT id, position, room, damage1, damage2, damage3, diverted, protection1, protection2, protection3, protection4 FROM rooms';
 		$roomsData = self::getCollectionFromDb($sql);
 		foreach ($roomsData as $roomData) {
 			$room = new SolarStormRoom($this->table, $roomData);
@@ -77,6 +78,14 @@ class SolarStormRooms extends APP_GameClass {
 			$total += count($room->getProtection());
 		}
 		return $total;
+	}
+
+	public function countTotalDiverted(): int {
+		return count(
+			array_filter($this->rooms, function ($room) {
+				return $room->isDiverted();
+			})
+		);
 	}
 
 	public function toArray() {

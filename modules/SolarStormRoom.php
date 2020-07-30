@@ -119,8 +119,8 @@ class SolarStormRoom extends APP_GameClass {
 		return $this->diverted;
 	}
 
-	public function hasDamage(): bool {
-		return count(array_filter($this->damage)) > 0;
+	public function getDamageCount(): int {
+		return count(array_filter($this->damage));
 	}
 
 	public function setDamage(array $damage) {
@@ -139,6 +139,9 @@ class SolarStormRoom extends APP_GameClass {
 	}
 
 	public function setDiverted(bool $diverted): void {
+		if ($this->slug === 'energy-core') {
+			throw new BgaVisibleSystemException('Cannot divert power in this room');
+		}
 		$this->diverted = $diverted;
 	}
 

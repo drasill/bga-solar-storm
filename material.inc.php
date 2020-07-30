@@ -64,7 +64,7 @@ $this->roomInfos = [
 		'slug' => 'energy-core',
 		'name' => self::_('Energy Core'),
 		'description' => self::_(
-			'When all rooms have diverted power, get here and use 1 action to reactivate the Energy Core'
+			"When all rooms have diverted power,\n get here and use 1 action to reactivate the Energy Core.\nThen all players win the game!"
 		),
 		'resources' => [],
 		'divertResources' => [],
@@ -72,74 +72,60 @@ $this->roomInfos = [
 	1 => [
 		'slug' => 'mess-hall',
 		'name' => self::_('Mess Hall'),
-		'description' => self::_(
-			'Give, take or exchange a resource card with another player'
-		),
+		'description' => self::_('Give, take or exchange a resource card with another player.'),
 		'resources' => ['nanobots', 'energy', 'data'],
-		'divertResources' => ['data','data','metal'],
+		'divertResources' => ['data', 'data', 'metal'],
 	],
 	2 => [
 		'slug' => 'repair-centre',
 		'name' => self::_('Repair Centre'),
-		'description' => self::_(
-			'Repair a damaged room by one space on the Repair Track. Discard the matching card.'
-		),
+		'description' => self::_("Repair a damaged room by one space on the Repair Track.\nDiscard the matching card."),
 		'resources' => ['metal', 'energy', 'data'],
-		'divertResources' => ['data','energy','nanobots'],
+		'divertResources' => ['data', 'energy', 'nanobots'],
 	],
 	3 => [
 		'slug' => 'medical-bay',
 		'name' => self::_('Medical Bay'),
-		'description' => self::_(
-			'Take two actions tokens when starting in this room'
-		),
+		'description' => self::_('Take two actions tokens when starting in this room.'),
 		'resources' => ['metal', 'nanobots', 'energy'],
-		'divertResources' => ['data','energy','energy'],
+		'divertResources' => ['data', 'energy', 'energy'],
 	],
 	4 => [
 		'slug' => 'engine-room',
 		'name' => self::_('Engine Room'),
-		'description' => self::_(
-			'Swap a card from your hand with one from the discard pile'
-		),
+		'description' => self::_('Swap a card from your hand with one from the discard pile.'),
 		'resources' => ['data', 'metal', 'nanobots'],
-		'divertResources' => ['metal','nanobots','nanobots'],
+		'divertResources' => ['metal', 'nanobots', 'nanobots'],
 	],
 	5 => [
 		'slug' => 'crew-quarters',
 		'name' => self::_('Crew Quarters'),
-		'description' => self::_(
-			"Move a player's meeple to a room that has another meeple in it"
-		),
+		'description' => self::_("Move a player's meeple to a room that has another meeple in it."),
 		'resources' => ['energy', 'data', 'metal'],
-		'divertResources' => ['metal','metal','nanobots'],
+		'divertResources' => ['metal', 'metal', 'nanobots'],
 	],
 	6 => [
 		'slug' => 'cargo-hold',
 		'name' => self::_('Cargo Hold'),
-		'description' => self::_(
-			'Look at the next 5 resources cards. Then put them back in any order.'
-		),
+		'description' => self::_("Look at the next 5 resources cards.\nThen put them back in any order."),
 		'resources' => ['energy', 'metal', 'data'],
-		'divertResources' => ['data','metal','nanobots'],
+		'divertResources' => ['data', 'metal', 'nanobots'],
 	],
 	7 => [
 		'slug' => 'armoury',
 		'name' => self::_('Armoury'),
 		'description' => self::_(
-			'Place 2 protection tokens on any rooms(s) (this ends at the start of your next turn)'
+			"Place 2 protection tokens on any rooms(s).\nThey are removed a the start of your next turn."
 		),
 		'resources' => ['data', 'nanobots', 'metal'],
-		'divertResources' => ['metal','energy','nanobots'],
+		'divertResources' => ['metal', 'energy', 'nanobots'],
 	],
 	8 => [
 		'slug' => 'bridge',
 		'name' => self::_('Bridge'),
-		'description' => self::_(
-			'Look at the next 3 Damage cards and put them back in any order.'
-		),
+		'description' => self::_('Look at the next 3 Damage cards and put them back in any order.'),
 		'resources' => ['nanobots', 'data', 'energy'],
-		'divertResources' => ['data','metal','energy'],
+		'divertResources' => ['data', 'metal', 'energy'],
 	],
 ];
 
