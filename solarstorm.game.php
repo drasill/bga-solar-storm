@@ -137,9 +137,17 @@ class SolarStorm extends Table {
 		$this->resourceCards->shuffle('deck');
 
 		// Distribute initial resourceCards
+		$numCardsByPlayer = 2;
+		switch (count($this->ssPlayers->getPlayers())) {
+			case 3:
+				$numCardsByPlayer = 3;
+				break;
+			case 2:
+				$numCardsByPlayer = 4;
+				break;
+		}
 		foreach ($this->ssPlayers->getPlayers() as $player) {
-			// TODO:NBPLAYERS change the number of cards according to number of players
-			$cards = $this->resourceCards->pickCards(2, 'deck', $player->getId());
+			$cards = $this->resourceCards->pickCards($numCardsByPlayer, 'deck', $player->getId());
 		}
 		// Reveal 2 cards on table
 		$this->assertResourceCardsOnTable(false);
