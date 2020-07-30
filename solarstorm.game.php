@@ -455,9 +455,15 @@ class SolarStorm extends Table {
 				$this->gamestate->nextState('transPlayerShare');
 				break;
 			case 'repair':
+				if ($this->resourceCards->countCardInLocation('hand', $player->getId()) <= 0) {
+					throw new BgaUserException(self::_('You have no resource card'));
+				}
 				$this->gamestate->nextState('transPlayerRepair');
 				break;
 			case 'divert':
+				if ($this->resourceCards->countCardInLocation('hand', $player->getId()) < 3) {
+					throw new BgaUserException(self::_("You need 3 resource cards"));
+				}
 				$this->gamestate->nextState('transPlayerDivert');
 				break;
 			case 'token':
@@ -487,6 +493,9 @@ class SolarStorm extends Table {
 						$this->gamestate->nextState('transPlayerRoomEngineRoom');
 						break;
 					case 'repair-centre':
+						if ($this->resourceCards->countCardInLocation('hand', $player->getId()) <= 0) {
+							throw new BgaUserException(self::_('You have no resource card'));
+						}
 						$this->gamestate->nextState('transPlayerRoomRepairCentre');
 						break;
 					case 'armoury':
@@ -1245,6 +1254,15 @@ class SolarStorm extends Table {
 		$this->notifyAllPlayers('updateRooms', 'cheater !', [
 			'rooms' => $updatedRooms,
 		]);
+	}
+
+	/**
+	 * Give lotta actions
+	 */
+	public function debugNitro() {
+		$player = $this->ssPlayers->getActive();
+		$player->incrementActions(5);
+		$player->save();
 	}
 
 	//////////////////////////////////////////////////////////////////////////////
