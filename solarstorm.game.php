@@ -174,8 +174,7 @@ class SolarStorm extends Table {
 		$this->drawDamageCard('bottom', false);
 	}
 
-	// FIXME private
-	public function drawDamageCard(string $from, bool $notify = true): void {
+	private function drawDamageCard(string $from, bool $notify = true): void {
 		if (!in_array($from, ['top', 'bottom'])) {
 			throw new \Exception('Invalid position to draw damage card from');
 		}
@@ -243,11 +242,10 @@ class SolarStorm extends Table {
 		}
 	}
 
-	// FIXME private
 	/**
 	 * Assert presence of 2 resources cards on the table.
 	 */
-	public function assertResourceCardsOnTable(bool $notify = true): void {
+	private function assertResourceCardsOnTable(bool $notify = true): void {
 		$currentCnt = $this->resourceCards->countCardInLocation('table');
 		$needToDrawCnt = 2 - $currentCnt;
 
@@ -294,7 +292,6 @@ class SolarStorm extends Table {
 		return $result;
 	}
 
-	// TODO supports a "win" reason
 	// TODO adjust lose/failure
 	private function triggerEndOfGame(string $reason): void {
 		$message = '';
@@ -307,6 +304,8 @@ class SolarStorm extends Table {
 				break;
 			case 'energy-core':
 				$message = clienttranslate('End of game ! All players win, congratulations !.');
+				$sql = "UPDATE player SET player_score = 1";
+				self::DbQuery($sql);
 				break;
 		}
 		$this->notifyAllPlayers('endOfGame', $message, []);
@@ -1319,6 +1318,13 @@ class SolarStorm extends Table {
 		$this->notifyAllPlayers('updateRooms', 'Deprotect All', [
 			'rooms' => $updatedRooms,
 		]);
+	}
+
+	/**
+	 * Unprotectall
+	 */
+	public function debugDrawDamage() {
+		$this->drawDamageCard('top', true);
 	}
 
 	//////////////////////////////////////////////////////////////////////////////
