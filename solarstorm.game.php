@@ -34,8 +34,6 @@ class SolarStorm extends Table {
 			'resourcePickedFromDeck' => 11,
 			// When scavenging, number of cards left to pick
 			'scavengeNumberOfCards' => 12,
-			// When puting protection tokens, how many left to put
-			'protectionTokensToPut' => 13,
 			// Initial resource deck size
 			'initialResourceDeckSize' => 14,
 
@@ -94,7 +92,6 @@ class SolarStorm extends Table {
 
 		self::setGameStateInitialValue('resourcePickedFromDeck', 0);
 		self::setGameStateInitialValue('scavengeNumberOfCards', 0);
-		self::setGameStateInitialValue('protectionTokensToPut', 0);
 		self::setGameStateInitialValue('initialResourceDeckSize', 0);
 
 		$this->rooms->generateRooms();
@@ -270,7 +267,7 @@ class SolarStorm extends Table {
 
 		$result['rooms'] = $this->rooms->toArray();
 		$result['ssPlayers'] = $this->ssPlayers->toArray();
-		$result['resourceCardsNbrInitial'] = (int)self::getGameStateValue('initialResourceDeckSize');
+		$result['resourceCardsNbrInitial'] = (int) self::getGameStateValue('initialResourceDeckSize');
 		$result['resourceCardsNbr'] = $this->resourceCards->countCardInLocation('deck');
 		$result['resourceTypes'] = array_values($this->resourceTypes);
 
@@ -462,7 +459,7 @@ class SolarStorm extends Table {
 				break;
 			case 'divert':
 				if ($this->resourceCards->countCardInLocation('hand', $player->getId()) < 3) {
-					throw new BgaUserException(self::_("You need 3 resource cards"));
+					throw new BgaUserException(self::_('You need 3 resource cards'));
 				}
 				$this->gamestate->nextState('transPlayerDivert');
 				break;
@@ -503,7 +500,6 @@ class SolarStorm extends Table {
 						if ($tokensLeft <= 0) {
 							throw new BgaUserException(self::_('No protection token available'));
 						}
-						self::setGameStateValue('protectionTokensToPut', min(2, $tokensLeft));
 						$this->gamestate->nextState('transPlayerRoomArmoury');
 						break;
 					case 'bridge':
@@ -1036,49 +1032,54 @@ class SolarStorm extends Table {
 		$this->gamestate->nextState('transActionDone');
 	}
 
-	public function actionPutProtectionToken(int $position) {
-		$tokensLeft = (int) self::getGameStateValue('protectionTokensToPut');
-		if ($tokensLeft === 0) {
-			throw new BgaVisibleSystemException('No protection token left to put'); // NOI18N
+	public function actionPutProtectionTokens(array $positions) {
+		$tokensLeft = 4 - $this->rooms->countTotalProtectionTokens();
+		if (count($positions) > 2 || count($positions) > $tokensLeft) {
+			throw new \Exception('Invalid number of tokens');
+		}
+		$player = $this->ssPlayers->getActive();
+		$updatedRooms = [];
+		foreach ($positions as $position) {
+			$room = $this->rooms->getRoomByPosition($position);
+			$room->addProtection($player);
+			$room->save();
+			$updatedRooms[$room->getPosition()] = $room->toArray();
 		}
 
-		$room = $this->rooms->getRoomByPosition($position);
-		$player = $this->ssPlayers->getActive();
-		$room->addProtection($player);
-		$room->save();
+		$updatedRooms = array_values($updatedRooms);
+
+		$roomNames = join(
+			', ',
+			array_map(function ($r) {
+				return $r['name'];
+			}, $updatedRooms)
+		);
 		$this->notifyAllPlayers(
 			'updateRooms',
-			clienttranslate('${player_name} puts a protection token in ${roomName}'),
+			clienttranslate('${player_name} puts a protection token in ${roomNames}'),
 			[
-				'rooms' => [$room->toArray()],
-				'roomName' => $room->getName(),
+				'rooms' => $updatedRooms,
+				'roomNames' => $roomNames,
 			] + $player->getNotificationArgs()
 		);
 
-		$tokensLeft--;
-		self::setGameStateValue('protectionTokensToPut', $tokensLeft);
-
-		if ($tokensLeft <= 0) {
-			$player->incrementActions(-1);
-			$player->save();
-			$this->gamestate->nextState('transActionDone');
-			return;
-		}
-		$this->gamestate->nextState('transPlayerRoomArmoury');
+		$player->incrementActions(-1);
+		$player->save();
+		$this->gamestate->nextState('transActionDone');
 	}
 
 	//////////////////////////////////////////////////////////////////////////////
 	//////////// Game state arguments
 	////////////
 
-	public function argPlayerTurn() {
+	public function argPlayerTurn(): array {
 		$player = $this->ssPlayers->getActive();
 		return [
 			'actions' => $player->getActions(),
 		];
 	}
 
-	public function argPlayerMove() {
+	public function argPlayerMove(): array {
 		$player = $this->ssPlayers->getActive();
 		$room = $this->rooms->getRoomByPosition($player->getPosition());
 		$possibleDestinations = $room->getPossibleDestinations();
@@ -1087,19 +1088,19 @@ class SolarStorm extends Table {
 		];
 	}
 
-	public function argPlayerScavengePickCards() {
+	public function argPlayerScavengePickCards(): array {
 		return [
 			'possibleSources' => $this->whereDoesPlayerCanPickResourceFrom(),
 		];
 	}
 
-	public function argPlayerPickResourcesCards() {
+	public function argPlayerPickResourcesCards(): array {
 		return [
 			'possibleSources' => $this->whereDoesPlayerCanPickResourceFrom(),
 		];
 	}
 
-	public function argPlayerRoomCargoHold() {
+	public function argPlayerRoomCargoHold(): array {
 		$nextCards = $this->resourceCards->getCardsInLocation('reorder');
 		return [
 			'_private' => [
@@ -1110,7 +1111,14 @@ class SolarStorm extends Table {
 		];
 	}
 
-	public function argPlayerRoomBridge() {
+	public function argPlayerRoomArmoury(): array {
+		$tokensLeft = 4 - $this->rooms->countTotalProtectionTokens();
+		return [
+			'tokensLeft' => $tokensLeft,
+		];
+	}
+
+	public function argPlayerRoomBridge(): array {
 		$nextCards = $this->damageCards->getCardsInLocation('reorder');
 		return [
 			'_private' => [
@@ -1121,7 +1129,7 @@ class SolarStorm extends Table {
 		];
 	}
 
-	public function argPlayerRoomEngineRoom() {
+	public function argPlayerRoomEngineRoom(): array {
 		$discardedCards = $this->resourceCards->getCardsInLocation('discard');
 		return [
 			'resourceCards' => $discardedCards,
@@ -1263,6 +1271,42 @@ class SolarStorm extends Table {
 		$player = $this->ssPlayers->getActive();
 		$player->incrementActions(5);
 		$player->save();
+	}
+
+	/**
+	 * Protect current room
+	 */
+	public function debugProtect() {
+		$player = $this->ssPlayers->getActive();
+		$room = $this->rooms->getRoomByPosition($player->getPosition());
+		$room->addProtection($player);
+		$room->save();
+		$this->notifyAllPlayers(
+			'updateRooms',
+			'protectaaate',
+			[
+				'rooms' => [$room->toArray()],
+				'roomName' => $room->getName(),
+			] + $player->getNotificationArgs()
+		);
+	}
+
+	/**
+	 * Unprotectall
+	 */
+	public function debugUnprotect() {
+		$updatedRooms = [];
+		foreach ($this->rooms->getRooms() as $room) {
+			if (!$room->isProtected()) {
+				continue;
+			}
+			$room->setProtection([]);
+			$room->save();
+			$updatedRooms[] = $room->toArray();
+		}
+		$this->notifyAllPlayers('updateRooms', 'Deprotect All', [
+			'rooms' => $updatedRooms,
+		]);
 	}
 
 	//////////////////////////////////////////////////////////////////////////////

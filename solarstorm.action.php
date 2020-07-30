@@ -151,10 +151,11 @@ class action_solarstorm extends APP_GameAction {
 		self::ajaxResponse();
 	}
 
-	public function putProtectionToken() {
+	public function putProtectionTokens() {
 		self::setAjaxMode();
-		$position = (int) self::getArg('position', AT_posint, true);
-		$this->game->actionPutProtectionToken($position);
+		$positions = self::getArg('positions', AT_numberlist, true);
+		$positions = preg_split('/\D/', $positions, -1, PREG_SPLIT_NO_EMPTY);
+		$this->game->actionPutProtectionTokens($positions);
 		self::ajaxResponse();
 	}
 }

@@ -237,9 +237,11 @@ $machinestates = [
 		'description' => clienttranslate('Armoury: ${actplayer} must place protection tokens'),
 		'descriptionmyturn' => clienttranslate('Armoury: ${you} must place protection tokens'),
 		'type' => 'activeplayer',
-		'possibleactions' => ['putProtectionToken'],
+		'args' => 'argPlayerRoomArmoury',
+		'possibleactions' => ['putProtectionTokens', 'cancel'],
 		'transitions' => [
 			'transActionDone' => ST_PLAYER_ACTION_DONE,
+			'transActionCancel' => ST_PLAYER_ACTION_CANCEL,
 			'transPlayerRoomArmoury' => ST_PLAYER_ROOM_ARMOURY,
 		],
 	],

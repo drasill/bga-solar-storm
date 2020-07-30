@@ -163,7 +163,23 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 					this.doPlayerRoomRepairCentre()
 					break
 				case 'playerRoomArmoury':
-					this.doPlayerRoomArmoury()
+					const tokensLeft = args.args.tokensLeft
+					const tokensToPut = Math.min(2, tokensLeft)
+					if (tokensLeft < 2) {
+						this.multipleChoiceDialog(
+							_('There is only one protection token left; are you sure you want to do this action ?'),
+							[_('Yes'), _('Cancel')],
+							choice => {
+								if (choice == 0) {
+									this.doPlayerRoomArmoury(tokensToPut)
+								} else {
+									this.ajaxAction('cancel', { lock: true })
+								}
+							}
+						)
+					} else {
+						this.doPlayerRoomArmoury(tokensToPut)
+					}
 					break
 				case 'playerRoomBridge':
 					this.doPlayerRoomBridge(Object.values(args.args._private.damageCards))
@@ -915,7 +931,6 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			}
 		},
 
-		// TODO check player has any resource card
 		async doPlayerRoomRepairCentre() {
 			try {
 				const room = await this.waitForRoomClick(this.rooms.rooms, { cancel: true })
@@ -942,17 +957,28 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			}
 		},
 
-		// TODO alert if there is only one token left ?
-		async doPlayerRoomArmoury() {
+		async doPlayerRoomArmoury(tokensToPut) {
+			const onCancel = []
 			try {
 				const validRooms = this.rooms.rooms.filter(r => r.slug !== 'energy-core')
-				const room = await this.waitForRoomClick(validRooms, { cancel: false })
-				await this.ajaxAction('putProtectionToken', {
+				const positions = []
+				for (let i = 0; i < tokensToPut; i++) {
+					const room = await this.waitForRoomClick(validRooms, { cancel: true })
+					positions.push(room.position)
+					room.protection.push(this.players.getActive().id)
+					room.updateProtectionTokens()
+					onCancel.push(() => {
+						room.protection.pop()
+						room.updateProtectionTokens()
+					})
+				}
+				await this.ajaxAction('putProtectionTokens', {
 					lock: true,
-					position: room.position
+					positions: positions.join(',')
 				})
 			} catch (e) {
 				console.error(e)
+				onCancel.forEach(f => f())
 				await this.ajaxAction('cancel', { lock: true })
 			}
 		},

@@ -50,6 +50,9 @@ class SolarStormRooms extends APP_GameClass {
 		throw new \Exception("Room id '$roomId' not found");
 	}
 
+	/**
+	 * @return SolarStormRoom[]
+	 */
 	public function getRooms(): array {
 		return $this->rooms;
 	}
