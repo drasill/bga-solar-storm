@@ -635,12 +635,14 @@ class SolarStorm extends Table {
 			$message = clienttranslate('${player_name} takes a resource : ${resourceName}');
 		}
 
+		$resourceCardsNbr = $this->resourceCards->countCardInLocation('deck');
 		$this->notifyAllPlayers(
 			'playerPickResource',
 			$message,
 			[
 				'card' => $card,
 				'resourceName' => $resourceName,
+				'resourceCardsNbr' => $resourceCardsNbr,
 			] + $player->getNotificationArgs()
 		);
 

@@ -242,6 +242,22 @@
 	box-shadow: rgba(0, 0, 255, 0.7) 4px 4px 6px;
 	cursor: pointer;
 }
+.ss-resource-deck__deck__number {
+	color: white;
+	font-weight: bold;
+	font-size: 20px;
+	text-align: center;
+	width: 30px;
+	background: #000407;
+	border-radius: 50%;
+	height: 30px;
+	top: 52%;
+	position: absolute;
+	left: 50%;
+	margin-left: -15px;
+	margin-top: -15px;
+	line-height: 30px;
+}
 
 .ss-resource-deck__table {
 	flex-grow: 1;

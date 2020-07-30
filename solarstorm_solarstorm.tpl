@@ -33,7 +33,9 @@
 			<div class="ss-decks-wrapper-top">
 				<div class="ss-damage-deck" id="ss-damage-deck"></div>
 				<div class="ss-resource-deck">
-					<div class="ss-resource-deck__source ss-resource-deck__deck ss-resource-card"></div>
+					<div class="ss-resource-deck__source ss-resource-deck__deck ss-resource-card">
+						<div class="ss-resource-deck__deck__number"></div>
+					</div>
 					<div class="ss-resource-deck__source ss-resource-deck__table" id="ss-resource-deck__table"></div>
 				</div>
 			</div>

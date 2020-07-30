@@ -76,7 +76,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			this.addTooltipMarkdown(
 				damageDeckEl,
 				_(
-					'Damage deck.\n----\nAt then **end of turn** of each player, a new card is revealed, indicating rooms which are damaged.\nThe deck is ordered like this :\n+ 8 damage cards with 1 room\n+ 8 damage cards with 2 rooms\n+ 8 damage cards with 3 rooms.\nWhen the deck is empty, the HULL starts taking damage, and resources will be discarded from the deck, accelerating the end of the game !\n----\n+ Note: at the start of the game, two damage cards are revealed from the bottom (3 rooms damage).\n+ Note 2: if a room has a *protection* token, instead of taking damage, the protection token is removed.'
+					'Damage deck.\n----\nAt then **end of turn** of each player, a new card is revealed, indicating rooms which are damaged.\nThe deck is ordered like this :\n+ 8 damage cards with 1 room\n+ 8 damage cards with 2 rooms\n+ 8 damage cards with 3 rooms.\nWhen the deck is empty, the ship\' hull starts taking damage, and resources will be discarded from the deck, accelerating the end of the game !\n----\n+ Note: at the start of the game, two damage cards are revealed from the bottom (applying 6 damages).\n+ Note 2: if a room has a *protection* token, instead of taking damage, the protection token is removed.'
 				),
 				{},
 				1000
@@ -106,6 +106,8 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				{ num: this.gamedatas.resourceCardsNbrInitial },
 				1000
 			)
+
+			this.updateResourceCardsNbr(this.gamedatas.resourceCardsNbr)
 		},
 
 		onScreenWidthChange() {
@@ -711,6 +713,10 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			})
 		},
 
+		updateResourceCardsNbr(num) {
+			$first('.ss-resource-deck__deck__number').innerHTML = num
+		},
+
 		addTooltipMarkdown(el, text, args = {}, delay = 250) {
 			const id = this.getElId(el)
 			const content = '<div class="ss-tooltip-markdown">' + markdownSubstitute(text, args) + '</div>'
@@ -1047,6 +1053,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			this.resourceDeck.removeFromStockById(card.id)
 			const player = this.players.getPlayerById(notif.args.player_id)
 			player.stock.addToStockWithId(card.type, card.id)
+			this.updateResourceCardsNbr(notif.args.resourceCardsNbr)
 			// TODO animation
 		},
 
