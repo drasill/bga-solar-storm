@@ -12,25 +12,25 @@
 
 $gameinfos = array(
 	// Name of the game in English (will serve as the basis for translation)
-	'game_name' => 'My Great Game',
+	'game_name' => 'Solar Storm',
 
 	// Game designer (or game designers, separated by commas)
-	'designer' => 'John Doe',
+	'designer' => 'Ayden Lowther',
 
 	// Game artist (or game artists, separated by commas)
-	'artist' => 'Jane Doe',
+	'artist' => 'Elias Stern, Vladimir Ishelin',
 
 	// Year of FIRST publication of this game. Can be negative.
-	'year' => 2000,
+	'year' => 2020,
 
 	// Game publisher
-	'publisher' => 'My Publishing Company',
+	'publisher' => 'Dranda Games',
 
 	// Url of game publisher website
-	'publisher_website' => 'http://www.mypublishingcompany.com/',
+	'publisher_website' => 'https://www.drandagames.co.uk/',
 
 	// Board Game Geek ID of the publisher
-	'publisher_bgg_id' => 274037,
+	'publisher_bgg_id' => 37933,
 
 	// Board game geek ID of the game
 	'bgg_id' => 274037,
@@ -76,7 +76,7 @@ $gameinfos = array(
 	'is_coop' => 1,
 
 	// Complexity of the game, from 0 (extremely simple) to 5 (extremely complex)
-	'complexity' => 3,
+	'complexity' => 2,
 
 	// Luck of the game, from 0 (absolutely no luck in this game) to 5 (totally luck driven)
 	'luck' => 3,
@@ -85,7 +85,7 @@ $gameinfos = array(
 	'strategy' => 3,
 
 	// Diplomacy of the game, from 0 (no interaction in this game) to 5 (totally based on interaction and discussion between players)
-	'diplomacy' => 3,
+	'diplomacy' => 4,
 
 	// Colors attributed to players
 	'player_colors' => ['423D37', 'C90E2D', '006DC8', 'EBC700'],
@@ -117,11 +117,14 @@ $gameinfos = array(
 	// Short game presentation text that will appear on the game description page, structured as an array of paragraphs.
 	// Each paragraph must be wrapped with totranslate() for translation and should not contain html (plain text without formatting).
 	// A good length for this text is between 100 and 150 words (about 6 to 9 lines on a standard display)
-	'presentation' => array(
-		//    totranslate("This wonderful game is about geometric shapes!"),
-		//    totranslate("It was awarded best triangle game of the year in 2005 and nominated for the Spiel des Jahres."),
-		//    ...
-	),
+	'presentation' => [
+		totranslate(
+			'Work together, or die alone in this cooperative survival game for 1-4 players that will make even the most hardened crews and solo players swelter.'
+		),
+		totranslate(
+			'Hand management, careful use of your actions, and teamwork are the key to weathering the Solar Storm.'
+		),
+	],
 
 	// Games categories
 	//  You can attribute a maximum of FIVE "tags" for your game.
@@ -130,7 +133,7 @@ $gameinfos = array(
 	//  http://en.doc.boardgamearena.com/Game_meta-information:_gameinfos.inc.php
 	//  IMPORTANT: this list should be ORDERED, with the most important tag first.
 	//  IMPORTANT: it is mandatory that the FIRST tag is 1, 2, 3 and 4 (= game category)
-	'tags' => array(2),
+	'tags' => [2, 12, 101, 204],
 
 	//////// BGA SANDBOX ONLY PARAMETERS (DO NOT MODIFY)
 
