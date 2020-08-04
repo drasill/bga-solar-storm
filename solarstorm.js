@@ -271,6 +271,19 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
               this.doPlayerActionSwapResource();
             });
             break;
+
+          case 'playerAskActionTokensPlay':
+            this.addActionButton('buttonUseToken', _('Use action token'), evt => {
+              this.ajaxAction('useToken', {
+                lock: true
+              });
+            });
+            this.addActionButton('buttonDontUseToken', _('End turn'), evt => {
+              this.ajaxAction('dontUseToken', {
+                lock: true
+              });
+            });
+            break;
         }
       }
     },
@@ -1528,6 +1541,7 @@ class SSPlayer {
     this.actionsTokensNumberEl = dojo.create('div', {
       class: 'ss-player-board__action-tokens__number'
     }, this.actionsTokensEl);
+    this.gameObject.addTooltipMarkdown(this.actionsTokensEl, _('Actions Tokens.\nAt any time during their turn, this player can use one action token to gain one action.\nThey can also use an action to gain a action token for later.\n----\n**Note** : there are only **8** action tokens available for all players.'), {}, 250);
   }
 
   assertMeepleEl() {

@@ -32,6 +32,7 @@ if (!defined('ST_PLAYER_TURN')) {
 	define('ST_PLAYER_ACTION_CANCEL', 19);
 	define('ST_PLAYER_ACTION_DONE', 20);
 	define('ST_PLAYER_PICK_RESOURCES_CARDS', 21);
+	define('ST_PLAYER_ASK_ACTION_TOKENS_PLAY', 22);
 
 	define('ST_PLAYER_END_TURN', 40);
 	define('ST_PLAYER_DISCARD_RESOURCES', 41);
@@ -269,6 +270,7 @@ $machinestates = [
 		'action' => 'stActionDone',
 		'transitions' => [
 			'transPlayerTurn' => ST_PLAYER_TURN,
+			'transPlayerAskActionTokensPlay' => ST_PLAYER_ASK_ACTION_TOKENS_PLAY,
 			'transPlayerPickResourcesCards' => ST_PLAYER_PICK_RESOURCES_CARDS,
 		],
 	],
@@ -284,6 +286,17 @@ $machinestates = [
 			'transPlayerEndTurn' => ST_PLAYER_END_TURN,
 			'transPlayerPickResourcesCards' => ST_PLAYER_PICK_RESOURCES_CARDS,
 			'transEndOfGame' => ST_END_OF_GAME,
+		],
+	],
+
+	ST_PLAYER_ASK_ACTION_TOKENS_PLAY => [
+		'name' => 'playerAskActionTokensPlay',
+		'description' => clienttranslate('End of turn: ${actplayer} can use their action tokens'),
+		'descriptionmyturn' => clienttranslate('End of turn: ${you} can use you action tokens'),
+		'type' => 'activeplayer',
+		'possibleactions' => ['useToken', 'dontUseToken'],
+		'transitions' => [
+			'transActionDone' => ST_PLAYER_ACTION_DONE,
 		],
 	],
 

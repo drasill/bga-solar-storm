@@ -34,6 +34,8 @@ class SolarStorm extends Table {
 			'resourcePickedFromDeck' => 11,
 			// When scavenging, number of cards left to pick
 			'scavengeNumberOfCards' => 12,
+			// Player doesn't want to use his action tokens (end of turn)
+			'dontWannaUseActionsTokens' => 13,
 			// Initial resource deck size
 			'initialResourceDeckSize' => 14,
 
@@ -92,6 +94,7 @@ class SolarStorm extends Table {
 
 		self::setGameStateInitialValue('resourcePickedFromDeck', 0);
 		self::setGameStateInitialValue('scavengeNumberOfCards', 0);
+		self::setGameStateInitialValue('dontWannaUseActionsTokens', 0);
 		self::setGameStateInitialValue('initialResourceDeckSize', 0);
 
 		$this->rooms->generateRooms();
@@ -476,6 +479,9 @@ class SolarStorm extends Table {
 				break;
 			case 'room':
 				$room = $this->rooms->getRoomByPosition($player->getPosition());
+				if ($room->getDamageCount() > 0) {
+					throw new BgaUserException(self::_("Cannot activate a damaged room, repair it first !"));
+				}
 				$roomSlug = $room->getSlug();
 				switch ($roomSlug) {
 					case 'crew-quarters':
@@ -1024,6 +1030,7 @@ class SolarStorm extends Table {
 	}
 
 	public function actionUseToken() {
+		self::setGameStateValue('dontWannaUseActionsTokens', 0);
 		$player = $this->ssPlayers->getActive();
 		$tokens = $player->getActionsTokens();
 		if ($tokens <= 0) {
@@ -1033,6 +1040,12 @@ class SolarStorm extends Table {
 		$player->incrementActions(1);
 		$player->save();
 		$this->notifyPlayerData($player, clienttranslate('${player_name} uses an action token'), []);
+		$this->gamestate->nextState('transActionDone');
+	}
+
+	public function actionDontUseToken() {
+		self::setGameStateValue('dontWannaUseActionsTokens', 1);
+		$player = $this->ssPlayers->getActive();
 		$this->gamestate->nextState('transActionDone');
 	}
 
@@ -1148,6 +1161,8 @@ class SolarStorm extends Table {
 		$player = $this->ssPlayers->getActive();
 		$room = $this->rooms->getRoomByPosition($player->getPosition());
 
+		self::setGameStateValue('dontWannaUseActionsTokens', 0);
+
 		if ($room->getSlug() === 'medical-bay') {
 			$tokensLeft = 8 - $this->ssPlayers->countTotalActionTokens();
 			$tokensMax = min(2, $tokensLeft);
@@ -1199,7 +1214,17 @@ class SolarStorm extends Table {
 		$player = $this->ssPlayers->getActive();
 		$actions = $player->getActions();
 		if ($actions === 0) {
+		
+			// Check if player has usable action tokens
+			if (!self::getGameStateValue('dontWannaUseActionsTokens')) {
+				if ($player->getActionsTokens() > 0) {
+					$this->gamestate->nextState('transPlayerAskActionTokensPlay');
+					return;
+				}
+			}
+
 			$this->gamestate->nextState('transPlayerPickResourcesCards');
+
 		} else {
 			$this->gamestate->nextState('transPlayerTurn');
 		}
@@ -1211,8 +1236,6 @@ class SolarStorm extends Table {
 
 	public function stEndTurn() {
 		$player = $this->ssPlayers->getActive();
-		$player->setActions(3);
-		$player->save();
 
 		// Check if player has too many cards in hand
 		$n = $this->resourceCards->countCardInLocation('hand', $player->getId());
@@ -1220,6 +1243,10 @@ class SolarStorm extends Table {
 			$this->gamestate->nextState('transPlayerDiscardResources');
 			return;
 		}
+
+		// Reset actions to 3
+		$player->setActions(3);
+		$player->save();
 
 		// Draw damage card
 		$this->drawDamageCard('top', true);
