@@ -729,7 +729,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 
       return new Promise((resolve, reject) => {
         this.resourceTypes.filter(r => r.id !== 'universal').forEach(resourceType => {
-          this.addActionButton(`buttonResourceType__${resourceType.id}`, resourceType.name, () => {
+          this.addActionButton(`buttonResourceType__${resourceType.id}`, `<span class="ss-resource-card-icon ss-resource-card-icon--medium ss-resource-card-icon--${resourceType.id}"></span>${resourceType.name}`, () => {
             cleanAll();
             resolve(resourceType);
           });
@@ -1140,14 +1140,18 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
       this.resourceDeck.removeFromStockById(card.id);
       const player = this.players.getPlayerById(notif.args.player_id);
       player.stock.addToStockWithId(card.type, card.id);
-      this.updateResourceCardsNbr(notif.args.resourceCardsNbr); // TODO animation
+
+      if (notif.args.resourceCardsNbr) {
+        this.updateResourceCardsNbr(notif.args.resourceCardsNbr);
+      } // TODO animation
+
     },
 
     notif_playerDiscardResource(notif) {
       console.log('notif_playerDiscardResource', notif);
-      const card = notif.args.card;
+      const cards = notif.args.cards ? notif.args.cards : [notif.args.card];
       const player = this.players.getPlayerById(notif.args.player_id);
-      player.stock.removeFromStockById(card.id); // TODO animation
+      cards.forEach(card => player.stock.removeFromStockById(card.id)); // TODO animation
     },
 
     notif_playerShareResource(notif) {
@@ -1178,8 +1182,53 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
       const player = this.players.getPlayerById(notif.args.player_id);
       player.setRoomPosition(notif.args.position);
       player.setActionsTokens(notif.args.actionsTokens);
-    }
+    },
 
+    /* This enable to inject translatable styled things to logs or action bar */
+
+    /* @Override */
+    format_string_recursive: function (log, args) {
+      try {
+        console.log('format_string_recursive', args.processed, log, args);
+
+        if (log && args && !args.processed) {
+          args.processed = true; // Representation of a resource card type
+
+          if (args.resourceType !== undefined) {
+            const type = this.resourceTypes.find(r => r.id === args.resourceType);
+            args.resourceType = dojo.string.substitute('<span class="ss-resource-card-icon ss-resource-card-icon--small ss-resource-card-icon--${resourceType}"></span>${resourceName}', {
+              resourceType: type.id,
+              resourceName: type.nametr
+            });
+          } // Representation of a resource card type (2)
+
+
+          if (args.resourceType2 !== undefined) {
+            const type = this.resourceTypes.find(r => r.id === args.resourceType2);
+            args.resourceType2 = dojo.string.substitute('<span class="ss-resource-card-icon ss-resource-card-icon--small ss-resource-card-icon--${resourceType2}"></span>${resourceName}', {
+              resourceType2: type.id,
+              resourceName: type.nametr
+            });
+          } // Representation of a many resource card types
+
+
+          if (args.resourceTypes !== undefined) {
+            const str = args.resourceTypes.map(resourceType => {
+              const type = this.resourceTypes.find(r => r.id === resourceType);
+              return dojo.string.substitute('<span class="ss-resource-card-icon ss-resource-card-icon--small ss-resource-card-icon--${resourceType}"></span>${resourceName}', {
+                resourceType: type.id,
+                resourceName: type.nametr
+              });
+            });
+            args.resourceTypes = str.join(', ');
+          }
+        }
+      } catch (e) {
+        console.error(log, args, 'Exception thrown', e.stack);
+      }
+
+      return this.inherited(arguments);
+    }
   });
 });
 

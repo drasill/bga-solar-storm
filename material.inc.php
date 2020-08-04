@@ -74,13 +74,13 @@ $this->roomInfos = [
 		'name' => self::_('Mess Hall'),
 		'description' => self::_('Give, take or exchange a resource card with another player.'),
 		'resources' => ['nanobots', 'energy', 'data'],
-		'divertResources' => ['data', 'data', 'metal'],
+		'divertResources' => ['data', 'data', 'energy'],
 	],
 	2 => [
 		'slug' => 'repair-centre',
 		'name' => self::_('Repair Centre'),
 		'description' => self::_("Repair a damaged room by one space on the Repair Track.\nDiscard the matching card."),
-		'resources' => ['metal', 'energy', 'data'],
+		'resources' => ['metal', 'energy', 'nanobots'],
 		'divertResources' => ['data', 'energy', 'nanobots'],
 	],
 	3 => [

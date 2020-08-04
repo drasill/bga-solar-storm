@@ -241,6 +241,37 @@
 	filter: drop-shadow(3px 3px 6px rgba(0, 0, 255, 0.7)) drop-shadow(-3px -3px 6px rgba(0, 0, 255, 0.7));
 }
 
+.ss-resource-card-icon {
+	display: inline-block;
+	width: 14px;
+	height: 20px;
+	background-image: url('img/resources.jpg');
+	background-position: 100% 0;
+	background-size: 600%;
+	vertical-align: middle;
+	margin-right: 5px;
+	filter: drop-shadow(2px 2px 2px rgba(0, 0, 0, 0.5)) drop-shadow(-2px -2px 2px rgba(0, 0, 0, 0.5));
+}
+.ss-resource-card-icon--medium {
+	width: 21px;
+	height: 30px;
+}
+.ss-resource-card-icon--data {
+	background-position: 0% 0;
+}
+.ss-resource-card-icon--metal {
+	background-position: 20% 0;
+}
+.ss-resource-card-icon--nanobots {
+	background-position: 40% 0;
+}
+.ss-resource-card-icon--energy {
+	background-position: 60% 0;
+}
+.ss-resource-card-icon--universal {
+	background-position: 80% 0;
+}
+
 .ss-resource-deck {
 	display: flex;
 	flex-direction: row;

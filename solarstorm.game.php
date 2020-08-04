@@ -636,11 +636,10 @@ class SolarStorm extends Table {
 
 		$this->resourceCards->moveCard($card['id'], 'hand', $player->getId());
 
-		$resourceName = $this->resourceTypes[$card['type']]['name'];
 		if ($fromDeck) {
-			$message = clienttranslate('${player_name} takes a resource from the deck : ${resourceName}');
+			$message = clienttranslate('${player_name} takes a resource from the deck : ${resourceType}');
 		} else {
-			$message = clienttranslate('${player_name} takes a resource : ${resourceName}');
+			$message = clienttranslate('${player_name} takes a resource : ${resourceType}');
 		}
 
 		$resourceCardsNbr = $this->resourceCards->countCardInLocation('deck');
@@ -649,7 +648,7 @@ class SolarStorm extends Table {
 			$message,
 			[
 				'card' => $card,
-				'resourceName' => $resourceName,
+				'resourceType' => $card['type'],
 				'resourceCardsNbr' => $resourceCardsNbr,
 			] + $player->getNotificationArgs()
 		);
@@ -694,13 +693,12 @@ class SolarStorm extends Table {
 		}
 		$this->resourceCards->moveCard($card['id'], 'discard');
 
-		$resourceName = $this->resourceTypes[$card['type']]['name'];
 		$this->notifyAllPlayers(
 			'playerDiscardResource',
-			clienttranslate('${player_name} discards a resource : ${resourceName}'),
+			clienttranslate('${player_name} discards a resource : ${resourceType}'),
 			[
 				'card' => $card,
-				'resourceName' => $resourceName,
+				'resourceType' => $card['type'],
 			] + $player->getNotificationArgs()
 		);
 		$this->gamestate->nextState('transPlayerEndTurn');
@@ -723,13 +721,12 @@ class SolarStorm extends Table {
 		$this->resourceCards->moveCard($card['id'], 'hand', $toPlayer->getId());
 		$player->incrementActions(-1);
 		$player->save();
-		$resourceName = $this->resourceTypes[$card['type']]['name'];
 		$this->notifyAllPlayers(
 			'playerShareResource',
-			clienttranslate('${player_name} gives a resource : ${resourceName} to ${to_player_name}'),
+			clienttranslate('${player_name} gives a resource : ${resourceType} to ${to_player_name}'),
 			[
 				'card' => $card,
-				'resourceName' => $resourceName,
+				'resourceType' => $card['type'],
 				'shareAction' => 'give',
 				'to_player_name' => $toPlayer->getName(),
 				'to_player_id' => $toPlayer->getId(),
@@ -758,13 +755,12 @@ class SolarStorm extends Table {
 		$this->resourceCards->moveCard($card['id'], 'hand', $player->getId());
 		$player->incrementActions(-1);
 		$player->save();
-		$resourceName = $this->resourceTypes[$card['type']]['name'];
 		$this->notifyAllPlayers(
 			'playerShareResource',
-			clienttranslate('${player_name} takes a resource : ${resourceName} from ${from_player_name}'),
+			clienttranslate('${player_name} takes a resource : ${resourceType} from ${from_player_name}'),
 			[
 				'card' => $card,
-				'resourceName' => $resourceName,
+				'resourceType' => $card['type'],
 				'shareAction' => 'take',
 				'from_player_name' => $fromPlayer->getName(),
 				'from_player_id' => $fromPlayer->getId(),
@@ -789,25 +785,23 @@ class SolarStorm extends Table {
 		$this->resourceCards->moveCard($card2['id'], 'hand', $player->getId());
 		$player->incrementActions(-1);
 		$player->save();
-		$resourceName = $this->resourceTypes[$card['type']]['name'];
 		$this->notifyAllPlayers(
 			'playerShareResource',
-			clienttranslate('${player_name} gives a resource : ${resourceName} to ${to_player_name}'),
+			clienttranslate('${player_name} gives a resource : ${resourceType} to ${to_player_name}'),
 			[
 				'card' => $card,
-				'resourceName' => $resourceName,
+				'resourceType' => $card['type'],
 				'shareAction' => 'give',
 				'to_player_name' => $withPlayer->getName(),
 				'to_player_id' => $withPlayer->getId(),
 			] + $player->getNotificationArgs()
 		);
-		$resourceName = $this->resourceTypes[$card2['type']]['name'];
 		$this->notifyAllPlayers(
 			'playerShareResource',
-			clienttranslate('${player_name} takes a resource : ${resourceName} from ${from_player_name}'),
+			clienttranslate('${player_name} takes a resource : ${resourceType} from ${from_player_name}'),
 			[
 				'card' => $card2,
-				'resourceName' => $resourceName,
+				'resourceType' => $card2['type'],
 				'shareAction' => 'take',
 				'from_player_name' => $withPlayer->getName(),
 				'from_player_id' => $withPlayer->getId(),
@@ -831,17 +825,15 @@ class SolarStorm extends Table {
 		$this->resourceCards->moveCard($card2['id'], 'discard');
 		$player->incrementActions(-1);
 		$player->save();
-		$resourceName = $this->resourceTypes[$card['type']]['name'];
-		$resourceName2 = $this->resourceTypes[$card2['type']]['name'];
 		$this->notifyAllPlayers(
 			'playerPickResource',
 			clienttranslate(
-				'${player_name} swap a resource : ${resourceName2} from their hand with a ${resourceName} from the discard pile'
+				'${player_name} swap a resource : ${resourceType2} from their hand with a ${resourceType} from the discard pile'
 			),
 			[
 				'card' => $card,
-				'resourceName' => $resourceName,
-				'resourceName2' => $resourceName2,
+				'resourceType' => $card['type'],
+				'resourceType2' => $card2['type'],
 			] + $player->getNotificationArgs()
 		);
 		$this->notifyAllPlayers(
@@ -849,7 +841,7 @@ class SolarStorm extends Table {
 			'',
 			[
 				'card' => $card2,
-				'resourceName' => $resourceName,
+				'resourceType' => $card2['type'],
 			] + $player->getNotificationArgs()
 		);
 		$this->gamestate->nextState('transActionDone');
@@ -879,13 +871,12 @@ class SolarStorm extends Table {
 
 		$this->resourceCards->moveCard($card['id'], 'discard');
 
-		$resourceName = $this->resourceTypes[$card['type']]['name'];
 		$this->notifyAllPlayers(
 			'playerDiscardResource',
-			clienttranslate('${player_name} repairs ${roomName} with resource : ${resourceName}'),
+			clienttranslate('${player_name} repairs ${roomName} with resource : ${resourceType}'),
 			[
 				'card' => $card,
-				'resourceName' => $resourceName,
+				'resourceType' => $card['type'],
 				'roomName' => $room->getName(),
 			] + $player->getNotificationArgs()
 		);
@@ -915,18 +906,18 @@ class SolarStorm extends Table {
 		$this->divertRoomWithResources($room, $cards);
 		$room->save();
 
-		$resourceNames = [];
+		$resourceTypes = [];
 		foreach ($cards as $card) {
 			$this->resourceCards->moveCard($card['id'], 'discard');
-			$resourceNames[] = $this->resourceTypes[$card['type']]['name'];
+			$resourceTypes[] = $card['type'];
 		}
 
 		$this->notifyAllPlayers(
-			'playerDiscardResources',
-			clienttranslate('${player_name} diverts power in ${roomName} with resources : ${resourceNames}'),
+			'playerDiscardResource',
+			clienttranslate('${player_name} diverts power in ${roomName} with resources : ${resourceTypes}'),
 			[
 				'cards' => $cards,
-				'resourceNames' => $resourceNames,
+				'resourceTypes' => $resourceTypes,
 				'roomName' => $room->getName(),
 			] + $player->getNotificationArgs()
 		);
@@ -1326,10 +1317,70 @@ class SolarStorm extends Table {
 	}
 
 	/**
-	 * Unprotectall
+	 * Draw a damage card
 	 */
 	public function debugDrawDamage() {
 		$this->drawDamageCard('top', true);
+	}
+
+	/**
+	 * Damage all rooms 100%
+	 */
+	public function debugDamageAll($repair = 0) {
+		$updatedRooms = [];
+		foreach ($this->rooms->getRooms() as $room) {
+			if ($room->getSlug() === 'energy-core') {
+				continue;
+			}
+			if ($repair) {
+				$room->setDamage([false, false, false]);
+			} else {
+				$room->setDamage([true, true, true]);
+			}
+			$room->save();
+			$updatedRooms[] = $room->toArray();
+		}
+		$this->notifyAllPlayers('updateRooms', 'Damage all', [
+			'rooms' => $updatedRooms,
+		]);
+	}
+
+	/**
+	 * Player get a universal (from somewhere)
+	 */
+	public function debugUniversal() {
+		$player = $this->ssPlayers->getActive();
+		$cards = $this->resourceCards->getCardsOfType('universal');
+		foreach ($cards as $card) {
+			$this->resourceCards->moveCard($card['id'], 'hand', $player->getId());
+			$this->notifyAllPlayers(
+				'playerPickResource',
+				'cheater finds a ${resourceType}',
+				[
+					'card' => $card,
+					'resourceType' => 'universal',
+				] + $player->getNotificationArgs()
+			);
+		}
+	}
+
+	/**
+	 * Player picks resource
+	 */
+	public function debugPickResource() {
+		$player = $this->ssPlayers->getActive();
+		$card = $this->resourceCards->pickCardForLocation('deck', 'hand', $player->getId());
+		$this->resourceCards->moveCard($card['id'], 'hand', $player->getId());
+		$resourceCardsNbr = $this->resourceCards->countCardInLocation('deck');
+		$this->notifyAllPlayers(
+			'playerPickResource',
+			'cheater picks a ${resourceType}',
+			[
+				'card' => $card,
+				'resourceType' => $card['type'],
+				'resourceCardsNbr' => $resourceCardsNbr,
+			] + $player->getNotificationArgs()
+		);
 	}
 
 	//////////////////////////////////////////////////////////////////////////////

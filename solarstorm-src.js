@@ -21,9 +21,9 @@ function $first(selector) {
 	return document.querySelectorAll(selector)[0]
 }
 
-define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/stock'], function(dojo, declare) {
+define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/stock'], function (dojo, declare) {
 	return declare('bgagame.solarstorm', ebg.core.gamegui, {
-		constructor: function() {
+		constructor: function () {
 			this.rooms = new SSRooms()
 			this.players = new SSPlayers(this)
 			this.resourceTypes = []
@@ -33,7 +33,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			this.reorderDamageDeck = null
 		},
 
-		setup: function(gamedatas) {
+		setup: function (gamedatas) {
 			this.resourceTypes = gamedatas.resourceTypes
 			this.initializePlayArea()
 			this.initializePlayersArea()
@@ -78,10 +78,10 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			this.addTooltipMarkdown(
 				damageDeckEl,
 				_(
-					"Damage deck.\n----\nAt then **end of turn** of each player, a new card is revealed, indicating rooms which are damaged.\nThe deck is ordered like this :\n+ 8 damage cards with 1 room\n+ 8 damage cards with 2 rooms\n+ 8 damage cards with 3 rooms.\nWhen the deck is empty, the ship' hull starts taking damage, and resources will be discarded from the deck, accelerating the end of the game !\n----\n+ Note: at the start of the game, two damage cards are revealed from the bottom (applying 6 damages).\n+ Note 2: if a room has a *protection* token, instead of taking damage, the protection token is removed."
+					"Damage deck.\n----\nAt then **end of turn** of each player, a new card is revealed, indicating rooms which are damaged.\nThe deck is ordered like this :\n+ 8 damage cards with 1 room\n+ 8 damage cards with 2 rooms\n+ 8 damage cards with 3 rooms.\nWhen the deck is empty, the ship' hull starts taking damage, and resources will be discarded from the deck, accelerating the end of the game !\n----\n+ Note: at the start of the game, two damage cards are revealed from the bottom (applying 6 damages).\n+ Note 2: if a room has a *protection* token, instead of taking damage, the protection token is removed.",
 				),
 				{},
-				1000
+				1000,
 			)
 
 			const reorderDamageDeckEl = $first('.ss-damage-reorder-deck')
@@ -105,10 +105,10 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			this.addTooltipMarkdown(
 				$first('.ss-resource-deck__deck'),
 				_(
-					'Resource deck.\n----\nAt the **end of their turn**, a player can pick either:\n+ 2 cards from this deck (*face down*),\n+ or 1 card among the 2 revealed.\n----**Important :** When the resource deck is depleted, the game is instantly lost.\n----At the start, there was a total of ${num} resources cards in this deck.'
+					'Resource deck.\n----\nAt the **end of their turn**, a player can pick either:\n+ 2 cards from this deck (*face down*),\n+ or 1 card among the 2 revealed.\n----**Important :** When the resource deck is depleted, the game is instantly lost.\n----At the start, there was a total of ${num} resources cards in this deck.',
 				),
 				{ num: this.gamedatas.resourceCardsNbrInitial },
-				1000
+				1000,
 			)
 
 			this.updateResourceCardsNbr(this.gamedatas.resourceCardsNbr)
@@ -121,13 +121,13 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 		///////////////////////////////////////////////////
 		//// Game & client states
 
-		onEnteringState: function(stateName, args) {
+		onEnteringState: function (stateName, args) {
 			console.log('Entering state: ' + stateName, args)
 
 			if (stateName === 'playerTurn') {
 				// Display for all players
 				const leftStr = dojo.string.substitute(_('(${n} left)'), {
-					n: args.args.actions
+					n: args.args.actions,
 				})
 				this.gamedatas.gamestate.descriptionmyturn += ' ' + leftStr
 				this.gamedatas.gamestate.description += ' ' + leftStr
@@ -181,7 +181,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 								} else {
 									this.ajaxAction('cancel', { lock: true })
 								}
-							}
+							},
 						)
 					} else {
 						this.doPlayerRoomArmoury(tokensToPut)
@@ -196,14 +196,14 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			}
 		},
 
-		onLeavingState: function(stateName) {
+		onLeavingState: function (stateName) {
 			console.log('Leaving state: ' + stateName)
 
 			switch (stateName) {
 			}
 		},
 
-		onUpdateActionButtons: function(stateName, args) {
+		onUpdateActionButtons: function (stateName, args) {
 			console.log('onUpdateActionButtons: ' + stateName, args)
 
 			if (this.isCurrentPlayerActive()) {
@@ -294,10 +294,10 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				this.addTooltipMarkdown(
 					el,
 					_(
-						'Resource card of type: **${type}** ${detail}\n----\nUsed to **repair** or **divert** power in the rooms.\nMaximum 6 cards in the player hand (at the end of turn).'
+						'Resource card of type: **${type}** ${detail}\n----\nUsed to **repair** or **divert** power in the rooms.\nMaximum 6 cards in the player hand (at the end of turn).',
 					),
 					{ type: type.nametr, detail: id === 'universal' ? _('(can be used as any other resource)') : '' },
-					250
+					250,
 				)
 			}
 			this.resourceTypes.forEach((type, index) => {
@@ -379,7 +379,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 						this.connectStockCardClick(this.resourceDeck, card => {
 							cleanAll()
 							resolve(card)
-						})
+						}),
 					)
 				}
 				if (options.deck) {
@@ -387,7 +387,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 						dojo.connect($first('.ss-resource-deck__source'), 'onclick', () => {
 							cleanAll()
 							resolve({ id: 9999 })
-						})
+						}),
 					)
 				}
 			})
@@ -426,7 +426,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 						this.connectStockCardClick(player.stock, card => {
 							cleanAll()
 							resolve({ card, player })
-						})
+						}),
 					)
 				})
 			})
@@ -499,7 +499,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 							this.rooms.highlightPositions(null)
 							cleanAll()
 							resolve(room)
-						})
+						}),
 					)
 				})
 			})
@@ -532,7 +532,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 						dojo.connect(player.meepleEl, 'onclick', () => {
 							cleanAll()
 							resolve(player)
-						})
+						}),
 					)
 				})
 			})
@@ -572,7 +572,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 					this.connectStockCardClick(this.reorderResourceDeck, card => {
 						cleanAll()
 						resolve(card)
-					})
+					}),
 				)
 			})
 		},
@@ -629,7 +629,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 					this.connectStockCardClick(this.reorderResourceDeck, card => {
 						selectedCards.push(card)
 						this.reorderResourceDeck.removeFromStockById(card.id)
-					})
+					}),
 				)
 			})
 		},
@@ -686,7 +686,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 					this.connectStockCardClick(this.reorderDamageDeck, card => {
 						selectedCards.push(card)
 						this.reorderDamageDeck.removeFromStockById(card.id)
-					})
+					}),
 				)
 			})
 		},
@@ -703,10 +703,14 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				this.resourceTypes
 					.filter(r => r.id !== 'universal')
 					.forEach(resourceType => {
-						this.addActionButton(`buttonResourceType__${resourceType.id}`, resourceType.name, () => {
-							cleanAll()
-							resolve(resourceType)
-						})
+						this.addActionButton(
+							`buttonResourceType__${resourceType.id}`,
+							`<span class="ss-resource-card-icon ss-resource-card-icon--medium ss-resource-card-icon--${resourceType.id}"></span>${resourceType.name}`,
+							() => {
+								cleanAll()
+								resolve(resourceType)
+							},
+						)
 					})
 				if (options.cancel) {
 					this.showActionCancelButton(() => {
@@ -753,12 +757,12 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 					`/solarstorm/solarstorm/${action}.html`,
 					args,
 					this,
-					function(result) {
+					function (result) {
 						resolve(result)
 					},
-					function(is_error) {
+					function (is_error) {
 						reject(is_error)
-					}
+					},
 				)
 			})
 		},
@@ -800,7 +804,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				await this.ajaxAction('giveResourceToAnotherPlayer', {
 					lock: true,
 					cardId: card.id,
-					playerId: player.id
+					playerId: player.id,
 				})
 			} catch (e) {
 				await this.ajaxAction('cancel', { lock: true })
@@ -819,7 +823,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				const card = (await this.waitForPlayerResource(targetPlayers, { cancel: true })).card
 				await this.ajaxAction('pickResourceFromAnotherPlayer', {
 					lock: true,
-					cardId: card.id
+					cardId: card.id,
 				})
 			} catch (e) {
 				await this.ajaxAction('cancel', { lock: true })
@@ -839,7 +843,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				await this.ajaxAction('swapResourceWithAnotherPlayer', {
 					lock: true,
 					cardId: card1.id,
-					card2Id: card2.id
+					card2Id: card2.id,
 				})
 			} catch (e) {
 				await this.ajaxAction('cancel', { lock: true })
@@ -856,7 +860,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				await this.ajaxAction('selectResourceForRepair', {
 					lock: true,
 					cardId: card.id,
-					resourceType: resourceTypeId
+					resourceType: resourceTypeId,
 				})
 			} catch (e) {
 				console.error(e)
@@ -869,7 +873,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				const cards = await this.waitForPlayerResources({ count: 3, cancel: true })
 				await this.ajaxAction('selectResourcesForDivert', {
 					lock: true,
-					cardIds: cards.map(c => c.id).join(',')
+					cardIds: cards.map(c => c.id).join(','),
 				})
 			} catch (e) {
 				console.error(e)
@@ -883,11 +887,11 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 					_('Reorder the next resource cards.') +
 					'<br/>' +
 					'The first ones you select will be on <b>top</b> of the deck.',
-				cancel: false
+				cancel: false,
 			})
 			await this.ajaxAction('putBackResourceCardsInDeck', {
 				lock: true,
-				cardIds: selectedCards.map(c => c.id).join(',')
+				cardIds: selectedCards.map(c => c.id).join(','),
 			})
 		},
 
@@ -897,11 +901,11 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 					_('Reorder the next damage cards.') +
 					'<br/>' +
 					'The first ones you select will be on <b>top</b> of the deck.',
-				cancel: false
+				cancel: false,
 			})
 			await this.ajaxAction('putBackDamageCardsInDeck', {
 				lock: true,
-				cardIds: selectedCards.map(c => c.id).join(',')
+				cardIds: selectedCards.map(c => c.id).join(','),
 			})
 		},
 
@@ -917,7 +921,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				await this.ajaxAction('moveMeepleToRoom', {
 					lock: true,
 					playerId: player.id,
-					position: room.position
+					position: room.position,
 				})
 			} catch (e) {
 				await this.ajaxAction('cancel', { lock: true })
@@ -928,13 +932,13 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			try {
 				const card = await this.waitForResourceCardFromDialog(cards, {
 					title: _('Select a card from the discard, to be swapped with one from your hand'),
-					cancel: true
+					cancel: true,
 				})
 				const card2 = (await this.waitForPlayerResource([this.players.getActive()], { cancel: true })).card
 				await this.ajaxAction('swapResourceFromDiscard', {
 					lock: true,
 					cardId: card.id,
-					card2Id: card2.id
+					card2Id: card2.id,
 				})
 			} catch (e) {
 				await this.ajaxAction('cancel', { lock: true })
@@ -946,7 +950,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				const room = await this.waitForRoomClick(this.rooms.rooms, { cancel: true })
 				this.gamedatas.gamestate.descriptionmyturn = dojo.string.substitute(
 					_('Repair Centre: You mush choose a resource to repair: ${room}'),
-					{ room: room.name }
+					{ room: room.name },
 				)
 				this.updatePageTitle()
 				this.removeActionButtons()
@@ -959,7 +963,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 					lock: true,
 					cardId: card.id,
 					position: room.position,
-					resourceType: resourceTypeId
+					resourceType: resourceTypeId,
 				})
 			} catch (e) {
 				console.error(e)
@@ -984,7 +988,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				}
 				await this.ajaxAction('putProtectionTokens', {
 					lock: true,
-					positions: positions.join(',')
+					positions: positions.join(','),
 				})
 			} catch (e) {
 				console.error(e)
@@ -997,7 +1001,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			const card = await this.waitForResourceFromDeck({
 				cancel: false,
 				deck: possibleSources.includes('deck'),
-				table: possibleSources.includes('table')
+				table: possibleSources.includes('table'),
 			})
 			await this.ajaxAction('pickResource', { lock: true, cardId: card.id })
 		},
@@ -1014,7 +1018,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
                   your solarstorm.game.php file.
 
         */
-		setupNotifications: function() {
+		setupNotifications: function () {
 			dojo.subscribe('updateRooms', this, 'notif_updateRooms')
 			dojo.subscribe('updateDamageDiscard', this, 'notif_updateDamageDiscard')
 			dojo.subscribe('addResourcesCardsOnTable', this, 'notif_addResourcesCardsOnTable')
@@ -1056,15 +1060,17 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			this.resourceDeck.removeFromStockById(card.id)
 			const player = this.players.getPlayerById(notif.args.player_id)
 			player.stock.addToStockWithId(card.type, card.id)
-			this.updateResourceCardsNbr(notif.args.resourceCardsNbr)
+			if (notif.args.resourceCardsNbr) {
+				this.updateResourceCardsNbr(notif.args.resourceCardsNbr)
+			}
 			// TODO animation
 		},
 
 		notif_playerDiscardResource(notif) {
 			console.log('notif_playerDiscardResource', notif)
-			const card = notif.args.card
+			const cards = notif.args.cards ? notif.args.cards : [notif.args.card]
 			const player = this.players.getPlayerById(notif.args.player_id)
-			player.stock.removeFromStockById(card.id)
+			cards.forEach(card => player.stock.removeFromStockById(card.id))
 			// TODO animation
 		},
 
@@ -1095,7 +1101,58 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			const player = this.players.getPlayerById(notif.args.player_id)
 			player.setRoomPosition(notif.args.position)
 			player.setActionsTokens(notif.args.actionsTokens)
-		}
+		},
+
+		/* This enable to inject translatable styled things to logs or action bar */
+		/* @Override */
+		format_string_recursive: function (log, args) {
+			try {
+				console.log('format_string_recursive', args.processed, log, args)
+				if (log && args && !args.processed) {
+					args.processed = true
+
+					// Representation of a resource card type
+					if (args.resourceType !== undefined) {
+						const type = this.resourceTypes.find(r => r.id === args.resourceType)
+						args.resourceType = dojo.string.substitute(
+							'<span class="ss-resource-card-icon ss-resource-card-icon--small ss-resource-card-icon--${resourceType}"></span>${resourceName}',
+							{
+								resourceType: type.id,
+								resourceName: type.nametr,
+							},
+						)
+					}
+					// Representation of a resource card type (2)
+					if (args.resourceType2 !== undefined) {
+						const type = this.resourceTypes.find(r => r.id === args.resourceType2)
+						args.resourceType2 = dojo.string.substitute(
+							'<span class="ss-resource-card-icon ss-resource-card-icon--small ss-resource-card-icon--${resourceType2}"></span>${resourceName}',
+							{
+								resourceType2: type.id,
+								resourceName: type.nametr,
+							},
+						)
+					}
+					// Representation of a many resource card types
+					if (args.resourceTypes !== undefined) {
+						const str = args.resourceTypes.map(resourceType => {
+							const type = this.resourceTypes.find(r => r.id === resourceType)
+							return dojo.string.substitute(
+								'<span class="ss-resource-card-icon ss-resource-card-icon--small ss-resource-card-icon--${resourceType}"></span>${resourceName}',
+								{
+									resourceType: type.id,
+									resourceName: type.nametr,
+								},
+							)
+						})
+						args.resourceTypes = str.join(', ')
+					}
+				}
+			} catch (e) {
+				console.error(log, args, 'Exception thrown', e.stack)
+			}
+			return this.inherited(arguments)
+		},
 	})
 })
 
@@ -1163,15 +1220,15 @@ class SSRoom {
 			'div',
 			{
 				id: `ss-room--${this.id}`,
-				class: `ss-room ss-room--pos-${this.position} ss-room--${this.id}`
+				class: `ss-room ss-room--pos-${this.position} ss-room--${this.id}`,
 			},
-			roomsEl
+			roomsEl,
 		)
 		this.gameObject.addTooltipMarkdown(
 			el,
 			`<div class="ss-room ss-room-tooltip ss-room--${this.id}"></div>**${this.name}**\n----\n${this.description}`,
 			{},
-			1000
+			1000,
 		)
 		if (this.id !== 0) {
 			for (let i = 0; i < 3; i++) {
@@ -1234,9 +1291,9 @@ class SSRoom {
 			dojo.create('div', { class: `ss-protection-token ss-protection-token--${order}`, id }, this.el)
 			const tooltip = dojo.string.substitute(
 				_(
-					"Protection token put by ${player_name}.${newline}It will be removed when a damage is received on this room, or at the <b>start</b> of ${player_name}'s turn"
+					"Protection token put by ${player_name}.${newline}It will be removed when a damage is received on this room, or at the <b>start</b> of ${player_name}'s turn",
 				),
-				{ player_name: player.name, newline: '<br/>' }
+				{ player_name: player.name, newline: '<br/>' },
 			)
 			this.gameObject.addTooltipHtml(id, tooltip, 250)
 			index++
@@ -1341,25 +1398,25 @@ class SSPlayer {
 			'div',
 			{
 				class: 'ss-player-board__name ss-section-title',
-				innerHTML: `<span>Hand of <span style="color: #${this.color}">${this.name}</span></span>`
+				innerHTML: `<span>Hand of <span style="color: #${this.color}">${this.name}</span></span>`,
 			},
-			boardEl
+			boardEl,
 		)
 		this.handEl = dojo.create(
 			'div',
 			{
 				class: 'ss-player-hand',
 				id: `ss-player-hand--${this.id}`,
-				style: { backgroundColor: `#${this.color}55` }
+				style: { backgroundColor: `#${this.color}55` },
 			},
-			this.boardEl
+			this.boardEl,
 		)
 		this.actionsTokensEl = dojo.create('div', { class: 'ss-player-board__action-tokens' }, boardEl)
 		dojo.create('div', { class: 'ss-player-board__action-tokens__token ss-action-token' }, this.actionsTokensEl)
 		this.actionsTokensNumberEl = dojo.create(
 			'div',
 			{ class: 'ss-player-board__action-tokens__number' },
-			this.actionsTokensEl
+			this.actionsTokensEl,
 		)
 	}
 
@@ -1374,9 +1431,9 @@ class SSPlayer {
 			'div',
 			{
 				id: `ss-player-meeple--id-${this.id}`,
-				class: `ss-player-meeple ss-player-meeple--order-${this.order} ss-player-meeple--id-${this.id}`
+				class: `ss-player-meeple ss-player-meeple--order-${this.order} ss-player-meeple--id-${this.id}`,
 			},
-			playersArea
+			playersArea,
 		)
 		this.gameObject.addTooltipHtml(meepleEl.id, _(`Player ${this.name}`), 250)
 		this.meepleEl = meepleEl
@@ -1443,8 +1500,8 @@ const markdownSubstitute = (() => {
 	/***   Regex Markdown Parser by chalarangelo   ***/
 	// Replaces 'regex' with 'replacement' in 'str'
 	// Curry function, usage: replaceRegex(regexVar, replacementVar) (strVar)
-	const replaceRegex = function(regex, replacement) {
-		return function(str) {
+	const replaceRegex = function (regex, replacement) {
+		return function (str) {
 			return str.replace(regex, replacement)
 		}
 	}
@@ -1462,22 +1519,22 @@ const markdownSubstitute = (() => {
 	const orderedListRegex = /(\n\s*([0-9]+\.)\s.*)+/g
 	const paragraphRegex = /\n+(?!<pre>)(?!<h)(?!<ul>)(?!<blockquote)(?!<hr)(?!\t)([^\n]+)\n/g
 	// Replacer functions for Markdown
-	const codeBlockReplacer = function(fullMatch) {
+	const codeBlockReplacer = function (fullMatch) {
 		return '\n<pre>' + fullMatch + '</pre>'
 	}
-	const inlineCodeReplacer = function(fullMatch, tagStart, tagContents) {
+	const inlineCodeReplacer = function (fullMatch, tagStart, tagContents) {
 		return '<code>' + tagContents + '</code>'
 	}
-	const imageReplacer = function(fullMatch, tagTitle, tagURL) {
+	const imageReplacer = function (fullMatch, tagTitle, tagURL) {
 		return '<img src="' + tagURL + '" alt="' + tagTitle + '" />'
 	}
-	const linkReplacer = function(fullMatch, tagTitle, tagURL) {
+	const linkReplacer = function (fullMatch, tagTitle, tagURL) {
 		return '<a href="' + tagURL + '">' + tagTitle + '</a>'
 	}
-	const headingReplacer = function(fullMatch, tagStart, tagContents) {
+	const headingReplacer = function (fullMatch, tagStart, tagContents) {
 		return '\n<h' + tagStart.trim().length + '>' + tagContents + '</h' + tagStart.trim().length + '>'
 	}
-	const boldItalicsReplacer = function(fullMatch, tagStart, tagContents) {
+	const boldItalicsReplacer = function (fullMatch, tagStart, tagContents) {
 		return (
 			'<' +
 			(tagStart.trim().length == 1 ? 'em' : 'strong') +
@@ -1488,16 +1545,16 @@ const markdownSubstitute = (() => {
 			'>'
 		)
 	}
-	const strikethroughReplacer = function(fullMatch, tagStart, tagContents) {
+	const strikethroughReplacer = function (fullMatch, tagStart, tagContents) {
 		return '<del>' + tagContents + '</del>'
 	}
-	const blockquoteReplacer = function(fullMatch, tagStart, tagContents) {
+	const blockquoteReplacer = function (fullMatch, tagStart, tagContents) {
 		return '\n<blockquote>' + tagContents + '</blockquote>'
 	}
-	const horizontalRuleReplacer = function(fullMatch) {
+	const horizontalRuleReplacer = function (fullMatch) {
 		return '\n<hr />'
 	}
-	const unorderedListReplacer = function(fullMatch) {
+	const unorderedListReplacer = function (fullMatch) {
 		let items = ''
 		fullMatch
 			.trim()
@@ -1507,7 +1564,7 @@ const markdownSubstitute = (() => {
 			})
 		return '\n<ul>' + items + '</ul>'
 	}
-	const orderedListReplacer = function(fullMatch) {
+	const orderedListReplacer = function (fullMatch) {
 		let items = ''
 		fullMatch
 			.trim()
@@ -1517,7 +1574,7 @@ const markdownSubstitute = (() => {
 			})
 		return '\n<ol>' + items + '</ol>'
 	}
-	const paragraphReplacer = function(fullMatch, tagContents) {
+	const paragraphReplacer = function (fullMatch, tagContents) {
 		return '<p>' + tagContents + '</p>'
 	}
 	// Rules for Markdown parsing (use in order of appearance for best results)
@@ -1535,7 +1592,7 @@ const markdownSubstitute = (() => {
 	const replaceParagraphs = replaceRegex(paragraphRegex, paragraphReplacer)
 	// Fix for tab-indexed code blocks
 	const codeBlockFixRegex = /\n(<pre>)((\n|.)*)(<\/pre>)/g
-	const codeBlockFixer = function(fullMatch, tagStart, tagContents, lastMatch, tagEnd) {
+	const codeBlockFixer = function (fullMatch, tagStart, tagContents, lastMatch, tagEnd) {
 		let lines = ''
 		tagContents.split('\n').forEach(line => {
 			lines += line.substring(1) + '\n'
@@ -1545,7 +1602,7 @@ const markdownSubstitute = (() => {
 	const fixCodeBlocks = replaceRegex(codeBlockFixRegex, codeBlockFixer)
 	// Replacement rule order function for Markdown
 	// Do not use as-is, prefer parseMarkdown as seen below
-	const replaceMarkdown = function(str) {
+	const replaceMarkdown = function (str) {
 		return replaceParagraphs(
 			replaceOrderedLists(
 				replaceUnorderedLists(
@@ -1553,18 +1610,18 @@ const markdownSubstitute = (() => {
 						replaceBlockquotes(
 							replaceceStrikethrough(
 								replaceBoldItalics(
-									replaceHeadings(replaceLinks(replaceImages(replaceInlineCodes(replaceCodeBlocks(str)))))
-								)
-							)
-						)
-					)
-				)
-			)
+									replaceHeadings(replaceLinks(replaceImages(replaceInlineCodes(replaceCodeBlocks(str))))),
+								),
+							),
+						),
+					),
+				),
+			),
 		)
 	}
 	// Parser for Markdown (fixes code, adds empty lines around for parsing)
 	// Usage: parseMarkdown(strVar)
-	const parseMarkdown = function(str) {
+	const parseMarkdown = function (str) {
 		return fixCodeBlocks(replaceMarkdown('\n' + str + '\n')).trim()
 	}
 

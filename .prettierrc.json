@@ -4,6 +4,6 @@
 	"semi": false,
 	"singleQuote": true,
 	"useTabs": true,
-	"trailingComma": "php5",
+	"trailingComma": "all",
 	"printWidth": 120
 }
