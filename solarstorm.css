@@ -321,8 +321,8 @@
 }
 
 .ss-resource-deck__deck {
-	width: 72px;
-	height: 100px;
+	width: 65px;
+	height: 90px;
 	background-image: url('img/resources.jpg');
 	background-position: 100% 0;
 	margin-right: 5px;
@@ -434,6 +434,32 @@
 	background-position: 0 100%;
 }
 
+.ss-player-meeple-icon {
+	background-image: url(img/meeples.png);
+	background-position: 0 0;
+	background-size: 100% 400%;
+	background-repeat: no-repeat;
+	width: 20px;
+	height: 20px;
+	display: inline-block;
+	filter: drop-shadow(1px 1px 1px rgba(255, 255, 255, 0.3)) drop-shadow(-1px -1px 1px rgba(255, 255, 255, 0.3))
+		drop-shadow(-1px 1px 1px rgba(255, 255, 255, 0.3)) drop-shadow(1px -1px 1px rgba(255, 255, 255, 0.3));
+	vertical-align: text-bottom;
+	margin-right: 5px;
+}
+.ss-player-meeple-icon--order-1 {
+	background-position: 0 0;
+}
+.ss-player-meeple-icon--order-2 {
+	background-position: 0 33%;
+}
+.ss-player-meeple-icon--order-3 {
+	background-position: 0 66%;
+}
+.ss-player-meeple-icon--order-4 {
+	background-position: 0 100%;
+}
+
 .ss-resource-reorder-dialog {
 	height: 0;
 	background: #ffffffcc;
@@ -493,6 +519,7 @@
 	height: 0px;
 	transition: all 1.3s ease-in-out;
 	text-align: center;
+	margin-left: 10px;
 }
 .ss-player-board__action-tokens.ss-visible {
 	opacity: 1;

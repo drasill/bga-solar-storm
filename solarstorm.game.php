@@ -177,7 +177,7 @@ class SolarStorm extends Table {
 		$this->damageCards->createCards($cards, 'deck');
 	}
 
-	private function drawDamageCard(string $from, bool $notify = true): void {
+	private function drawDamageCard(string $from): void {
 		if (!in_array($from, ['top', 'bottom'])) {
 			throw new \Exception('Invalid position to draw damage card from');
 		}
@@ -185,21 +185,21 @@ class SolarStorm extends Table {
 		$cards = $this->damageCards->getCardsInLocation('deck', null, 'location_arg');
 		if ($from === 'bottom') {
 			$card = $cards[0];
+			$message = clienttranslate('Start of game: damage card drawn');
 		} else {
 			$card = $cards[count($cards) - 1];
+			$message = clienttranslate('End of turn: ${player_name} draws the next damage card');
 		}
 
 		$this->damageCards->insertCardOnExtremePosition($card['id'], 'discard', true);
-		if ($notify) {
-			$player = $this->ssPlayers->getActive();
-			$this->notifyAllPlayers(
-				'updateDamageDiscard',
-				'${player_name} draws the next damage card',
-				[
-					'cards' => [$card],
-				] + $player->getNotificationArgs()
-			);
-		}
+		$player = $this->ssPlayers->getActive();
+		$this->notifyAllPlayers(
+			'updateDamageDiscard',
+			$message,
+			[
+				'cards' => [$card],
+			] + $player->getNotificationArgs()
+		);
 
 		$roomsSlugs = $this->damageCardsInfos[$card['type']];
 		$updatedRooms = [];
@@ -213,7 +213,7 @@ class SolarStorm extends Table {
 				if ($room->getDamageCount() === 3) {
 					$room->setDestroyed(true);
 					$room->save();
-					$this->notifyAllPlayers('updateRooms', clienttranslate('The room ${roomName} receive fatal damage !'), [
+					$this->notifyAllPlayers('updateRooms', clienttranslate('${roomName} receive fatal damage !'), [
 						'rooms' => [$room->toArray() + ['shake' => true]],
 						'roomName' => $room->getSlug(),
 					]);
@@ -226,14 +226,14 @@ class SolarStorm extends Table {
 			$updatedRooms[] = $room->toArray() + ['shake' => true];
 		}
 
-		if (!empty($updatedRooms) && $notify) {
-			$this->notifyAllPlayers('updateRooms', clienttranslate('The room(s) ${roomNames} receive damage'), [
+		if (!empty($updatedRooms)) {
+			$this->notifyAllPlayers('updateRooms', clienttranslate('${roomNames} receive damage'), [
 				'rooms' => $updatedRooms,
 				'roomNames' => array_column($updatedRooms, 'slug'),
 			]);
 		}
-		if (!empty($protectedRooms) && $notify) {
-			$this->notifyAllPlayers('message', clienttranslate('The room(s) ${roomNames} were protected !'), [
+		if (!empty($protectedRooms)) {
+			$this->notifyAllPlayers('message', clienttranslate('${roomNames} were protected !'), [
 				'roomNames' => array_column($protectedRooms, 'slug'),
 			]);
 		}
@@ -1151,8 +1151,8 @@ class SolarStorm extends Table {
 		$playerTurnsCount = (int) self::getGameStateValue('playerTurnsCount');
 		if ($playerTurnsCount === 0) {
 			// First turn
-			$this->drawDamageCard('bottom', true);
-			$this->drawDamageCard('bottom', true);
+			$this->drawDamageCard('bottom');
+			$this->drawDamageCard('bottom');
 		}
 		self::setGameStateValue('playerTurnsCount', $playerTurnsCount + 1);
 
@@ -1245,7 +1245,7 @@ class SolarStorm extends Table {
 		$player->save();
 
 		// Draw damage card
-		$this->drawDamageCard('top', true);
+		$this->drawDamageCard('top');
 
 		$playerId = self::activeNextPlayer();
 		self::giveExtraTime($playerId);
@@ -1361,7 +1361,7 @@ class SolarStorm extends Table {
 	 * Draw a damage card
 	 */
 	public function debugDrawDamage() {
-		$this->drawDamageCard('top', true);
+		$this->drawDamageCard('top');
 	}
 
 	/**

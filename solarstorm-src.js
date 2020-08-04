@@ -306,7 +306,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 
 		createResourceStock(el) {
 			const stock = new ebg.stock()
-			stock.create(this, el, 72, 100)
+			stock.create(this, el, 65, 90)
 			stock.setSelectionMode(1)
 			stock.extraClasses = 'ss-resource-card'
 			stock.setSelectionAppearance('class')
@@ -1374,7 +1374,7 @@ class SSRoom {
 			this.el.classList.remove('ss-shake')
 		}, 2000)
 	}
-	
+
 	setDestroyed(destroyed) {
 		this.destroyed = destroyed
 		this.el.classList[destroyed ? 'add' : 'remove']('ss-room-destroyed')
@@ -1481,7 +1481,7 @@ class SSPlayer {
 			'div',
 			{
 				class: 'ss-player-board__name ss-section-title',
-				innerHTML: `<span>${handName}</span>`,
+				innerHTML: `<span><span class="ss-player-meeple-icon ss-player-meeple-icon--order-${this.order}"></span>${handName}</span>`,
 			},
 			boardEl,
 		)
@@ -1489,10 +1489,14 @@ class SSPlayer {
 			'div',
 			{
 				class: 'ss-player-hand',
-				id: `ss-player-hand--${this.id}`,
-				style: { backgroundColor: `#${this.color}55` },
+				style: { backgroundColor: `#${this.color}55`, boxShadow: `#${this.color}55 0px 0px 4px 2px` },
 			},
 			this.boardEl,
+		)
+		this.handDeckEl = this.handEl = dojo.create(
+			'div',
+			{ class: 'ss-player-hand__deck', id: `ss-player-hand--${this.id}` },
+			this.handEl,
 		)
 		this.actionsTokensEl = dojo.create('div', { class: 'ss-player-board__action-tokens' }, boardEl)
 		dojo.create('div', { class: 'ss-player-board__action-tokens__token ss-action-token' }, this.actionsTokensEl)
@@ -1532,8 +1536,8 @@ class SSPlayer {
 
 	createStock() {
 		this.stock = new ebg.stock()
-		this.stock = this.gameObject.createResourceStock(this.handEl)
-		this.stock.setOverlap(30, 5)
+		this.stock = this.gameObject.createResourceStock(this.handDeckEl)
+		this.stock.setOverlap(30, 0)
 		this.gameObject.resourceTypes.forEach((type, index) => {
 			this.stock.addItemType(type.id, index, g_gamethemeurl + 'img/resources.jpg', index)
 		})
