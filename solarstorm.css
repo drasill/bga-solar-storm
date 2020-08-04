@@ -93,8 +93,30 @@
 	box-shadow: rgba(0, 0, 255, 0.7) 4px 4px 6px;
 }
 
+.ss-room.ss-highlight-hover {
+	border: 2px solid white;
+	cursor: pointer;
+	box-shadow: rgba(255, 255, 255, 0.7) 4px 4px 6px;
+}
+
+.ss-room.ss-shake {
+	animation: ss-shake 1s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
 .ss-room:hover {
 	filter: drop-shadow(2px 2px 2px rgba(0, 0, 0, 0.5)) drop-shadow(-2px -2px 2px rgba(0, 0, 0, 0.5));
+}
+
+.ss-room.ss-room-destroyed:after {
+	content: ' ';
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: url(img/explosion.svg);
+	background-position: 50% 50%;
+	background-size: 100% 100%;
 }
 
 .ss-room--pos-0 {
@@ -166,26 +188,38 @@
 	position: relative;
 	width: 333px;
 	height: 245px;
+	margin-bottom: 10px;
+}
+
+.ss-room-name {
+	border-width: 3px;
+	border-style: double;
+	padding: 0px 2px;
+	font-weight: bold;
+	border-radius: 4px 10px;
+	white-space: nowrap;
+	line-height: 22px;
+	font-size: 11px;
 }
 
 .ss-room__damage {
 	position: absolute;
-	width: 10%;
-	height: 14%;
-	left: 90%;
+	width: 9%;
+	height: 12%;
+	left: 85%;
 	background-image: url(img/damage-cube.png);
 	background-size: contain;
 	background-repeat: no-repeat;
 	transition: all 1.3s ease-in-out;
 }
 .ss-room__damage--0 {
-	top: 19%;
+	top: 18%;
 }
 .ss-room__damage--1 {
-	top: 37%;
+	top: 35%;
 }
 .ss-room__damage--2 {
-	top: 54%;
+	top: 52%;
 }
 
 .ss-room--damaged-0 .ss-room__damage--0,
@@ -522,4 +556,27 @@
 	font-style: italic;
 }
 .ss-tooltip-markdown p {
+}
+
+@keyframes ss-shake {
+	10%,
+	90% {
+		transform: translate3d(-1px, 0, 0) rotate3d(1, 1, 1, -0.1deg);
+	}
+
+	20%,
+	80% {
+		transform: translate3d(2px, 0, 0) rotate3d(1, 1, 1, 0.2deg);
+	}
+
+	30%,
+	50%,
+	70% {
+		transform: translate3d(-4px, 0, 0) rotate3d(1, 1, 1, -0.4deg);
+	}
+
+	40%,
+	60% {
+		transform: translate3d(4px, 0, 0) rotate3d(1, 1, 1, 0.4deg);
+	}
 }

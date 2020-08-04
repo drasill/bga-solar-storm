@@ -48,6 +48,19 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				const room = new SSRoom(this, roomData)
 				this.rooms.addRoom(room)
 			})
+
+			document.addEventListener('mouseover', e => {
+				if (e.target && e.target.classList && e.target.classList.contains('ss-room-name')) {
+					const room = this.rooms.getBySlug(e.target.getAttribute('data-room'))
+					room.highlightHover(true)
+				}
+			})
+			document.addEventListener('mouseout', e => {
+				if (e.target && e.target.classList && e.target.classList.contains('ss-room-name')) {
+					const room = this.rooms.getBySlug(e.target.getAttribute('data-room'))
+					room.highlightHover(false)
+				}
+			})
 		},
 
 		initializePlayersArea() {
@@ -326,11 +339,11 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			return stock
 		},
 
-		highlightEl(el, value) {
+		highlightEl(el, value, cls = 'ss-highlight') {
 			if (typeof el === 'string') {
 				el = $first(el)
 			}
-			el.classList[value ? 'add' : 'remove']('ss-highlight')
+			el.classList[value ? 'add' : 'remove'](cls)
 		},
 
 		setVisibleEl(el, value) {
@@ -1043,7 +1056,11 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				const room = this.rooms.getBySlug(roomData.slug)
 				room.setDamage(roomData.damage)
 				room.setDiverted(roomData.diverted)
+				room.setDestroyed(roomData.destroyed)
 				room.setProtection(roomData.protection)
+				if (room.shake) {
+					room.shake()
+				}
 			})
 		},
 
@@ -1115,7 +1132,6 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 		/* @Override */
 		format_string_recursive: function (log, args) {
 			try {
-				console.log('format_string_recursive', args.processed, log, args)
 				if (log && args && !args.processed) {
 					args.processed = true
 
@@ -1154,6 +1170,34 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 							)
 						})
 						args.resourceTypes = str.join(', ')
+					}
+
+					// Representation of a room name
+					if (args.roomName !== undefined) {
+						const room = this.rooms.getBySlug(args.roomName)
+						args.roomName = dojo.string.substitute(
+							'<span class="ss-room-name" data-room="${roomSlug}" style="color: ${roomColor}">${roomName}</span>',
+							{
+								roomName: room.name,
+								roomColor: room.color,
+								roomSlug: room.slug,
+							},
+						)
+					}
+					// Representation of room names
+					if (args.roomNames !== undefined) {
+						const str = args.roomNames.map(roomName => {
+							const room = this.rooms.getBySlug(roomName)
+							return dojo.string.substitute(
+								'<span class="ss-room-name" data-room="${roomSlug}" style="color: ${roomColor}">${roomName}</span>',
+								{
+									roomName: room.name,
+									roomColor: room.color,
+									roomSlug: room.slug,
+								},
+							)
+						})
+						args.roomNames = str.join(', ')
 					}
 				}
 			} catch (e) {
@@ -1195,25 +1239,30 @@ class SSRoom {
 	id = null
 	slug = null
 	name = null
+	color = null
 	description = null
 	position = null
 	damage = [false, false, false]
 	diverted = false
+	destroyed = false
 	protection = []
 
 	el = null
 	divertedTokenEl = null
+	shakeTimeout = null
 
 	constructor(gameObject, data) {
 		this.gameObject = gameObject
 		this.id = data.id
 		this.slug = data.slug
 		this.name = data.name
+		this.color = data.color
 		this.description = data.description
 		this.position = data.position
 		this.assertEl()
 		this.setDamage(data.damage)
 		this.setDiverted(data.diverted)
+		this.setDestroyed(data.destroyed)
 		this.setProtection(data.protection)
 	}
 
@@ -1234,7 +1283,7 @@ class SSRoom {
 		)
 		this.gameObject.addTooltipMarkdown(
 			el,
-			`<div class="ss-room ss-room-tooltip ss-room--${this.id}"></div>**${this.name}**\n----\n${this.description}`,
+			`<div class="ss-room ss-room-tooltip ss-room--${this.id}"></div>**<span class="ss-room-name" data-room="${this.slug}" style="color: ${this.color}">${this.name}</span>**\n----\n${this.description}`,
 			{},
 			1000,
 		)
@@ -1310,6 +1359,25 @@ class SSRoom {
 
 	highlight(value) {
 		this.gameObject.highlightEl(this.el, value)
+	}
+
+	highlightHover(value) {
+		this.gameObject.highlightEl(this.el, value, 'ss-highlight-hover')
+	}
+
+	shake() {
+		if (this.shakeTimeout) {
+			clearTimeout(this.shakeTimeout)
+		}
+		this.el.classList.add('ss-shake')
+		this.shakeTimeout = setTimeout(() => {
+			this.el.classList.remove('ss-shake')
+		}, 2000)
+	}
+	
+	setDestroyed(destroyed) {
+		this.destroyed = destroyed
+		this.el.classList[destroyed ? 'add' : 'remove']('ss-room-destroyed')
 	}
 }
 
@@ -1389,6 +1457,10 @@ class SSPlayer {
 		this.setActionsTokens(actionsTokens)
 	}
 
+	isCurrent() {
+		return this.gameObject.player_id == this.id
+	}
+
 	isCurrentActive() {
 		return this.gameObject.player_id == this.id && this.gameObject.getActivePlayerId() == this.id
 	}
@@ -1402,11 +1474,14 @@ class SSPlayer {
 		const playersHandsEl = $first('.ss-players-hands')
 		boardEl = dojo.create('div', { class: `ss-player-board ss-players-board--id-${this.id}` }, playersHandsEl)
 		this.boardEl = boardEl
+		const handName = this.isCurrent()
+			? _('Your hand')
+			: _('Hand of') + ` <span style="color: #${this.color}">${this.name}</span>`
 		const nameEl = dojo.create(
 			'div',
 			{
 				class: 'ss-player-board__name ss-section-title',
-				innerHTML: `<span>Hand of <span style="color: #${this.color}">${this.name}</span></span>`,
+				innerHTML: `<span>${handName}</span>`,
 			},
 			boardEl,
 		)
@@ -1428,7 +1503,9 @@ class SSPlayer {
 		)
 		this.gameObject.addTooltipMarkdown(
 			this.actionsTokensEl,
-			_('Actions Tokens.\nAt any time during their turn, this player can use one action token to gain one action.\nThey can also use an action to gain a action token for later.\n----\n**Note** : there are only **8** action tokens available for all players.'),
+			_(
+				'Actions Tokens.\nAt any time during their turn, this player can use one action token to gain one action.\nThey can also use an action to gain a action token for later.\n----\n**Note** : there are only **8** action tokens available for all players.',
+			),
 			{},
 			250,
 		)

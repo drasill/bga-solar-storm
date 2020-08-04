@@ -30,14 +30,16 @@ class SolarStorm extends Table {
 	function __construct() {
 		parent::__construct();
 		self::initGameStateLabels([
+			// Number of player turns
+			'playerTurnsCount' => 11,
 			// If the player has picked a resourceCard from the deck (0/1)
-			'resourcePickedFromDeck' => 11,
+			'resourcePickedFromDeck' => 12,
 			// When scavenging, number of cards left to pick
-			'scavengeNumberOfCards' => 12,
+			'scavengeNumberOfCards' => 13,
 			// Player doesn't want to use his action tokens (end of turn)
-			'dontWannaUseActionsTokens' => 13,
+			'dontWannaUseActionsTokens' => 14,
 			// Initial resource deck size
-			'initialResourceDeckSize' => 14,
+			'initialResourceDeckSize' => 15,
 
 			// Options
 			// Game difficulty (number of universal cards)
@@ -92,6 +94,7 @@ class SolarStorm extends Table {
 
 		/************ Start the game initialization *****/
 
+		self::setGameStateInitialValue('playerTurnsCount', 0);
 		self::setGameStateInitialValue('resourcePickedFromDeck', 0);
 		self::setGameStateInitialValue('scavengeNumberOfCards', 0);
 		self::setGameStateInitialValue('dontWannaUseActionsTokens', 0);
@@ -172,9 +175,6 @@ class SolarStorm extends Table {
 		$cards = array_merge($cards['3room'], $cards['2room'], $cards['1room']);
 
 		$this->damageCards->createCards($cards, 'deck');
-
-		$this->drawDamageCard('bottom', false);
-		$this->drawDamageCard('bottom', false);
 	}
 
 	private function drawDamageCard(string $from, bool $notify = true): void {
@@ -189,7 +189,7 @@ class SolarStorm extends Table {
 			$card = $cards[count($cards) - 1];
 		}
 
-		$this->damageCards->moveCard($card['id'], 'discard');
+		$this->damageCards->insertCardOnExtremePosition($card['id'], 'discard', true);
 		if ($notify) {
 			$player = $this->ssPlayers->getActive();
 			$this->notifyAllPlayers(
@@ -211,36 +211,30 @@ class SolarStorm extends Table {
 				$protectedRooms[] = $room->toArray();
 			} else {
 				if ($room->getDamageCount() === 3) {
+					$room->setDestroyed(true);
+					$room->save();
+					$this->notifyAllPlayers('updateRooms', clienttranslate('The room ${roomName} receive fatal damage !'), [
+						'rooms' => [$room->toArray() + ['shake' => true]],
+						'roomName' => $room->getSlug(),
+					]);
 					$this->triggerEndOfGame('damage');
 					return;
 				}
 				$room->doDamage();
 			}
 			$room->save();
-			$updatedRooms[] = $room->toArray();
+			$updatedRooms[] = $room->toArray() + ['shake' => true];
 		}
 
 		if (!empty($updatedRooms) && $notify) {
-			$roomNames = join(
-				', ',
-				array_map(function ($r) {
-					return $r['name'];
-				}, $updatedRooms)
-			);
 			$this->notifyAllPlayers('updateRooms', clienttranslate('The room(s) ${roomNames} receive damage'), [
 				'rooms' => $updatedRooms,
-				'roomNames' => $roomNames,
+				'roomNames' => array_column($updatedRooms, 'slug'),
 			]);
 		}
 		if (!empty($protectedRooms) && $notify) {
-			$roomNames = join(
-				', ',
-				array_map(function ($r) {
-					return $r['name'];
-				}, $protectedRooms)
-			);
 			$this->notifyAllPlayers('message', clienttranslate('The room(s) ${roomNames} were protected !'), [
-				'roomNames' => $roomNames,
+				'roomNames' => array_column($protectedRooms, 'slug'),
 			]);
 		}
 	}
@@ -283,7 +277,7 @@ class SolarStorm extends Table {
 		$result['resourceTypes'] = array_values($this->resourceTypes);
 
 		$result['damageCardsNbr'] = $this->damageCards->countCardInLocation('deck');
-		$result['damageCardsDiscarded'] = $this->damageCards->getCardsInLocation('discard');
+		$result['damageCardsDiscarded'] = $this->damageCards->getCardsInLocation('discard', null, 'location_arg');
 		$result['resourceCardsOnTable'] = $this->resourceCards->getCardsInLocation('table');
 
 		$data = [];
@@ -381,9 +375,6 @@ class SolarStorm extends Table {
 	public function repairRoomWithResource(SolarStormRoom $room, string $resourceType): void {
 		$resourceInfo = $this->resourceTypes[$resourceType];
 
-		if ($room->isDiverted()) {
-		}
-
 		foreach ($room->getResources() as $resIndex => $resType) {
 			if ($resType !== $resourceType) {
 				continue;
@@ -480,7 +471,7 @@ class SolarStorm extends Table {
 			case 'room':
 				$room = $this->rooms->getRoomByPosition($player->getPosition());
 				if ($room->getDamageCount() > 0) {
-					throw new BgaUserException(self::_("Cannot activate a damaged room, repair it first !"));
+					throw new BgaUserException(self::_('Cannot activate a damaged room, repair it first !'));
 				}
 				$roomSlug = $room->getSlug();
 				switch ($roomSlug) {
@@ -558,7 +549,7 @@ class SolarStorm extends Table {
 		$player->incrementActions(-1);
 		$player->save();
 		$this->notifyPlayerData($player, clienttranslate('${player_name} moves to ${roomName}'), [
-			'roomName' => $room->getName(),
+			'roomName' => $room->getSlug(),
 		]);
 		$this->gamestate->nextState('transActionDone');
 	}
@@ -883,7 +874,7 @@ class SolarStorm extends Table {
 			[
 				'card' => $card,
 				'resourceType' => $card['type'],
-				'roomName' => $room->getName(),
+				'roomName' => $room->getSlug(),
 			] + $player->getNotificationArgs()
 		);
 
@@ -924,7 +915,7 @@ class SolarStorm extends Table {
 			[
 				'cards' => $cards,
 				'resourceTypes' => $resourceTypes,
-				'roomName' => $room->getName(),
+				'roomName' => $room->getSlug(),
 			] + $player->getNotificationArgs()
 		);
 
@@ -959,7 +950,7 @@ class SolarStorm extends Table {
 			$playerToMove,
 			clienttranslate('${player_name} is moved to ${roomName} by ${player_action_name} (Crew Quarters action)'),
 			[
-				'roomName' => $room->getName(),
+				'roomName' => $room->getSlug(),
 				'player_action_name' => $player->getName(),
 				'player_action_id' => $player->getId(),
 			]
@@ -1065,18 +1056,12 @@ class SolarStorm extends Table {
 
 		$updatedRooms = array_values($updatedRooms);
 
-		$roomNames = join(
-			', ',
-			array_map(function ($r) {
-				return $r['name'];
-			}, $updatedRooms)
-		);
 		$this->notifyAllPlayers(
 			'updateRooms',
 			clienttranslate('${player_name} puts a protection token in ${roomNames}'),
 			[
 				'rooms' => $updatedRooms,
-				'roomNames' => $roomNames,
+				'roomNames' => array_column($updatedRooms, 'slug'),
 			] + $player->getNotificationArgs()
 		);
 
@@ -1158,6 +1143,14 @@ class SolarStorm extends Table {
 	////////////
 
 	public function stStartOfTurn() {
+		$playerTurnsCount = (int) self::getGameStateValue('playerTurnsCount');
+		if ($playerTurnsCount === 0) {
+			// First turn
+			$this->drawDamageCard('bottom', true);
+			$this->drawDamageCard('bottom', true);
+		}
+		self::setGameStateValue('playerTurnsCount', $playerTurnsCount + 1);
+
 		$player = $this->ssPlayers->getActive();
 		$room = $this->rooms->getRoomByPosition($player->getPosition());
 
@@ -1214,7 +1207,6 @@ class SolarStorm extends Table {
 		$player = $this->ssPlayers->getActive();
 		$actions = $player->getActions();
 		if ($actions === 0) {
-		
 			// Check if player has usable action tokens
 			if (!self::getGameStateValue('dontWannaUseActionsTokens')) {
 				if ($player->getActionsTokens() > 0) {
@@ -1224,7 +1216,6 @@ class SolarStorm extends Table {
 			}
 
 			$this->gamestate->nextState('transPlayerPickResourcesCards');
-
 		} else {
 			$this->gamestate->nextState('transPlayerTurn');
 		}
@@ -1320,7 +1311,7 @@ class SolarStorm extends Table {
 			'protectaaate',
 			[
 				'rooms' => [$room->toArray()],
-				'roomName' => $room->getName(),
+				'roomName' => $room->getSlug(),
 			] + $player->getNotificationArgs()
 		);
 	}

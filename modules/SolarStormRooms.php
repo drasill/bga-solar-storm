@@ -24,7 +24,7 @@ class SolarStormRooms extends APP_GameClass {
 		array_splice($rooms, 4, 0, 0);
 		foreach ($rooms as $position => $room) {
 			$damage = 0;
-			$sql = "INSERT INTO rooms (position, room, damage1, damage2, damage3, diverted) VALUES ('$position', '$room', '$damage', '$damage', '$damage', false)";
+			$sql = "INSERT INTO rooms (position, room, damage1, damage2, damage3, diverted, destroyed) VALUES ('$position', '$room', '$damage', '$damage', '$damage', false, false)";
 			self::DbQuery($sql);
 		}
 		$this->load();
@@ -33,7 +33,7 @@ class SolarStormRooms extends APP_GameClass {
 	public function load() {
 		$this->rooms = [];
 		$sql =
-			'SELECT id, position, room, damage1, damage2, damage3, diverted, protection1, protection2, protection3, protection4 FROM rooms';
+			'SELECT id, position, room, damage1, damage2, damage3, diverted, destroyed, protection1, protection2, protection3, protection4 FROM rooms';
 		$roomsData = self::getCollectionFromDb($sql);
 		foreach ($roomsData as $roomData) {
 			$room = new SolarStormRoom($this->table, $roomData);

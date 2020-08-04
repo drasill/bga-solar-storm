@@ -68,6 +68,7 @@ $this->roomInfos = [
 		),
 		'resources' => [],
 		'divertResources' => [],
+		'color' => '#6E7C85',
 	],
 	1 => [
 		'slug' => 'mess-hall',
@@ -75,6 +76,7 @@ $this->roomInfos = [
 		'description' => self::_('Give, take or exchange a resource card with another player.'),
 		'resources' => ['nanobots', 'energy', 'data'],
 		'divertResources' => ['data', 'data', 'energy'],
+		'color' => '#814438',
 	],
 	2 => [
 		'slug' => 'repair-centre',
@@ -82,6 +84,7 @@ $this->roomInfos = [
 		'description' => self::_("Repair a damaged room by one space on the Repair Track.\nDiscard the matching card."),
 		'resources' => ['metal', 'energy', 'nanobots'],
 		'divertResources' => ['data', 'energy', 'nanobots'],
+		'color' => '#968B3C',
 	],
 	3 => [
 		'slug' => 'medical-bay',
@@ -89,6 +92,7 @@ $this->roomInfos = [
 		'description' => self::_('Take two actions tokens when starting in this room.'),
 		'resources' => ['metal', 'nanobots', 'energy'],
 		'divertResources' => ['data', 'energy', 'energy'],
+		'color' => '#1F73AE',
 	],
 	4 => [
 		'slug' => 'engine-room',
@@ -96,6 +100,7 @@ $this->roomInfos = [
 		'description' => self::_('Swap a card from your hand with one from the discard pile.'),
 		'resources' => ['data', 'metal', 'nanobots'],
 		'divertResources' => ['metal', 'nanobots', 'nanobots'],
+		'color' => '#A06828',
 	],
 	5 => [
 		'slug' => 'crew-quarters',
@@ -103,6 +108,7 @@ $this->roomInfos = [
 		'description' => self::_("Move a player's meeple to a room that has another meeple in it."),
 		'resources' => ['energy', 'data', 'metal'],
 		'divertResources' => ['metal', 'metal', 'nanobots'],
+		'color' => '#6F9F38',
 	],
 	6 => [
 		'slug' => 'cargo-hold',
@@ -110,6 +116,7 @@ $this->roomInfos = [
 		'description' => self::_("Look at the next 5 resources cards.\nThen put them back in any order."),
 		'resources' => ['energy', 'metal', 'data'],
 		'divertResources' => ['data', 'metal', 'nanobots'],
+		'color' => '#2A7844',
 	],
 	7 => [
 		'slug' => 'armoury',
@@ -119,6 +126,7 @@ $this->roomInfos = [
 		),
 		'resources' => ['data', 'nanobots', 'metal'],
 		'divertResources' => ['metal', 'energy', 'nanobots'],
+		'color' => '#5D3F8E',
 	],
 	8 => [
 		'slug' => 'bridge',
@@ -126,6 +134,7 @@ $this->roomInfos = [
 		'description' => self::_('Look at the next 3 Damage cards and put them back in any order.'),
 		'resources' => ['nanobots', 'data', 'energy'],
 		'divertResources' => ['data', 'metal', 'energy'],
+		'color' => '#7B191B',
 	],
 ];
 

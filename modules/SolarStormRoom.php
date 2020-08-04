@@ -19,6 +19,9 @@ class SolarStormRoom extends APP_GameClass {
 	/** @var string */
 	private $description;
 
+	/** @var string */
+	private $color;
+
 	/** @var int */
 	private $position = null;
 
@@ -37,6 +40,9 @@ class SolarStormRoom extends APP_GameClass {
 	/** @var bool */
 	private $diverted = null;
 
+	/** @var bool */
+	private $destroyed = false;
+
 	public function __construct(SolarStorm $table, array $roomData) {
 		$this->table = $table;
 
@@ -52,10 +58,12 @@ class SolarStormRoom extends APP_GameClass {
 			])
 		);
 		$this->diverted = $roomData['diverted'] == 1;
+		$this->destroyed = $roomData['destroyed'] == 1;
 
 		$roomInfo = $this->table->roomInfos[$this->roomId];
 		$this->slug = $roomInfo['slug'];
 		$this->name = $roomInfo['name'];
+		$this->color = $roomInfo['color'];
 		$this->description = $roomInfo['description'];
 		$this->resources = $roomInfo['resources'];
 		$this->divertResources = $roomInfo['divertResources'];
@@ -67,6 +75,10 @@ class SolarStormRoom extends APP_GameClass {
 
 	public function getName(): string {
 		return $this->name;
+	}
+
+	public function getColor(): string {
+		return $this->color;
 	}
 
 	public function getDescription(): string {
@@ -145,6 +157,10 @@ class SolarStormRoom extends APP_GameClass {
 		$this->diverted = $diverted;
 	}
 
+	public function setDestroyed(bool $destroyed): void {
+		$this->destroyed = $destroyed;
+	}
+
 	/**
 	 * Return list of positions a player can go from this room
 	 * @param int[]
@@ -176,6 +192,7 @@ class SolarStormRoom extends APP_GameClass {
 			'damage2' => $this->damage[1] ? '1' : '0',
 			'damage3' => $this->damage[2] ? '1' : '0',
 			'diverted' => $this->diverted ? '1' : '0',
+			'destroyed' => $this->destroyed ? '1' : '0',
 			'protection1' => $this->protection[0] ?? 'NULL',
 			'protection2' => $this->protection[1] ?? 'NULL',
 			'protection3' => $this->protection[2] ?? 'NULL',
@@ -195,9 +212,11 @@ class SolarStormRoom extends APP_GameClass {
 			'id' => $this->roomId,
 			'slug' => $this->slug,
 			'name' => $this->name,
+			'color' => $this->color,
 			'description' => $this->description,
 			'position' => $this->position,
 			'diverted' => $this->diverted,
+			'destroyed' => $this->destroyed,
 			'damage' => $this->damage,
 			'protection' => $this->protection,
 		];
