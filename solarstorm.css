@@ -200,6 +200,8 @@
 	white-space: nowrap;
 	line-height: 22px;
 	font-size: 11px;
+	background: #eee;
+	box-shadow: #00000055 2px 1px 2px;
 }
 
 .ss-room__damage {

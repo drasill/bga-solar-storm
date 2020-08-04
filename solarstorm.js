@@ -1143,7 +1143,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
         room.setDestroyed(roomData.destroyed);
         room.setProtection(roomData.protection);
 
-        if (room.shake) {
+        if (roomData.shake) {
           room.shake();
         }
       });

@@ -515,6 +515,11 @@ class SolarStorm extends Table {
 						if ($this->rooms->countTotalDiverted() < 8) {
 							throw new BgaUserException(self::_('All rooms need to have their power diverted first'));
 						}
+						$this->notifyAllPlayers(
+							'message',
+							'🎉 ' . clienttranslate('${player_name} activates the Energy Core !'),
+							$player->getNotificationArgs()
+						);
 						$this->triggerEndOfGame('energy-core');
 						break;
 					default:
@@ -1287,6 +1292,24 @@ class SolarStorm extends Table {
 		$this->notifyAllPlayers('updateRooms', 'cheater !', [
 			'rooms' => $updatedRooms,
 		]);
+	}
+
+	/**
+	 * Toggle Divert current room
+	 */
+	public function debugDivert() {
+		$player = $this->ssPlayers->getActive();
+		$room = $this->rooms->getRoomByPosition($player->getPosition());
+		$room->setDiverted(!$room->isDiverted());
+		$room->save();
+		$this->notifyAllPlayers(
+			'updateRooms',
+			'toggle divert',
+			[
+				'rooms' => [$room->toArray()],
+				'roomName' => $room->getSlug(),
+			] + $player->getNotificationArgs()
+		);
 	}
 
 	/**
