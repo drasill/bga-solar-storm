@@ -172,4 +172,10 @@ class action_solarstorm extends APP_GameAction {
 		$this->game->actionPutProtectionTokens($positions);
 		self::ajaxResponse();
 	}
+
+	public function restartTurn() {
+		self::setAjaxMode();
+		$this->game->actionRestartTurn();
+		self::ajaxResponse();
+	}
 }

@@ -38,6 +38,7 @@ if (!defined('ST_PLAYER_TURN')) {
 	define('ST_PLAYER_DISCARD_RESOURCES', 41);
 	define('ST_PLAYER_DISCARD_RESOURCES_HULL', 42);
 	define('ST_PLAYER_NEXT_PLAYER', 43);
+	define('ST_PLAYER_RESTART_TURN', 44);
 
 	define('ST_END_OF_GAME', 99);
 }
@@ -67,7 +68,7 @@ $machinestates = [
 		'descriptionmyturn' => clienttranslate('${you} must choose an action'),
 		'type' => 'activeplayer',
 		'args' => 'argPlayerTurn',
-		'possibleactions' => ['choose', 'useToken'],
+		'possibleactions' => ['choose', 'useToken', 'restartTurn'],
 		'transitions' => [
 			'transPlayerMove' => ST_PLAYER_MOVE,
 			'transPlayerScavenge' => ST_PLAYER_SCAVENGE,
@@ -83,6 +84,7 @@ $machinestates = [
 			'transPlayerRoomBridge' => ST_PLAYER_ROOM_BRIDGE,
 			'transActionDone' => ST_PLAYER_ACTION_DONE,
 			'transEndOfGame' => ST_END_OF_GAME,
+			'transPlayerRestartTurn' => ST_PLAYER_RESTART_TURN,
 		],
 	],
 
@@ -283,11 +285,12 @@ $machinestates = [
 		'descriptionmyturn' => clienttranslate('End of turn: ${you} must pick resources cards'),
 		'type' => 'activeplayer',
 		'args' => 'argPlayerPickResourcesCards',
-		'possibleactions' => ['pickResource'],
+		'possibleactions' => ['pickResource', 'restartTurn'],
 		'transitions' => [
 			'transPlayerEndTurn' => ST_PLAYER_END_TURN,
 			'transPlayerPickResourcesCards' => ST_PLAYER_PICK_RESOURCES_CARDS,
 			'transEndOfGame' => ST_END_OF_GAME,
+			'transPlayerRestartTurn' => ST_PLAYER_RESTART_TURN,
 		],
 	],
 
@@ -296,9 +299,10 @@ $machinestates = [
 		'description' => clienttranslate('End of turn: ${actplayer} can use their action tokens'),
 		'descriptionmyturn' => clienttranslate('End of turn: ${you} can use you action tokens'),
 		'type' => 'activeplayer',
-		'possibleactions' => ['useToken', 'dontUseToken'],
+		'possibleactions' => ['useToken', 'dontUseToken', 'restartTurn'],
 		'transitions' => [
 			'transActionDone' => ST_PLAYER_ACTION_DONE,
+			'transPlayerRestartTurn' => ST_PLAYER_RESTART_TURN,
 		],
 	],
 
@@ -321,10 +325,11 @@ $machinestates = [
 		'descriptionmyturn' => clienttranslate('End of turn: ${you} must discard resources cards (max 6)'),
 		'type' => 'activeplayer',
 		'args' => 'argPlayerDiscardResources',
-		'possibleactions' => ['discardResources'],
+		'possibleactions' => ['discardResources', 'restartTurn'],
 		'transitions' => [
 			'transPlayerDiscardResourcesHull' => ST_PLAYER_DISCARD_RESOURCES_HULL,
 			'transPlayerNextPlayer' => ST_PLAYER_NEXT_PLAYER,
+			'transPlayerRestartTurn' => ST_PLAYER_RESTART_TURN,
 		],
 	],
 
@@ -344,6 +349,15 @@ $machinestates = [
 		'name' => 'playerNextPlayer',
 		'type' => 'game',
 		'action' => 'stNextPlayer',
+		'transitions' => [
+			'transPlayerStartOfTurn' => ST_PLAYER_START_OF_TURN
+		],
+	],
+
+	ST_PLAYER_RESTART_TURN => [
+		'name' => 'playerRestartTurn',
+		'type' => 'game',
+		'action' => 'stPlayerRestartTurn',
 		'transitions' => [
 			'transPlayerStartOfTurn' => ST_PLAYER_START_OF_TURN
 		],

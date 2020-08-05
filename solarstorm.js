@@ -252,6 +252,14 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
               });
             }
 
+            if (args.canRestartTurn) {
+              this.showRestartTurnButton(() => {
+                this.ajaxAction('restartTurn', {
+                  lock: true
+                });
+              });
+            }
+
             break;
 
           case 'playerShare':
@@ -311,6 +319,18 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 
     removeActionCancelButton() {
       const el = $('actionCancelButton');
+
+      if (el) {
+        el.remove();
+      }
+    },
+
+    showRestartTurnButton(callback) {
+      this.addActionButton('actionRestartTurn', _('Restart turn'), callback, null, null, 'red');
+    },
+
+    removeRestartTurnButton() {
+      const el = $('actionRestartTurn');
 
       if (el) {
         el.remove();
@@ -397,7 +417,8 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
       options = Object.assign({
         table: true,
         deck: true,
-        cancel: false
+        cancel: false,
+        restart: false
       }, options);
       return new Promise((resolve, reject) => {
         const handles = [];
@@ -411,6 +432,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
           handles.forEach(handle => dojo.disconnect(handle));
           this.resourceDeck.setSelectionMode(0);
           this.removeActionCancelButton();
+          this.removeRestartTurnButton();
         }; // Highlight
 
 
@@ -421,7 +443,14 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
         if (options.cancel) {
           this.showActionCancelButton(() => {
             cleanAll();
-            reject('CANCEL BTN');
+            reject('CANCEL_BTN');
+          });
+        }
+
+        if (options.restart) {
+          this.showRestartTurnButton(() => {
+            cleanAll();
+            reject('RESTART_BTN');
           });
         } // Wait for click
 
@@ -1133,15 +1162,26 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
     },
 
     async doPlayerPickResources(possibleSources) {
-      const card = await this.waitForResourceFromDeck({
-        cancel: false,
-        deck: possibleSources.includes('deck'),
-        table: possibleSources.includes('table')
-      });
-      await this.ajaxAction('pickResource', {
-        lock: true,
-        cardId: card.id
-      });
+      try {
+        const card = await this.waitForResourceFromDeck({
+          cancel: false,
+          restart: true,
+          deck: possibleSources.includes('deck'),
+          table: possibleSources.includes('table')
+        });
+        await this.ajaxAction('pickResource', {
+          lock: true,
+          cardId: card.id
+        });
+      } catch (e) {
+        if (e === 'RESTART_BTN') {
+          await this.ajaxAction('restartTurn', {
+            lock: true
+          });
+        } else {
+          console.error(e);
+        }
+      }
     },
 
     ///////////////////////////////////////////////////
@@ -1162,6 +1202,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
       dojo.subscribe('playerDiscardResource', this, 'notif_playerDiscardResource');
       dojo.subscribe('playerShareResource', this, 'notif_playerShareResource');
       dojo.subscribe('putBackResourcesCardInDeck', this, 'notif_putBackResourcesCardInDeck');
+      dojo.subscribe('fullState', this, 'notif_fullState');
     },
 
     notif_updateRooms(notif) {
@@ -1242,6 +1283,33 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
       const player = this.players.getPlayerById(notif.args.player_id);
       player.setRoomPosition(notif.args.position);
       player.setActionsTokens(notif.args.actionsTokens);
+
+      if (notif.args.resourceCards) {
+        player.stock.removeAll();
+        notif.args.resourceCards.forEach(resourceCard => {
+          player.stock.addToStockWithId(resourceCard.type, resourceCard.id);
+        });
+      }
+    },
+
+    notif_fullState(notif) {
+      console.log('notif_fullState', notif);
+      notif.args.players.forEach(playerData => {
+        const player = this.players.getPlayerById(playerData.id);
+        player.setRoomPosition(playerData.position);
+        player.setActionsTokens(playerData.actionsTokens);
+        player.stock.removeAll();
+        playerData.resourceCards.forEach(resourceCard => {
+          player.stock.addToStockWithId(resourceCard.type, resourceCard.id);
+        });
+      });
+      notif.args.rooms.forEach(roomData => {
+        const room = this.rooms.getBySlug(roomData.slug);
+        room.setDamage(roomData.damage);
+        room.setDiverted(roomData.diverted);
+        room.setDestroyed(roomData.destroyed);
+        room.setProtection(roomData.protection);
+      });
     },
 
     /* This enable to inject translatable styled things to logs or action bar */

@@ -42,6 +42,8 @@ class SolarStorm extends Table {
 			'initialResourceDeckSize' => 15,
 			// HullBreach: number of cars to discards
 			'hullBreachNumberOfCards' => 16,
+			// Can Restart Turn
+			'canRestartTurn' => 17,
 
 			// Options
 			// Game difficulty (number of universal cards)
@@ -102,6 +104,7 @@ class SolarStorm extends Table {
 		self::setGameStateInitialValue('dontWannaUseActionsTokens', 0);
 		self::setGameStateInitialValue('initialResourceDeckSize', 0);
 		self::setGameStateInitialValue('hullBreachNumberOfCards', 0);
+		self::setGameStateInitialValue('canRestartTurn', 0);
 
 		$this->rooms->generateRooms();
 
@@ -274,6 +277,8 @@ class SolarStorm extends Table {
 			return;
 		}
 
+		self::setGameStateValue('canRestartTurn', 0);
+
 		$cards = $this->resourceCards->pickCardsForLocation($needToDrawCnt, 'deck', 'table');
 		if ($this->resourceCards->countCardInLocation('deck') == 0) {
 			$this->triggerEndOfGame('resources');
@@ -352,17 +357,24 @@ class SolarStorm extends Table {
 	//////////// Utility functions
 	////////////
 
-	private function notifyPlayerData(SolarStormPlayer $player, string $message = '', array $args = []): void {
-		$this->notifyAllPlayers(
-			'updatePlayerData',
-			$message,
-			[
-				'position' => $player->getPosition(),
-				'actionsTokens' => $player->getActionsTokens(),
-			] +
-				$args +
-				$player->getNotificationArgs()
-		);
+	private function notifyPlayerData(
+		SolarStormPlayer $player,
+		string $message = '',
+		array $args = [],
+		bool $all = false
+	): void {
+		$args += [
+			'position' => $player->getPosition(),
+			'actionsTokens' => $player->getActionsTokens(),
+		];
+
+		if ($all) {
+			$args['resourceCards'] = array_values($this->resourceCards->getCardsInLocation('hand', $player->getId()));
+		}
+
+		$args += $player->getNotificationArgs();
+
+		$this->notifyAllPlayers('updatePlayerData', $message, $args);
 	}
 
 	private function getPlayersIdsInTheSameRoom($excludeActive = false): array {
@@ -476,11 +488,13 @@ class SolarStorm extends Table {
 		}
 
 		// When player doesn't have enough cards in hand : ignore or end of game ? FIXME
-		$numCardsInHand = (int)$this->resourceCards->countCardInLocation('hand', $player->getId());
+		$numCardsInHand = (int) $this->resourceCards->countCardInLocation('hand', $player->getId());
 		$numCardsToDiscard = min($numCardsInHand, $numCardsToDiscard);
 		$this->notifyAllPlayers(
 			'message',
-			clienttranslate('Hull Breach ! Die result : ${die_result}. ${player_name} must discard ${num} resource card(s)'),
+			clienttranslate(
+				'Hull Breach ! Die result : ${die_result}. ${player_name} must discard ${num} resource card(s)'
+			),
 			[
 				'die_result' => $dice,
 				'num' => $numCardsToDiscard,
@@ -540,6 +554,7 @@ class SolarStorm extends Table {
 						$this->gamestate->nextState('transPlayerRoomCrewQuarter');
 						break;
 					case 'cargo-hold':
+						self::setGameStateValue('canRestartTurn', 0);
 						$this->resourceCards->pickCardsForLocation(5, 'deck', 'reorder');
 						$this->gamestate->nextState('transPlayerRoomCargoHold');
 						break;
@@ -569,6 +584,7 @@ class SolarStorm extends Table {
 						$this->gamestate->nextState('transPlayerRoomArmoury');
 						break;
 					case 'bridge':
+						self::setGameStateValue('canRestartTurn', 0);
 						$this->damageCards->pickCardsForLocation(3, 'deck', 'reorder');
 						$this->gamestate->nextState('transPlayerRoomBridge');
 						break;
@@ -593,7 +609,7 @@ class SolarStorm extends Table {
 		}
 	}
 
-	public function actionCancel() {
+	public function actionCancel(): void {
 		self::checkAction('cancel');
 		$this->gamestate->nextState('transActionCancel');
 	}
@@ -620,7 +636,7 @@ class SolarStorm extends Table {
 		$this->gamestate->nextState('transActionDone');
 	}
 
-	public function actionRollDice() {
+	public function actionRollDice(): void {
 		self::checkAction('rollDice');
 
 		$player = $this->ssPlayers->getActive();
@@ -667,7 +683,7 @@ class SolarStorm extends Table {
 		$this->gamestate->nextState('transActionScavengePickCards');
 	}
 
-	public function actionPickResource($cardId) {
+	public function actionPickResource($cardId): void {
 		self::checkAction('pickResource');
 		$player = $this->ssPlayers->getActive();
 
@@ -681,6 +697,7 @@ class SolarStorm extends Table {
 			$fromDeck = true;
 			// Pick from deck
 			$card = $this->resourceCards->pickCardForLocation('deck', 'hand', $player->getId());
+			self::setGameStateValue('canRestartTurn', 0);
 			if ($this->resourceCards->countCardInLocation('deck') == 0) {
 				$this->triggerEndOfGame('resources');
 				return;
@@ -747,7 +764,7 @@ class SolarStorm extends Table {
 		$this->gamestate->nextState('transPlayerPickResourcesCards');
 	}
 
-	public function actionDiscardResource($cardId) {
+	public function actionDiscardResource($cardId): void {
 		self::checkAction('discardResource');
 		$card = $this->resourceCards->getCard($cardId);
 		$player = $this->ssPlayers->getActive();
@@ -767,7 +784,7 @@ class SolarStorm extends Table {
 		$this->gamestate->nextState('transPlayerEndTurn');
 	}
 
-	public function actionDiscardResources(array $cardIds) {
+	public function actionDiscardResources(array $cardIds): void {
 		self::checkAction('discardResources');
 		$player = $this->ssPlayers->getActive();
 
@@ -804,7 +821,7 @@ class SolarStorm extends Table {
 		$this->gamestate->nextState('transPlayerNextPlayer');
 	}
 
-	public function actionGiveResourceToAnotherPlayer(int $cardId, int $playerId) {
+	public function actionGiveResourceToAnotherPlayer(int $cardId, int $playerId): void {
 		self::checkAction('giveResourceToAnotherPlayer');
 		$player = $this->ssPlayers->getActive();
 		$card = $this->resourceCards->getCard($cardId);
@@ -835,7 +852,7 @@ class SolarStorm extends Table {
 		$this->gamestate->nextState('transActionDone');
 	}
 
-	public function actionPickResourceFromAnotherPlayer(int $cardId) {
+	public function actionPickResourceFromAnotherPlayer(int $cardId): void {
 		self::checkAction('pickResourceFromAnotherPlayer');
 		$player = $this->ssPlayers->getActive();
 		$card = $this->resourceCards->getCard($cardId);
@@ -869,7 +886,7 @@ class SolarStorm extends Table {
 		$this->gamestate->nextState('transActionDone');
 	}
 
-	public function actionSwapResourceWithAnotherPlayer(int $cardId, int $card2Id) {
+	public function actionSwapResourceWithAnotherPlayer(int $cardId, int $card2Id): void {
 		self::checkAction('swapResourceWithAnotherPlayer');
 		$player = $this->ssPlayers->getActive();
 		$card = $this->resourceCards->getCard($cardId);
@@ -910,7 +927,7 @@ class SolarStorm extends Table {
 		$this->gamestate->nextState('transActionDone');
 	}
 
-	public function actionSwapResourceFromDiscard(int $cardId, int $card2Id) {
+	public function actionSwapResourceFromDiscard(int $cardId, int $card2Id): void {
 		self::checkAction('swapResourceFromDiscard');
 		$player = $this->ssPlayers->getActive();
 		$card = $this->resourceCards->getCard($cardId);
@@ -947,7 +964,7 @@ class SolarStorm extends Table {
 		$this->gamestate->nextState('transActionDone');
 	}
 
-	public function actionSelectResourceForRepair(int $cardId, ?string $typeId = null, ?int $position = null) {
+	public function actionSelectResourceForRepair(int $cardId, ?string $typeId = null, ?int $position = null): void {
 		self::checkAction('selectResourceForRepair');
 		$card = $this->resourceCards->getCard($cardId);
 		$player = $this->ssPlayers->getActive();
@@ -1061,7 +1078,7 @@ class SolarStorm extends Table {
 		$this->gamestate->nextState('transActionDone');
 	}
 
-	public function actionPutBackResourceCardsInDeck(array $cardIds) {
+	public function actionPutBackResourceCardsInDeck(array $cardIds): void {
 		self::checkAction('putBackResourceCardsInDeck');
 		$player = $this->ssPlayers->getActive();
 		$cardIds = array_reverse($cardIds);
@@ -1085,7 +1102,7 @@ class SolarStorm extends Table {
 		$this->gamestate->nextState('transActionDone');
 	}
 
-	public function actionPutBackDamageCardsInDeck(array $cardIds) {
+	public function actionPutBackDamageCardsInDeck(array $cardIds): void {
 		self::checkAction('putBackDamageCardsInDeck');
 		$player = $this->ssPlayers->getActive();
 		$cardIds = array_reverse($cardIds);
@@ -1109,7 +1126,7 @@ class SolarStorm extends Table {
 		$this->gamestate->nextState('transActionDone');
 	}
 
-	public function actionGetActionToken() {
+	public function actionGetActionToken(): void {
 		$player = $this->ssPlayers->getActive();
 		$tokensLeft = 8 - $this->ssPlayers->countTotalActionTokens();
 		if ($tokensLeft <= 0) {
@@ -1123,7 +1140,7 @@ class SolarStorm extends Table {
 		$this->gamestate->nextState('transActionDone');
 	}
 
-	public function actionUseToken() {
+	public function actionUseToken(): void {
 		self::setGameStateValue('dontWannaUseActionsTokens', 0);
 		$player = $this->ssPlayers->getActive();
 		$tokens = $player->getActionsTokens();
@@ -1137,13 +1154,13 @@ class SolarStorm extends Table {
 		$this->gamestate->nextState('transActionDone');
 	}
 
-	public function actionDontUseToken() {
+	public function actionDontUseToken(): void {
 		self::setGameStateValue('dontWannaUseActionsTokens', 1);
 		$player = $this->ssPlayers->getActive();
 		$this->gamestate->nextState('transActionDone');
 	}
 
-	public function actionPutProtectionTokens(array $positions) {
+	public function actionPutProtectionTokens(array $positions): void {
 		$tokensLeft = 4 - $this->rooms->countTotalProtectionTokens();
 		if (count($positions) > 2 || count($positions) > $tokensLeft) {
 			throw new \Exception('Invalid number of tokens');
@@ -1173,6 +1190,13 @@ class SolarStorm extends Table {
 		$this->gamestate->nextState('transActionDone');
 	}
 
+	public function actionRestartTurn(): void {
+		if (!self::getGameStateValue('canRestartTurn')) {
+			throw new BgaUserException(self::_('Cannot restart turn now'));
+		}
+		$this->gamestate->nextState('transPlayerRestartTurn');
+	}
+
 	//////////////////////////////////////////////////////////////////////////////
 	//////////// Game state arguments
 	////////////
@@ -1180,6 +1204,7 @@ class SolarStorm extends Table {
 	public function argPlayerTurn(): array {
 		$player = $this->ssPlayers->getActive();
 		return [
+			'canRestartTurn' => (bool)self::getGameStateValue('canRestartTurn'),
 			'actions' => $player->getActions(),
 		];
 	}
@@ -1195,12 +1220,14 @@ class SolarStorm extends Table {
 
 	public function argPlayerScavengePickCards(): array {
 		return [
+			'canRestartTurn' => (bool)self::getGameStateValue('canRestartTurn'),
 			'possibleSources' => $this->whereDoesPlayerCanPickResourceFrom(),
 		];
 	}
 
 	public function argPlayerPickResourcesCards(): array {
 		return [
+			'canRestartTurn' => (bool)self::getGameStateValue('canRestartTurn'),
 			'possibleSources' => $this->whereDoesPlayerCanPickResourceFrom(),
 		];
 	}
@@ -1311,6 +1338,8 @@ class SolarStorm extends Table {
 			);
 		}
 
+		$this->saveCurrentState();
+		self::setGameStateValue('canRestartTurn', 1);
 		$this->gamestate->nextState('transPlayerTurn');
 	}
 
@@ -1384,6 +1413,12 @@ class SolarStorm extends Table {
 		$player = $this->ssPlayers->getActive();
 		$player->incrementActions(-1);
 		$player->save();
+	}
+
+	public function stPlayerRestartTurn() {
+		// TODO check
+		$this->loadCurrentState();
+		$this->gamestate->nextState('transPlayerStartOfTurn');
 	}
 
 	//////////////////////////////////////////////////////////////////////////////
@@ -1592,6 +1627,41 @@ class SolarStorm extends Table {
 		}
 
 		throw new feException('Zombie mode not supported at this game state: ' . $statename);
+	}
+
+	///////////////////////////////////////////////////////////////////////////////////:
+	////////// DB save/restore undo
+	//////////
+
+	private function saveCurrentState() {
+		$tableNames = ['damage_card', 'resource_card', 'player_data', 'rooms'];
+		foreach ($tableNames as $tableName) {
+			$tableNameSave = $tableName . '_save';
+			self::DbQuery("DROP TABLE IF EXISTS $tableNameSave");
+			self::DbQuery("CREATE TABLE $tableNameSave SELECT * FROM $tableName");
+		}
+	}
+
+	private function loadCurrentState() {
+		$tableNames = ['damage_card', 'resource_card', 'player_data', 'rooms'];
+		foreach ($tableNames as $tableName) {
+			$tableNameSave = $tableName . '_save';
+			self::DbQuery("DROP TABLE IF EXISTS $tableName");
+			self::DbQuery("CREATE TABLE $tableName SELECT * FROM $tableNameSave");
+		}
+		$this->rooms = new SolarStormRooms($this);
+		$this->ssPlayers = new SolarStormPlayers($this);
+
+		$data = [];
+		foreach ($this->rooms->getRooms() as $room) {
+			$data['rooms'][] = $room->toArray();
+		}
+		foreach ($this->ssPlayers->getPlayers() as $player) {
+			$data['players'][] = $player->toArray() + [
+				'resourceCards' => array_values($this->resourceCards->getCardsInLocation('hand', $player->getId())),
+			];
+		}
+		$this->notifyAllPlayers('fullState', 'FullState', $data);
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////:

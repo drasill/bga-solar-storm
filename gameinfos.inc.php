@@ -135,6 +135,9 @@ $gameinfos = array(
 	//  IMPORTANT: it is mandatory that the FIRST tag is 1, 2, 3 and 4 (= game category)
 	'tags' => [2, 12, 101, 204],
 
+	// Allow setting an undo point - to allow players to restart their turn
+	'db_undo_support' => true,
+
 	//////// BGA SANDBOX ONLY PARAMETERS (DO NOT MODIFY)
 
 	// simple : A plays, B plays, C plays, A plays, B plays, ...
