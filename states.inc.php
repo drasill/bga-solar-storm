@@ -36,6 +36,8 @@ if (!defined('ST_PLAYER_TURN')) {
 
 	define('ST_PLAYER_END_TURN', 40);
 	define('ST_PLAYER_DISCARD_RESOURCES', 41);
+	define('ST_PLAYER_DISCARD_RESOURCES_HULL', 42);
+	define('ST_PLAYER_NEXT_PLAYER', 43);
 
 	define('ST_END_OF_GAME', 99);
 }
@@ -306,8 +308,9 @@ $machinestates = [
 		'action' => 'stEndTurn',
 		'updateGameProgression' => true,
 		'transitions' => [
-			'transPlayerStartOfTurn' => ST_PLAYER_START_OF_TURN,
 			'transPlayerDiscardResources' => ST_PLAYER_DISCARD_RESOURCES,
+			'transPlayerDiscardResourcesHull' => ST_PLAYER_DISCARD_RESOURCES_HULL,
+			'transPlayerNextPlayer' => ST_PLAYER_NEXT_PLAYER,
 			'transEndOfGame' => ST_END_OF_GAME,
 		],
 	],
@@ -317,9 +320,32 @@ $machinestates = [
 		'description' => clienttranslate('End of turn: ${actplayer} must discard resources cards (max 6)'),
 		'descriptionmyturn' => clienttranslate('End of turn: ${you} must discard resources cards (max 6)'),
 		'type' => 'activeplayer',
-		'possibleactions' => ['discardResource'],
+		'args' => 'argPlayerDiscardResources',
+		'possibleactions' => ['discardResources'],
 		'transitions' => [
-			'transPlayerEndTurn' => ST_PLAYER_END_TURN,
+			'transPlayerDiscardResourcesHull' => ST_PLAYER_DISCARD_RESOURCES_HULL,
+			'transPlayerNextPlayer' => ST_PLAYER_NEXT_PLAYER,
+		],
+	],
+
+	ST_PLAYER_DISCARD_RESOURCES_HULL => [
+		'name' => 'playerDiscardResourcesHull',
+		'description' => clienttranslate('End of turn: Hull Breach ! ${actplayer} must discard resources cards'),
+		'descriptionmyturn' => clienttranslate('End of turn: Hull Breach ! ${you} must discard resources cards'),
+		'type' => 'activeplayer',
+		'args' => 'argPlayerDiscardResourcesHull',
+		'possibleactions' => ['discardResources'],
+		'transitions' => [
+			'transPlayerNextPlayer' => ST_PLAYER_NEXT_PLAYER,
+		],
+	],
+
+	ST_PLAYER_NEXT_PLAYER => [
+		'name' => 'playerNextPlayer',
+		'type' => 'game',
+		'action' => 'stNextPlayer',
+		'transitions' => [
+			'transPlayerStartOfTurn' => ST_PLAYER_START_OF_TURN
 		],
 	],
 

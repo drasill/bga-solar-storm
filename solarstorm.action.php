@@ -73,6 +73,14 @@ class action_solarstorm extends APP_GameAction {
 		self::ajaxResponse();
 	}
 
+	public function discardResources() {
+		self::setAjaxMode();
+		$cardIds = self::getArg('cardIds', AT_numberlist, true);
+		$cardIds = preg_split('/\D/', $cardIds, -1, PREG_SPLIT_NO_EMPTY);
+		$this->game->actionDiscardResources($cardIds);
+		self::ajaxResponse();
+	}
+
 	public function selectResourceForRepair() {
 		self::setAjaxMode();
 		$cardId = (int) self::getArg('cardId', AT_posint, true);

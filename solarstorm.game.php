@@ -40,6 +40,8 @@ class SolarStorm extends Table {
 			'dontWannaUseActionsTokens' => 14,
 			// Initial resource deck size
 			'initialResourceDeckSize' => 15,
+			// HullBreach: number of cars to discards
+			'hullBreachNumberOfCards' => 16,
 
 			// Options
 			// Game difficulty (number of universal cards)
@@ -99,6 +101,7 @@ class SolarStorm extends Table {
 		self::setGameStateInitialValue('scavengeNumberOfCards', 0);
 		self::setGameStateInitialValue('dontWannaUseActionsTokens', 0);
 		self::setGameStateInitialValue('initialResourceDeckSize', 0);
+		self::setGameStateInitialValue('hullBreachNumberOfCards', 0);
 
 		$this->rooms->generateRooms();
 
@@ -174,6 +177,13 @@ class SolarStorm extends Table {
 		}
 		$cards = array_merge($cards['3room'], $cards['2room'], $cards['1room']);
 
+		// Hull card
+		array_unshift($cards, [
+			'type' => 'hull',
+			'type_arg' => null,
+			'nbr' => 1,
+		]);
+
 		$this->damageCards->createCards($cards, 'deck');
 	}
 
@@ -182,13 +192,23 @@ class SolarStorm extends Table {
 			throw new \Exception('Invalid position to draw damage card from');
 		}
 
+		if ($this->damageCards->countCardInLocation('deck') == 0) {
+			return;
+		}
+
 		$cards = $this->damageCards->getCardsInLocation('deck', null, 'location_arg');
 		if ($from === 'bottom') {
-			$card = $cards[0];
+			$card = $cards[1]; // Don't pick hull card
 			$message = clienttranslate('Start of game: damage card drawn');
 		} else {
 			$card = $cards[count($cards) - 1];
 			$message = clienttranslate('End of turn: ${player_name} draws the next damage card');
+		}
+
+		if ($card['type'] === 'hull') {
+			$message = clienttranslate(
+				'End of turn: ${player_name} draws the last damage card, the hull is now receiving damage !'
+			);
 		}
 
 		$this->damageCards->insertCardOnExtremePosition($card['id'], 'discard', true);
@@ -200,6 +220,10 @@ class SolarStorm extends Table {
 				'cards' => [$card],
 			] + $player->getNotificationArgs()
 		);
+
+		if ($this->damageCards->countCardInLocation('deck') == 0) {
+			return;
+		}
 
 		$roomsSlugs = $this->damageCardsInfos[$card['type']];
 		$updatedRooms = [];
@@ -436,6 +460,43 @@ class SolarStorm extends Table {
 		$room->setDiverted(true);
 	}
 
+	public function checkHullBreach(): bool {
+		$n = $this->damageCards->countCardInLocation('deck');
+		if ($n > 0) {
+			return true;
+		}
+
+		$player = $this->ssPlayers->getActive();
+		$dice = bga_rand(1, 6);
+		$numCardsToDiscard = 1;
+		if ($dice >= 5) {
+			$numCardsToDiscard = 3;
+		} elseif ($dice >= 3) {
+			$numCardsToDiscard = 2;
+		}
+
+		// When player doesn't have enough cards in hand : ignore or end of game ? FIXME
+		$numCardsInHand = (int)$this->resourceCards->countCardInLocation('hand', $player->getId());
+		$numCardsToDiscard = min($numCardsInHand, $numCardsToDiscard);
+		$this->notifyAllPlayers(
+			'message',
+			clienttranslate('Hull Breach ! Die result : ${die_result}. ${player_name} must discard ${num} resource card(s)'),
+			[
+				'die_result' => $dice,
+				'num' => $numCardsToDiscard,
+			] + $player->getNotificationArgs()
+		);
+		self::setGameStateValue('hullBreachNumberOfCards', $numCardsToDiscard);
+
+		// When player doesn't have enough cards in hand : ignore or end of game ? FIXME
+		if ($numCardsToDiscard === 0) {
+			return true;
+		}
+
+		$this->gamestate->nextState('transPlayerDiscardResourcesHull');
+		return false;
+	}
+
 	//////////////////////////////////////////////////////////////////////////////
 	//////////// Player actions
 	////////////
@@ -570,9 +631,9 @@ class SolarStorm extends Table {
 
 		$this->notifyAllPlayers(
 			'playerRollsDice',
-			clienttranslate('${player_name} rolls the dice : ${dice_result}'),
+			clienttranslate('${player_name} rolls the dice : ${die_result}'),
 			[
-				'dice_result' => $dice,
+				'die_result' => $dice,
 			] + $player->getNotificationArgs()
 		);
 
@@ -704,6 +765,43 @@ class SolarStorm extends Table {
 			] + $player->getNotificationArgs()
 		);
 		$this->gamestate->nextState('transPlayerEndTurn');
+	}
+
+	public function actionDiscardResources(array $cardIds) {
+		self::checkAction('discardResources');
+		$player = $this->ssPlayers->getActive();
+
+		$cards = [];
+		foreach ($cardIds as $cardId) {
+			$card = $this->resourceCards->getCard($cardId);
+			if ($card['location'] !== 'hand' || $card['location_arg'] != $player->getId()) {
+				throw new BgaVisibleSystemException('Card not in your hand'); // NOI18N
+			}
+			$cards[] = $card;
+		}
+		$resourceTypes = [];
+		foreach ($cards as $card) {
+			$this->resourceCards->moveCard($card['id'], 'discard');
+			$resourceTypes[] = $card['type'];
+		}
+
+		$this->notifyAllPlayers(
+			'playerDiscardResource',
+			clienttranslate('${player_name} discards resources : ${resourceTypes}'),
+			[
+				'cards' => $cards,
+				'resourceTypes' => $resourceTypes,
+			] + $player->getNotificationArgs()
+		);
+
+		$stateName = $this->gamestate->state()['name'];
+		if ($stateName === 'playerDiscardResources') {
+			// Check if hull is breached
+			if (!$this->checkHullBreach()) {
+				return;
+			}
+		}
+		$this->gamestate->nextState('transPlayerNextPlayer');
 	}
 
 	public function actionGiveResourceToAnotherPlayer(int $cardId, int $playerId) {
@@ -1143,6 +1241,21 @@ class SolarStorm extends Table {
 		];
 	}
 
+	public function argPlayerDiscardResources(): array {
+		$player = $this->ssPlayers->getActive();
+		$n = $this->resourceCards->countCardInLocation('hand', $player->getId()) - 6;
+		return [
+			'numCardsToDiscard' => $n,
+		];
+	}
+
+	public function argPlayerDiscardResourcesHull(): array {
+		$n = (int) self::getGameStateValue('hullBreachNumberOfCards');
+		return [
+			'numCardsToDiscard' => $n,
+		];
+	}
+
 	//////////////////////////////////////////////////////////////////////////////
 	//////////// Game state actions
 	////////////
@@ -1231,21 +1344,30 @@ class SolarStorm extends Table {
 	}
 
 	public function stEndTurn() {
-		$player = $this->ssPlayers->getActive();
+		// Draw damage card
+		$this->drawDamageCard('top');
 
 		// Check if player has too many cards in hand
+		$player = $this->ssPlayers->getActive();
 		$n = $this->resourceCards->countCardInLocation('hand', $player->getId());
 		if ($n > 6) {
 			$this->gamestate->nextState('transPlayerDiscardResources');
 			return;
 		}
 
+		// Check if hull is breached
+		if (!$this->checkHullBreach()) {
+			return;
+		}
+
+		$this->gamestate->nextState('transPlayerNextPlayer');
+	}
+
+	public function stNextPlayer() {
 		// Reset actions to 3
+		$player = $this->ssPlayers->getActive();
 		$player->setActions(3);
 		$player->save();
-
-		// Draw damage card
-		$this->drawDamageCard('top');
 
 		$playerId = self::activeNextPlayer();
 		self::giveExtraTime($playerId);
@@ -1269,11 +1391,19 @@ class SolarStorm extends Table {
 	//////////// Methods to be called from the chat window in dev studio
 
 	/**
-	 * Leave one card in the resource decks, so any deck pick will end the game
+	 * Leave one card in the resource deck, so any deck pick will end the game
 	 */
 	public function debugEmptyResourceDeck() {
 		$cnt = $this->resourceCards->countCardInLocation('deck');
 		$this->resourceCards->pickCardsForLocation($cnt - 1, 'deck', 'discard');
+	}
+
+	/**
+	 * Leave one card in the damage deck, so next one should be hull damage
+	 */
+	public function debugEmptyDamageDeck() {
+		$cnt = $this->damageCards->countCardInLocation('deck');
+		$this->damageCards->pickCardsForLocation($cnt - 1, 'deck', 'discard');
 	}
 
 	/**

@@ -161,7 +161,10 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 					this.doPlayerPickResources(args.args.possibleSources)
 					break
 				case 'playerDiscardResources':
-					this.doPlayerActionDiscardResource()
+					this.doPlayerActionDiscardResource(args.args.numCardsToDiscard, 'excess')
+					break
+				case 'playerDiscardResourcesHull':
+					this.doPlayerActionDiscardResource(args.args.numCardsToDiscard, 'hull-breach')
 					break
 				case 'playerRepair':
 					this.doPlayerActionRepair()
@@ -336,6 +339,20 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			for (let i = 0; i < 24; i++) {
 				stock.addItemType(i, 1, g_gamethemeurl + 'img/damages.jpg', i + 1)
 			}
+			stock.addItemType('hull', 1, g_gamethemeurl + 'img/damages.jpg', 25)
+			stock.onItemCreate = (el, id) => {
+				if (id !== 'hull') {
+					return
+				}
+				this.addTooltipMarkdown(
+					el,
+					_(
+						'Hull Breach Card !\n----\nThis is the **last** card of the deck.\nAt the end of a player turn, a die is rolled :\n+ 1 or 2: player must discard 1 resource card\n+ 3 or 4: player must discard 2 resource cards\n+ 5 or 6: player must discard 3 resource cards\n ',
+					),
+					{},
+					250,
+				)
+			}
 			return stock
 		},
 
@@ -455,7 +472,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 
 		waitForPlayerResources(options = {}) {
 			// Default options
-			options = Object.assign({ count: 1, cancel: false }, options)
+			options = Object.assign({ count: 1, cancel: false, btnText: _('Accept') }, options)
 
 			return new Promise((resolve, reject) => {
 				const handles = []
@@ -471,7 +488,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				}
 
 				player.stock.setSelectionMode(2)
-				this.addActionButton('buttonAccept', _('Accept'), () => {
+				this.addActionButton('buttonAccept', options.btnText, () => {
 					const cards = player.stock.getSelectedItems()
 					if (cards.length !== options.count) {
 						gameui.showMessage(_(`You must select ${options.count} cards`), 'error')
@@ -803,19 +820,30 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			}
 		},
 
-		async doPlayerActionDiscardResource() {
-			const card = (await this.waitForPlayerResource([this.players.getActive()])).card
-			await this.ajaxAction('discardResource', { lock: true, cardId: card.id })
+		async doPlayerActionDiscardResource(numCardsToDiscard, reason = null) {
+			let message = _('You must discard ${num} cards(s)')
+			if (reason === 'hull-breach') {
+				message = _('Hull Breach !') + ' ' + message
+			}
+			this.gamedatas.gamestate.descriptionmyturn = dojo.string.substitute(message, {
+				num: numCardsToDiscard,
+			})
+			this.updatePageTitle()
+			const cards = await this.waitForPlayerResources({ count: numCardsToDiscard, cancel: false, btnText: _('Discard selected') })
+			await this.ajaxAction('discardResources', {
+				lock: true,
+				cardIds: cards.map(c => c.id).join(','),
+			})
 		},
 
 		async doPlayerActionGiveResource(sameRoomOnly = true) {
-			this.gamedatas.gamestate.descriptionmyturn = _('You mush choose a card to give')
+			this.gamedatas.gamestate.descriptionmyturn = _('You must choose a card to give')
 			this.updatePageTitle()
 			this.removeActionButtons()
 			try {
 				const activePlayer = this.players.getActive()
 				const card = (await this.waitForPlayerResource([activePlayer], { cancel: true })).card
-				this.gamedatas.gamestate.descriptionmyturn = _('You mush choose a player to give the card to')
+				this.gamedatas.gamestate.descriptionmyturn = _('You must choose a player to give the card to')
 				this.updatePageTitle()
 				this.removeActionButtons()
 				const targetPlayers = this.players
@@ -833,7 +861,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 		},
 
 		async doPlayerActionTakeResource(sameRoomOnly = true) {
-			this.gamedatas.gamestate.descriptionmyturn = _('You mush choose a card to take')
+			this.gamedatas.gamestate.descriptionmyturn = _('You must choose a card to take')
 			this.updatePageTitle()
 			this.removeActionButtons()
 			try {
@@ -852,12 +880,12 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 		},
 
 		async doPlayerActionSwapResource() {
-			this.gamedatas.gamestate.descriptionmyturn = _('Swap cards : You mush choose a card to give')
+			this.gamedatas.gamestate.descriptionmyturn = _('Swap cards : You must choose a card to give')
 			this.updatePageTitle()
 			this.removeActionButtons()
 			try {
 				const card1 = (await this.waitForPlayerResource([this.players.getActive()], { cancel: true })).card
-				this.gamedatas.gamestate.descriptionmyturn = _('Swap cards : You mush choose a card to exchange')
+				this.gamedatas.gamestate.descriptionmyturn = _('Swap cards : You must choose a card to exchange')
 				this.updatePageTitle()
 				this.removeActionButtons()
 				const card2 = (await this.waitForPlayerResource(this.players.getInactive(), { cancel: true })).card
@@ -891,7 +919,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 
 		async doPlayerActionDivert() {
 			try {
-				const cards = await this.waitForPlayerResources({ count: 3, cancel: true })
+				const cards = await this.waitForPlayerResources({ count: 3, cancel: true, btnText: _('Use selected cards')  })
 				await this.ajaxAction('selectResourcesForDivert', {
 					lock: true,
 					cardIds: cards.map(c => c.id).join(','),
@@ -933,7 +961,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 		async doPlayerRoomCrewQuarter() {
 			try {
 				const player = await this.waitForPlayerMeepleClick(this.players.players, { cancel: true })
-				this.gamedatas.gamestate.descriptionmyturn = _('Crew Quarters: You mush choose a destination')
+				this.gamedatas.gamestate.descriptionmyturn = _('Crew Quarters: You must choose a destination')
 				this.updatePageTitle()
 				this.removeActionButtons()
 				// Valid rooms are where there are meeples
@@ -970,7 +998,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			try {
 				const room = await this.waitForRoomClick(this.rooms.rooms, { cancel: true })
 				this.gamedatas.gamestate.descriptionmyturn = dojo.string.substitute(
-					_('Repair Centre: You mush choose a resource to repair: ${room}'),
+					_('Repair Centre: You must choose a resource to repair: ${room}'),
 					{ room: room.name },
 				)
 				this.updatePageTitle()
