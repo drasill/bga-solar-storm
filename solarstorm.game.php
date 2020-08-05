@@ -44,6 +44,8 @@ class SolarStorm extends Table {
 			'hullBreachNumberOfCards' => 16,
 			// Can Restart Turn
 			'canRestartTurn' => 17,
+			// Player has picked action token this turn
+			'hasPickedActionToken' => 18,
 
 			// Options
 			// Game difficulty (number of universal cards)
@@ -105,6 +107,7 @@ class SolarStorm extends Table {
 		self::setGameStateInitialValue('initialResourceDeckSize', 0);
 		self::setGameStateInitialValue('hullBreachNumberOfCards', 0);
 		self::setGameStateInitialValue('canRestartTurn', 0);
+		self::setGameStateInitialValue('hasPickedActionToken', 0);
 
 		$this->rooms->generateRooms();
 
@@ -1136,6 +1139,7 @@ class SolarStorm extends Table {
 		$player->setActionsTokens($tokens + 1);
 		$player->incrementActions(-1);
 		$player->save();
+		self::setGameStateValue('hasPickedActionToken', 1);
 		$this->notifyPlayerData($player, clienttranslate('${player_name} takes an action token'), []);
 		$this->gamestate->nextState('transActionDone');
 	}
@@ -1205,6 +1209,7 @@ class SolarStorm extends Table {
 		$player = $this->ssPlayers->getActive();
 		return [
 			'canRestartTurn' => (bool)self::getGameStateValue('canRestartTurn'),
+			'canUseActionTokens' => !self::getGameStateValue('hasPickedActionToken'),
 			'actions' => $player->getActions(),
 		];
 	}
@@ -1340,6 +1345,7 @@ class SolarStorm extends Table {
 
 		$this->saveCurrentState();
 		self::setGameStateValue('canRestartTurn', 1);
+		self::setGameStateValue('hasPickedActionToken', 0);
 		$this->gamestate->nextState('transPlayerTurn');
 	}
 
@@ -1353,9 +1359,12 @@ class SolarStorm extends Table {
 	public function stActionDone() {
 		$player = $this->ssPlayers->getActive();
 		$actions = $player->getActions();
+		$hasPickedActionToken = (bool)self::getGameStateValue('hasPickedActionToken');
+		$dontWannaUseActionsTokens = (bool)self::getGameStateValue('dontWannaUseActionsTokens');
+
 		if ($actions === 0) {
 			// Check if player has usable action tokens
-			if (!self::getGameStateValue('dontWannaUseActionsTokens')) {
+			if (!$dontWannaUseActionsTokens && !$hasPickedActionToken) {
 				if ($player->getActionsTokens() > 0) {
 					$this->gamestate->nextState('transPlayerAskActionTokensPlay');
 					return;
@@ -1651,6 +1660,7 @@ class SolarStorm extends Table {
 		}
 		$this->rooms = new SolarStormRooms($this);
 		$this->ssPlayers = new SolarStormPlayers($this);
+		self::setGameStateValue('hasPickedActionToken', 0);
 
 		$data = [];
 		foreach ($this->rooms->getRooms() as $room) {

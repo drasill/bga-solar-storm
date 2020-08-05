@@ -451,6 +451,7 @@
 .ss-player-board.ss-highlight {
 	border: 2px solid blue;
 	box-shadow: rgba(0, 0, 255, 0.7) 4px 4px 6px;
+	cursor: pointer;
 }
 
 .ss-player-board__name {
@@ -460,6 +461,15 @@
 .ss-player-board .ss-player-hand {
 	flex: 1;
 	min-width: 10px;
+}
+
+.ss-player-hand.ss-highlight {
+	outline: 2px solid blue;
+	box-shadow: rgba(0, 0, 255, 0.7) 4px 4px 6px;
+}
+
+.ss-player-hand.ss-highlight .ss-resource-card:hover {
+	box-shadow: rgba(255, 255, 255, 0.7) 4px 4px 6px;
 }
 
 .ss-player-meeple {

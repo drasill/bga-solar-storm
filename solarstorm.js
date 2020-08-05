@@ -64,9 +64,10 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
     },
 
     initializePlayersArea() {
-      const playersData = this.gamedatas.ssPlayers.sort((p1, p2) => p1.order - p2.order);
-      playersData.forEach(data => {
-        const player = new SSPlayer(this, data.id, data.name, data.color, data.order, data.position, data.actionsTokens);
+      this.gamedatas.playerorder.forEach(id => {
+        id = parseInt(id, 10);
+        const data = this.gamedatas.ssPlayers.find(_ => _.id === id);
+        const player = new SSPlayer(this, id, data.name, data.color, data.order, data.position, data.actionsTokens);
         this.players.addPlayer(player);
       });
 
@@ -205,7 +206,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
           break;
 
         case 'pickResources':
-          this.doPlayerPickResources(args.args.possibleSources);
+          this.doPlayerPickResources(args.args.possibleSources, args.args.canRestartTurn);
           break;
       }
     },
@@ -244,7 +245,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
               this.onPlayerChooseAction(evt, 'token');
             });
 
-            if (player.actionsTokens > 0) {
+            if (player.actionsTokens > 0 && args.canUseActionTokens) {
               this.addActionButton('buttonUseToken', _('Use action token'), evt => {
                 this.ajaxAction('useToken', {
                   lock: true
@@ -507,10 +508,42 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
           player.stock.setSelectionMode(1);
           handles.push(this.connectStockCardClick(player.stock, card => {
             cleanAll();
-            resolve({
-              card,
-              player
-            });
+            resolve(card);
+          }));
+        });
+      });
+    },
+
+    waitForPlayerSelection(players, options = {}) {
+      // Default options
+      options = Object.assign({
+        cancel: false
+      }, options);
+      const ids = players.map(p => p.id);
+      this.players.highlightBoards(ids);
+      return new Promise((resolve, reject) => {
+        const handles = [];
+
+        const cleanAll = () => {
+          this.players.highlightBoards(null);
+          handles.forEach(handle => dojo.disconnect(handle));
+
+          if (options.cancel) {
+            this.removeActionCancelButton();
+          }
+        };
+
+        if (options.cancel) {
+          this.showActionCancelButton(() => {
+            cleanAll();
+            reject('CANCEL BTN');
+          });
+        }
+
+        players.forEach(player => {
+          handles.push(dojo.connect(player.boardEl, 'onclick', () => {
+            cleanAll();
+            resolve(player);
           }));
         });
       });
@@ -909,16 +942,16 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 
       try {
         const activePlayer = this.players.getActive();
-        const card = (await this.waitForPlayerResource([activePlayer], {
+        const card = await this.waitForPlayerResource([activePlayer], {
           cancel: true
-        })).card;
+        });
         this.gamedatas.gamestate.descriptionmyturn = _('You must choose a player to give the card to');
         this.updatePageTitle();
         this.removeActionButtons();
         const targetPlayers = this.players.getInactive().filter(p => !sameRoomOnly || p.position === activePlayer.position);
-        const player = (await this.waitForPlayerResource(targetPlayers, {
+        const player = await this.waitForPlayerSelection(targetPlayers, {
           cancel: true
-        })).player;
+        });
         await this.ajaxAction('giveResourceToAnotherPlayer', {
           lock: true,
           cardId: card.id,
@@ -939,9 +972,9 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
       try {
         const activePlayer = this.players.getActive();
         const targetPlayers = this.players.getInactive().filter(p => !sameRoomOnly || p.position === activePlayer.position);
-        const card = (await this.waitForPlayerResource(targetPlayers, {
+        const card = await this.waitForPlayerResource(targetPlayers, {
           cancel: true
-        })).card;
+        });
         await this.ajaxAction('pickResourceFromAnotherPlayer', {
           lock: true,
           cardId: card.id
@@ -959,15 +992,15 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
       this.removeActionButtons();
 
       try {
-        const card1 = (await this.waitForPlayerResource([this.players.getActive()], {
+        const card1 = await this.waitForPlayerResource([this.players.getActive()], {
           cancel: true
-        })).card;
+        });
         this.gamedatas.gamestate.descriptionmyturn = _('Swap cards : You must choose a card to exchange');
         this.updatePageTitle();
         this.removeActionButtons();
-        const card2 = (await this.waitForPlayerResource(this.players.getInactive(), {
+        const card2 = await this.waitForPlayerResource(this.players.getInactive(), {
           cancel: true
-        })).card;
+        });
         await this.ajaxAction('swapResourceWithAnotherPlayer', {
           lock: true,
           cardId: card1.id,
@@ -982,9 +1015,9 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 
     async doPlayerActionRepair() {
       try {
-        const card = (await this.waitForPlayerResource([this.players.getActive()], {
+        const card = await this.waitForPlayerResource([this.players.getActive()], {
           cancel: true
-        })).card;
+        });
         let resourceTypeId = null;
 
         if (card.type === 'universal') {
@@ -1078,9 +1111,9 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
           title: _('Select a card from the discard, to be swapped with one from your hand'),
           cancel: true
         });
-        const card2 = (await this.waitForPlayerResource([this.players.getActive()], {
+        const card2 = await this.waitForPlayerResource([this.players.getActive()], {
           cancel: true
-        })).card;
+        });
         await this.ajaxAction('swapResourceFromDiscard', {
           lock: true,
           cardId: card.id,
@@ -1103,9 +1136,9 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
         });
         this.updatePageTitle();
         this.removeActionButtons();
-        const card = (await this.waitForPlayerResource([this.players.getActive()], {
+        const card = await this.waitForPlayerResource([this.players.getActive()], {
           cancel: true
-        })).card;
+        });
         let resourceTypeId = null;
 
         if (card.type === 'universal') {
@@ -1161,11 +1194,11 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
       }
     },
 
-    async doPlayerPickResources(possibleSources) {
+    async doPlayerPickResources(possibleSources, canRestartTurn) {
       try {
         const card = await this.waitForResourceFromDeck({
           cancel: false,
-          restart: true,
+          restart: canRestartTurn,
           deck: possibleSources.includes('deck'),
           table: possibleSources.includes('table')
         });
@@ -1476,7 +1509,7 @@ class SSRoom {
       const repairText = _('**Resources needed to repair the room.**\nThis takes 1 action by repair slot.\nYou must discard the required Resource card.');
 
       fullText.push(`<div class="ss-room-tooltip"><div class="ss-room--zoom-divert ss-room--${this.id}"></div><div>${divertText}</div><div>${repairText}</div><div class="ss-room--zoom-repair ss-room--${this.id}"></div></div>\n----\n`);
-      fullText.push(_('**Room action** (when the room is not damaged) :') + "\n");
+      fullText.push(_('**Room action** (when the room is not damaged) :') + '\n');
     }
 
     fullText.push(this.description);
@@ -1635,6 +1668,12 @@ class SSPlayers {
     });
   }
 
+  highlightBoards(ids) {
+    this.players.forEach(player => {
+      player.highlightBoard(ids && ids.includes(player.id));
+    });
+  }
+
   highlightMeeples(ids) {
     this.players.forEach(player => {
       player.highlightMeeple(ids === 'all' || ids && ids.includes(player.id));
@@ -1662,6 +1701,10 @@ class SSPlayer {
     _defineProperty(this, "actionsTokens", 0);
 
     _defineProperty(this, "boardEl", null);
+
+    _defineProperty(this, "handEl", null);
+
+    _defineProperty(this, "handDeckEl", null);
 
     _defineProperty(this, "meepleEl", null);
 
@@ -1702,7 +1745,7 @@ class SSPlayer {
       class: `ss-player-board ss-players-board--id-${this.id}`
     }, playersHandsEl);
     this.boardEl = boardEl;
-    const handName = this.isCurrent() ? _('Your hand') : _('Hand of') + ` <span style="color: #${this.color}">${this.name}</span>`;
+    const handName = this.isCurrent() ? _('Your hand') : _('Hand of') + ` ${this.name}`;
     const nameEl = dojo.create('div', {
       class: 'ss-player-board__name ss-section-title',
       innerHTML: `<span><span class="ss-player-meeple-icon ss-player-meeple-icon--order-${this.order}"></span>${handName}</span>`
@@ -1714,7 +1757,7 @@ class SSPlayer {
         boxShadow: `#${this.color}55 0px 0px 4px 2px`
       }
     }, this.boardEl);
-    this.handDeckEl = this.handEl = dojo.create('div', {
+    this.handDeckEl = dojo.create('div', {
       class: 'ss-player-hand__deck',
       id: `ss-player-hand--${this.id}`
     }, this.handEl);
@@ -1788,6 +1831,10 @@ class SSPlayer {
   }
 
   highlightHand(value) {
+    this.gameObject.highlightEl(this.handEl, value);
+  }
+
+  highlightBoard(value) {
     this.gameObject.highlightEl(this.boardEl, value);
   }
 
