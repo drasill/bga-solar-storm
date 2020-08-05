@@ -310,7 +310,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 		},
 
 		showRestartTurnButton(callback) {
-				this.addActionButton('actionRestartTurn', _('Restart turn'), callback, null, null, 'red')
+			this.addActionButton('actionRestartTurn', _('Restart turn'), callback, null, null, 'gray')
 		},
 
 		removeRestartTurnButton() {
@@ -1360,7 +1360,7 @@ class SSRoom {
 	}
 
 	assertEl() {
-		let el = $first(`.ss-room--${this.id}`)
+		let el = $first(`.ss-room-card--${this.id}`)
 		if (el) {
 			this.el = el
 			return
@@ -1370,16 +1370,28 @@ class SSRoom {
 			'div',
 			{
 				id: `ss-room--${this.id}`,
-				class: `ss-room ss-room--pos-${this.position} ss-room--${this.id}`,
+				class: `ss-room ss-room--pos-${this.position} ss-room-card--${this.id} ss-room--${this.id}`,
 			},
 			roomsEl,
 		)
-		this.gameObject.addTooltipMarkdown(
-			el,
-			`<div class="ss-room ss-room-tooltip ss-room--${this.id}"></div>**<span class="ss-room-name" data-room="${this.slug}" style="color: ${this.color}">${this.name}</span>**\n----\n${this.description}`,
-			{},
-			1000,
+		const fullText = []
+		fullText.push(
+			`<span class="ss-room-name" data-room="${this.slug}" style="color: ${this.color}">${this.name}</span>\n-----\n`,
 		)
+		if (this.slug !== 'energy-core') {
+			const divertText = _(
+				'**Resources needed to divert power**\nThis takes 1 action.\nYou must discard **all** the required Resource cards.',
+			)
+			const repairText = _(
+				'**Resources needed to repair the room.**\nThis takes 1 action by repair slot.\nYou must discard the required Resource card.',
+			)
+			fullText.push(
+				`<div class="ss-room-tooltip"><div class="ss-room--zoom-divert ss-room--${this.id}"></div><div>${divertText}</div><div>${repairText}</div><div class="ss-room--zoom-repair ss-room--${this.id}"></div></div>\n----\n`,
+			)
+			fullText.push(_('**Room action** (when the room is not damaged) :') + "\n")
+		}
+		fullText.push(this.description)
+		this.gameObject.addTooltipMarkdown(el, fullText.join(''), {}, 1000)
 		if (this.id !== 0) {
 			for (let i = 0; i < 3; i++) {
 				dojo.create('div', { class: `ss-room__damage ss-room__damage--${i}` }, el)

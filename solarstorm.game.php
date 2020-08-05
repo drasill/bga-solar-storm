@@ -1661,7 +1661,10 @@ class SolarStorm extends Table {
 				'resourceCards' => array_values($this->resourceCards->getCardsInLocation('hand', $player->getId())),
 			];
 		}
-		$this->notifyAllPlayers('fullState', 'FullState', $data);
+
+		$activePlayer = $this->ssPlayers->getActive();
+		$data += $activePlayer->getNotificationArgs();
+		$this->notifyAllPlayers('fullState', '${player_name} restarts the turn', $data);
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////:
