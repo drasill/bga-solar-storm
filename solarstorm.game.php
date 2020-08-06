@@ -50,6 +50,8 @@ class SolarStorm extends Table {
 			// Options
 			// Game difficulty (number of universal cards)
 			'gameDifficulty' => 100,
+			// Realistic mode (hide number of resource cards left) (0 false, 1 true)
+			'hideResourcesLeft' => 101,
 		]);
 		$this->rooms = new SolarStormRooms($this);
 		$this->ssPlayers = new SolarStormPlayers($this);
@@ -108,6 +110,28 @@ class SolarStorm extends Table {
 		self::setGameStateInitialValue('hullBreachNumberOfCards', 0);
 		self::setGameStateInitialValue('canRestartTurn', 0);
 		self::setGameStateInitialValue('hasPickedActionToken', 0);
+
+		// Stats
+		self::initStat('table', 'turns_number', 0);
+		self::initStat('table', 'repair_done', 0);
+		self::initStat('table', 'power_diverted', 0);
+		self::initStat('table', 'resources_picked', 0);
+		self::initStat('table', 'room_protected', 0);
+		self::initStat('table', 'room_damaged', 0);
+
+		self::initStat('player', 'turns_number', 0);
+		self::initStat('player', 'repair_done', 0);
+		self::initStat('player', 'power_diverted', 0);
+		self::initStat('player', 'resources_picked', 0);
+		self::initStat('player', 'action_move', 0);
+		self::initStat('player', 'action_room_bridge', 0);
+		self::initStat('player', 'action_room_armoury', 0);
+		self::initStat('player', 'action_room_cargo_hold', 0);
+		self::initStat('player', 'action_room_crew_quarters', 0);
+		self::initStat('player', 'action_room_engine_room', 0);
+		self::initStat('player', 'action_room_medical_bay', 0);
+		self::initStat('player', 'action_room_repair_centre', 0);
+		self::initStat('player', 'action_room_mess_hall', 0);
 
 		$this->rooms->generateRooms();
 
@@ -237,9 +261,11 @@ class SolarStorm extends Table {
 		foreach ($roomsSlugs as $roomsSlug) {
 			$room = $this->rooms->getRoomBySlug($roomsSlug);
 			if ($room->isProtected()) {
+				$this->incStat(1, 'room_protected');
 				$room->removeOldestProtectionToken();
 				$protectedRooms[] = $room->toArray();
 			} else {
+				$this->incStat(1, 'room_damaged');
 				if ($room->getDamageCount() === 3) {
 					$room->setDestroyed(true);
 					$room->save();
@@ -289,7 +315,7 @@ class SolarStorm extends Table {
 		}
 
 		if ($notify) {
-			$resourceCardsNbr = $this->resourceCards->countCardInLocation('deck');
+			$resourceCardsNbr = $this->getNbrResourceCardsInDeck();
 			if ($notify) {
 				$this->notifyAllPlayers('addResourcesCardsOnTable', '', [
 					'cards' => $cards,
@@ -305,9 +331,10 @@ class SolarStorm extends Table {
 		$result['rooms'] = $this->rooms->toArray();
 		$result['ssPlayers'] = $this->ssPlayers->toArray();
 		$result['resourceCardsNbrInitial'] = (int) self::getGameStateValue('initialResourceDeckSize');
-		$result['resourceCardsNbr'] = $this->resourceCards->countCardInLocation('deck');
+		$result['resourceCardsNbr'] = $this->getNbrResourceCardsInDeck();
 		$result['resourceTypes'] = array_values($this->resourceTypes);
 
+		$result['damageCardsInfos'] = array_values($this->damageCardsInfos);
 		$result['damageCardsNbr'] = $this->damageCards->countCardInLocation('deck');
 		$result['damageCardsDiscarded'] = $this->damageCards->getCardsInLocation('discard', null, 'location_arg');
 		$result['resourceCardsOnTable'] = $this->resourceCards->getCardsInLocation('table');
@@ -340,20 +367,15 @@ class SolarStorm extends Table {
 		$this->gamestate->nextState('transEndOfGame');
 	}
 
-	/*
-        getGameProgression:
-        
-        Compute and return the current game progression.
-        The number returned must be an integer beween 0 (=the game just started) and
-        100 (= the game is finished or almost finished).
-    
-        This method is called each time we are in a game state with the "updateGameProgression" property set to true 
-        (see states.inc.php)
-    */
 	function getGameProgression() {
-		// TODO: compute and return the game progression
-
-		return 0;
+		$total = (int) self::getGameStateValue('initialResourceDeckSize') - 10;
+		$left = (int) $this->resourceCards->countCardInLocation('deck');
+		$progress = (int) ((($total - $left) / $total) * 100);
+		if (self::getGameStateValue('hideResourcesLeft')) {
+			// Ceil value to 25 (https://forum.boardgamearena.com/viewtopic.php?f=12&t=16978&p=64909#p64909)
+			// $progress -= $progress % 25;
+		}
+		return $progress;
 	}
 
 	//////////////////////////////////////////////////////////////////////////////
@@ -473,6 +495,8 @@ class SolarStorm extends Table {
 			unset($cards[$card['id']]);
 		}
 		$room->setDiverted(true);
+		$this->incStat(1, 'power_diverted');
+		$this->incStat(1, 'power_diverted', self::getActivePlayerId());
 	}
 
 	public function checkHullBreach(): bool {
@@ -512,6 +536,16 @@ class SolarStorm extends Table {
 
 		$this->gamestate->nextState('transPlayerDiscardResourcesHull');
 		return false;
+	}
+
+	/**
+	 * Returns the number of resource cards in "deck", or null, depending on game setting
+	 */
+	private function getNbrResourceCardsInDeck(): ?int {
+		if (self::getGameStateValue('hideResourcesLeft')) {
+			return null;
+		}
+		return (int) $this->resourceCards->countCardInLocation('deck');
 	}
 
 	//////////////////////////////////////////////////////////////////////////////
@@ -633,6 +667,7 @@ class SolarStorm extends Table {
 		$player->setPosition($position);
 		$player->incrementActions(-1);
 		$player->save();
+		$this->incStat(1, 'action_move', self::getActivePlayerId());
 		$this->notifyPlayerData($player, clienttranslate('${player_name} moves to ${roomName}'), [
 			'roomName' => $room->getSlug(),
 		]);
@@ -725,7 +760,10 @@ class SolarStorm extends Table {
 			$message = clienttranslate('${player_name} takes a resource : ${resourceType}');
 		}
 
-		$resourceCardsNbr = $this->resourceCards->countCardInLocation('deck');
+		$this->incStat(1, 'resources_picked');
+		$this->incStat(1, 'resources_picked', self::getActivePlayerId());
+
+		$resourceCardsNbr = $this->getNbrResourceCardsInDeck();
 		$this->notifyAllPlayers(
 			'playerPickResource',
 			$message,
@@ -852,6 +890,9 @@ class SolarStorm extends Table {
 				'to_player_id' => $toPlayer->getId(),
 			] + $player->getNotificationArgs()
 		);
+		if ($this->gamestate->state()['name'] === 'mess-hall') {
+			$this->incStat(1, 'action_room_mess_hall', self::getActivePlayerId());
+		}
 		$this->gamestate->nextState('transActionDone');
 	}
 
@@ -886,6 +927,9 @@ class SolarStorm extends Table {
 				'from_player_id' => $fromPlayer->getId(),
 			] + $player->getNotificationArgs()
 		);
+		if ($this->gamestate->state()['name'] === 'mess-hall') {
+			$this->incStat(1, 'action_room_mess_hall', self::getActivePlayerId());
+		}
 		$this->gamestate->nextState('transActionDone');
 	}
 
@@ -927,6 +971,9 @@ class SolarStorm extends Table {
 				'from_player_id' => $withPlayer->getId(),
 			] + $player->getNotificationArgs()
 		);
+		if ($this->gamestate->state()['name'] === 'mess-hall') {
+			$this->incStat(1, 'action_room_mess_hall', self::getActivePlayerId());
+		}
 		$this->gamestate->nextState('transActionDone');
 	}
 
@@ -964,6 +1011,7 @@ class SolarStorm extends Table {
 				'resourceType' => $card2['type'],
 			] + $player->getNotificationArgs()
 		);
+		$this->incStat(1, 'action_room_engine_room', self::getActivePlayerId());
 		$this->gamestate->nextState('transActionDone');
 	}
 
@@ -1006,6 +1054,13 @@ class SolarStorm extends Table {
 		]);
 		$player->incrementActions(-1);
 		$player->save();
+
+		$this->incStat(1, 'repair_done');
+		$this->incStat(1, 'repair_done', self::getActivePlayerId());
+		if ($stateName === 'playerRoomRepairCentre') {
+			$this->incStat(1, 'action_room_repair_centre', self::getActivePlayerId());
+		}
+
 		$this->gamestate->nextState('transActionDone');
 	}
 
@@ -1078,6 +1133,7 @@ class SolarStorm extends Table {
 				'player_action_id' => $player->getId(),
 			]
 		);
+		$this->incStat(1, 'action_room_crew_quarters', self::getActivePlayerId());
 		$this->gamestate->nextState('transActionDone');
 	}
 
@@ -1191,6 +1247,7 @@ class SolarStorm extends Table {
 
 		$player->incrementActions(-1);
 		$player->save();
+		$this->incStat(1, 'action_room_armoury', self::getActivePlayerId());
 		$this->gamestate->nextState('transActionDone');
 	}
 
@@ -1208,7 +1265,7 @@ class SolarStorm extends Table {
 	public function argPlayerTurn(): array {
 		$player = $this->ssPlayers->getActive();
 		return [
-			'canRestartTurn' => (bool)self::getGameStateValue('canRestartTurn'),
+			'canRestartTurn' => (bool) self::getGameStateValue('canRestartTurn'),
 			'canUseActionTokens' => !self::getGameStateValue('hasPickedActionToken'),
 			'actions' => $player->getActions(),
 		];
@@ -1225,14 +1282,14 @@ class SolarStorm extends Table {
 
 	public function argPlayerScavengePickCards(): array {
 		return [
-			'canRestartTurn' => (bool)self::getGameStateValue('canRestartTurn'),
+			'canRestartTurn' => (bool) self::getGameStateValue('canRestartTurn'),
 			'possibleSources' => $this->whereDoesPlayerCanPickResourceFrom(),
 		];
 	}
 
 	public function argPlayerPickResourcesCards(): array {
 		return [
-			'canRestartTurn' => (bool)self::getGameStateValue('canRestartTurn'),
+			'canRestartTurn' => (bool) self::getGameStateValue('canRestartTurn'),
 			'possibleSources' => $this->whereDoesPlayerCanPickResourceFrom(),
 		];
 	}
@@ -1307,14 +1364,27 @@ class SolarStorm extends Table {
 		self::setGameStateValue('dontWannaUseActionsTokens', 0);
 
 		if ($room->getSlug() === 'medical-bay') {
-			$tokensLeft = 8 - $this->ssPlayers->countTotalActionTokens();
-			$tokensMax = min(2, $tokensLeft);
-			$tokens = $player->getActionsTokens();
-			$player->setActionsTokens($tokens + $tokensMax);
-			$player->save();
-			$this->notifyPlayerData($player, clienttranslate('Medical Bay: ${player_name} takes ${num} action token(s)'), [
-				'num' => $tokensMax,
-			]);
+			if ($room->getDamageCount() > 0) {
+				$this->notifyAllPlayers(
+					'message',
+					'Medical Bay: ${player_name} takes no action token, as the room is damaged.',
+					$player->getNotificationArgs()
+				);
+			} else {
+				$tokensLeft = 8 - $this->ssPlayers->countTotalActionTokens();
+				$tokensMax = min(2, $tokensLeft);
+				$tokens = $player->getActionsTokens();
+				$player->setActionsTokens($tokens + $tokensMax);
+				$player->save();
+				$this->incStat(1, 'action_room_medical_bay', self::getActivePlayerId());
+				$this->notifyPlayerData(
+					$player,
+					clienttranslate('Medical Bay: ${player_name} takes ${num} action token(s)'),
+					[
+						'num' => $tokensMax,
+					]
+				);
+			}
 		}
 
 		// Remove protection tokens from this player
@@ -1359,8 +1429,8 @@ class SolarStorm extends Table {
 	public function stActionDone() {
 		$player = $this->ssPlayers->getActive();
 		$actions = $player->getActions();
-		$hasPickedActionToken = (bool)self::getGameStateValue('hasPickedActionToken');
-		$dontWannaUseActionsTokens = (bool)self::getGameStateValue('dontWannaUseActionsTokens');
+		$hasPickedActionToken = (bool) self::getGameStateValue('hasPickedActionToken');
+		$dontWannaUseActionsTokens = (bool) self::getGameStateValue('dontWannaUseActionsTokens');
 
 		if ($actions === 0) {
 			// Check if player has usable action tokens
@@ -1398,6 +1468,9 @@ class SolarStorm extends Table {
 			return;
 		}
 
+		$this->incStat(1, 'turns_number', self::getActivePlayerId());
+		$this->incStat(1, 'turns_number');
+
 		$this->gamestate->nextState('transPlayerNextPlayer');
 	}
 
@@ -1416,12 +1489,14 @@ class SolarStorm extends Table {
 		$player = $this->ssPlayers->getActive();
 		$player->incrementActions(-1);
 		$player->save();
+		$this->incStat(1, 'action_room_cargo_hold', self::getActivePlayerId());
 	}
 
 	public function stPlayerRoomBridge() {
 		$player = $this->ssPlayers->getActive();
 		$player->incrementActions(-1);
 		$player->save();
+		$this->incStat(1, 'action_room_bridge', self::getActivePlayerId());
 	}
 
 	public function stPlayerRestartTurn() {
@@ -1586,7 +1661,7 @@ class SolarStorm extends Table {
 		$player = $this->ssPlayers->getActive();
 		$card = $this->resourceCards->pickCardForLocation('deck', 'hand', $player->getId());
 		$this->resourceCards->moveCard($card['id'], 'hand', $player->getId());
-		$resourceCardsNbr = $this->resourceCards->countCardInLocation('deck');
+		$resourceCardsNbr = $this->getNbrResourceCardsInDeck();
 		$this->notifyAllPlayers(
 			'playerPickResource',
 			'cheater picks a ${resourceType}',
@@ -1604,15 +1679,15 @@ class SolarStorm extends Table {
 
 	/*
         zombieTurn:
-        
+
         This method is called each time it is the turn of a player who has quit the game (= "zombie" player).
         You can do whatever you want in order to make sure the turn of this player ends appropriately
         (ex: pass).
-        
+
         Important: your zombie code will be called when the player leaves the game. This action is triggered
         from the main site and propagated to the gameserver from a server, not from a browser.
         As a consequence, there is no current player associated to this action. In your zombieTurn function,
-        you must _never_ use getCurrentPlayerId() or getCurrentPlayerName(), otherwise it will fail with a "Not logged" error message. 
+        you must _never_ use getCurrentPlayerId() or getCurrentPlayerName(), otherwise it will fail with a "Not logged" error message.
     */
 
 	function zombieTurn($state, $active_player) {
@@ -1643,7 +1718,7 @@ class SolarStorm extends Table {
 	//////////
 
 	private function saveCurrentState() {
-		$tableNames = ['damage_card', 'resource_card', 'player_data', 'rooms'];
+		$tableNames = ['damage_card', 'resource_card', 'player_data', 'rooms', 'stats'];
 		foreach ($tableNames as $tableName) {
 			$tableNameSave = $tableName . '_save';
 			self::DbQuery("DROP TABLE IF EXISTS $tableNameSave");
@@ -1652,7 +1727,7 @@ class SolarStorm extends Table {
 	}
 
 	private function loadCurrentState() {
-		$tableNames = ['damage_card', 'resource_card', 'player_data', 'rooms'];
+		$tableNames = ['damage_card', 'resource_card', 'player_data', 'rooms', 'stats'];
 		foreach ($tableNames as $tableName) {
 			$tableNameSave = $tableName . '_save';
 			self::DbQuery("DROP TABLE IF EXISTS $tableName");
@@ -1683,13 +1758,13 @@ class SolarStorm extends Table {
 
 	/*
         upgradeTableDb:
-        
+
         You don't have to care about this until your game has been published on BGA.
         Once your game is on BGA, this method is called everytime the system detects a game running with your old
         Database scheme.
         In this case, if you change your Database scheme, you just have to apply the needed changes in order to
         update the game database and allow the game to continue to run with your new version.
-    
+
     */
 
 	function upgradeTableDb($from_version) {
