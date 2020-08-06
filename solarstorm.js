@@ -102,9 +102,11 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 
       for (let card of Object.values(this.gamedatas.damageCardsDiscarded)) {
         this.damageDeck.addToStock(card.type);
-      }
+      } // prettier-ignore
 
-      this.addTooltipMarkdown(damageDeckEl, _('Damage deck') + '.\n----\n' + _("At then **end of turn** of each player, a new card is revealed, indicating rooms which are damaged.${newline}The deck is ordered like this :${newline}+ 8 damage cards with 1 room${newline}+ 8 damage cards with 2 rooms${newline}+ 8 damage cards with 3 rooms.${newline}When the deck is empty, the ship' hull starts taking damage, and resources will be discarded from the deck, accelerating the end of the game !") + '\n----\n' + _('+ Note: at the start of the game, two damage cards are revealed from the bottom (applying 6 damages).${newline}+ Note 2: if a room has a *protection* token, instead of taking damage, the protection token is removed.'), {}, 1000);
+
+      const markdown = [_('Damage deck'), '.\n----\n', _("At the **end of turn** of each player, a new card is revealed, indicating rooms which are damaged.${newline}The deck is ordered like this :${newline}+ 8 damage cards with 1 room${newline}+ 8 damage cards with 2 rooms${newline}+ 8 damage cards with 3 rooms.${newline}When the deck is empty, the ship' hull starts taking damage, and resources will be discarded from the deck, accelerating the end of the game !"), '\n----\n', _('+ Note: at the start of the game, two damage cards are revealed from the bottom (applying 6 damages).${newline}+ Note 2: if a room has a *protection* token, instead of taking damage, the protection token is removed.')];
+      this.addTooltipMarkdown(damageDeckEl, markdown.join(''), {}, 1000);
       const reorderDamageDeckEl = $first('.ss-damage-reorder-deck');
       this.reorderDamageDeck = this.createDamageStock(reorderDamageDeckEl);
     },
@@ -121,8 +123,9 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
       }
 
       const reorderResourceDeckEl = $first('.ss-resource-reorder-deck');
-      this.reorderResourceDeck = this.createResourceStock(reorderResourceDeckEl);
-      this.addTooltipMarkdown($first('.ss-resource-deck__deck'), _('Resource deck') + '.\n----\n' + _('At the **end of their turn**, a player can pick either:${newline}+ 2 cards from this deck (*face down*),${newline}+ or 1 card among the 2 revealed.${newline}**Important :** When the resource deck is depleted, the game is instantly lost.${newline}${newline}At the start, there was a total of ${num} resources cards in this deck.'), {
+      this.reorderResourceDeck = this.createResourceStock(reorderResourceDeckEl); // prettier-ignore
+
+      this.addTooltipMarkdown($first('.ss-resource-deck__deck'), [_('Resource deck'), '.\n----\n', _('At the **end of their turn**, a player can pick either:${newline}+ 2 cards from this deck (*face down*),${newline}+ or 1 card among the 2 revealed.${newline}**Important :** When the resource deck is depleted, the game is instantly lost.${newline}${newline}At the start, there was a total of ${num} resources cards in this deck.')].join(''), {
         num: this.gamedatas.resourceCardsNbrInitial
       }, 1000);
       this.updateResourceCardsNbr(this.gamedatas.resourceCardsNbr);
@@ -363,8 +366,9 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
       stock.setSelectionAppearance('class');
 
       stock.onItemCreate = (el, id) => {
-        const type = this.resourceTypes.find(r => r.id === id);
-        this.addTooltipMarkdown(el, _('Resource card of type: **${type}** ${detail}') + '\n----\n' + _('Used to **repair** or **divert** power in the rooms.${newline}Maximum 6 cards in the player hand (at the end of turn).'), {
+        const type = this.resourceTypes.find(r => r.id === id); // prettier-ignore
+
+        this.addTooltipMarkdown(el, [_('Resource card of type: **${type}** ${detail}'), '\n----\n', _('Used to **repair** or **divert** power in the rooms.${newline}Maximum 6 cards in the player hand (at the end of turn).')].join(''), {
           type: type.nametr,
           detail: id === 'universal' ? _('(can be used as any other resource)') : ''
         }, 250);
@@ -391,7 +395,8 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 
       stock.onItemCreate = (el, id) => {
         if (id === 'hull') {
-          this.addTooltipMarkdown(el, _('Hull Breach Card !') + '\n----\n' + _('This is the **last** card of the deck.${newline}At the end of a player turn, a die is rolled :${newline}+ 1 or 2: player must discard 1 resource card${newline}+ 3 or 4: player must discard 2 resource cards${newline}+ 5 or 6: player must discard 3 resource cards'), {}, 250);
+          // prettier-ignore
+          this.addTooltipMarkdown(el, [_('Hull Breach Card !'), '\n----\n', _('This is the **last** card of the deck.${newline}At the end of a player turn, a die is rolled :${newline}+ 1 or 2: player must discard 1 resource card${newline}+ 3 or 4: player must discard 2 resource cards${newline}+ 5 or 6: player must discard 3 resource cards')].join(''), {}, 250);
           return;
         }
 
@@ -445,7 +450,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
         const cleanAll = () => {
           // De-Highlight
           types.forEach(type => {
-            this.highlightEl(`.ss-resource-deck__${type}`, false);
+            this.highlightEl(".ss-resource-deck__" + type, false);
           });
           handles.forEach(handle => dojo.disconnect(handle));
           this.resourceDeck.setSelectionMode(0);
@@ -455,7 +460,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 
 
         types.forEach(type => {
-          this.highlightEl(`.ss-resource-deck__${type}`, options[type]);
+          this.highlightEl(".ss-resource-deck__" + type, options[type]);
         });
 
         if (options.cancel) {
@@ -591,7 +596,9 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
           const cards = player.stock.getSelectedItems();
 
           if (cards.length !== options.count) {
-            gameui.showMessage(_(`You must select ${options.count} cards`), 'error');
+            gameui.showMessage(dojo.string.substitute(_('You must select ${num} cards'), {
+              num: options.count
+            }), 'error');
             return;
           }
 
@@ -761,7 +768,9 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
         });
         this.addActionButton('buttonAccept', _('Accept'), () => {
           if (selectedCards.length !== options.count) {
-            gameui.showMessage(_(`You must select ${options.count} cards`), 'error');
+            gameui.showMessage(dojo.string.substitute(_('You must select ${num} cards'), {
+              num: options.count
+            }), 'error');
             return;
           }
 
@@ -821,7 +830,9 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
         });
         this.addActionButton('buttonAccept', _('Accept'), () => {
           if (selectedCards.length !== options.count) {
-            gameui.showMessage(_(`You must select ${options.count} cards`), 'error');
+            gameui.showMessage(dojo.string.substitute(_('You must select ${num} cards'), {
+              num: options.count
+            }), 'error');
             return;
           }
 
@@ -848,7 +859,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 
       return new Promise((resolve, reject) => {
         this.resourceTypes.filter(r => r.id !== 'universal').forEach(resourceType => {
-          this.addActionButton(`buttonResourceType__${resourceType.id}`, `<span class="ss-resource-card-icon ss-resource-card-icon--medium ss-resource-card-icon--${resourceType.id}"></span>${resourceType.name}`, () => {
+          this.addActionButton("buttonResourceType__" + resourceType.id, "<span class=\"ss-resource-card-icon ss-resource-card-icon--medium ss-resource-card-icon--" + resourceType.id + "\"></span>" + resourceType.name, () => {
             cleanAll();
             resolve(resourceType);
           });
@@ -914,7 +925,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
       }
 
       return new Promise((resolve, reject) => {
-        this.ajaxcall(`/solarstorm/solarstorm/${action}.html`, args, this, function (result) {
+        this.ajaxcall("/solarstorm/solarstorm/" + action + ".html", args, this, function (result) {
           resolve(result);
         }, function (is_error) {
           reject(is_error);
@@ -1529,7 +1540,7 @@ class SSRoom {
   }
 
   assertEl() {
-    let el = $first(`.ss-room-card--${this.id}`);
+    let el = $first(".ss-room-card--" + this.id);
 
     if (el) {
       this.el = el;
@@ -1538,31 +1549,20 @@ class SSRoom {
 
     const roomsEl = $first('.ss-rooms');
     el = dojo.create('div', {
-      id: `ss-room--${this.id}`,
-      class: `ss-room ss-room--pos-${this.position} ss-room-card--${this.id} ss-room--${this.id}`
+      id: "ss-room--" + this.id,
+      class: "ss-room ss-room--pos-" + this.position + " ss-room-card--" + this.id + " ss-room--" + this.id
     }, roomsEl);
     const fullText = [];
-    fullText.push(`<span class="ss-room-name" data-room="${this.slug}" style="color: ${this.color}">${this.name}</span>\n-----\n`);
+    fullText.push("<span class=\"ss-room-name\" data-room=\"" + this.slug + "\" style=\"color: " + this.color + "\">" + this.name + "</span>\n-----\n");
 
     if (this.slug !== 'energy-core') {
-      const divertText = _('**Resources needed to divert power**\nThis takes 1 action.\nYou must discard **all** the required Resource cards.\nNote: a diverted room can be fully repaired, in 1 action, with only 1 resource card !');
+      // prettier-ignore
+      const divertText = _('**Resources needed to divert power**\nThis takes 1 action.\nYou must discard **all** the required Resource cards.\nNote: a diverted room can be fully repaired, in 1 action, with only 1 resource card !'); // prettier-ignore
+
 
       const repairText = _('**Resources needed to repair the room.**\nThis takes 1 action by repair slot.\nYou must discard the required Resource card.');
 
-      fullText.push(`<div class="ss-room-tooltip">
-					<div>
-						<div class="ss-room--zoom-divert ss-room--${this.id}"></div>
-						<div>⬇</div>
-						<div class="ss-diverted-token"></div>
-					</div>
-					<div>${divertText}</div>
-					<div>${repairText}</div>
-					<div>
-						<div class="ss-room--zoom-repair ss-room--${this.id}"></div>
-						<div>⬆</div>
-						<div class="ss-damage-cube"></div>
-					</div>
-				</div>\n----\n`);
+      fullText.push("<div class=\"ss-room-tooltip\">\n\t\t\t\t\t<div>\n\t\t\t\t\t\t<div class=\"ss-room--zoom-divert ss-room--" + this.id + "\"></div>\n\t\t\t\t\t\t<div>\u2B07</div>\n\t\t\t\t\t\t<div class=\"ss-diverted-token\"></div>\n\t\t\t\t\t</div>\n\t\t\t\t\t<div>" + divertText + "</div>\n\t\t\t\t\t<div>" + repairText + "</div>\n\t\t\t\t\t<div>\n\t\t\t\t\t\t<div class=\"ss-room--zoom-repair ss-room--" + this.id + "\"></div>\n\t\t\t\t\t\t<div>\u2B06</div>\n\t\t\t\t\t\t<div class=\"ss-damage-cube\"></div>\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n----\n");
       fullText.push(_('**Room action** (when the room is not damaged) :') + '\n');
     }
 
@@ -1572,7 +1572,7 @@ class SSRoom {
     if (this.id !== 0) {
       for (let i = 0; i < 3; i++) {
         dojo.create('div', {
-          class: `ss-room__damage ss-room__damage--${i}`
+          class: "ss-room__damage ss-room__damage--" + i
         }, el);
       }
 
@@ -1590,7 +1590,7 @@ class SSRoom {
     }
 
     damage.forEach((dmg, index) => {
-      this.el.classList[dmg ? 'add' : 'remove'](`ss-room--damaged-${index}`);
+      this.el.classList[dmg ? 'add' : 'remove']("ss-room--damaged-" + index);
     });
     this.damage = damage;
   }
@@ -1632,7 +1632,7 @@ class SSRoom {
 
     let index = 0;
     this.protection.forEach(playerId => {
-      const id = `ss-protection-token--${this.position}-${index}`;
+      const id = "ss-protection-token--" + this.position + "-" + index;
       const player = this.gameObject.players.getPlayerById(playerId);
 
       if (!player) {
@@ -1641,9 +1641,10 @@ class SSRoom {
 
       const order = player.order;
       dojo.create('div', {
-        class: `ss-protection-token ss-protection-token--${order}`,
+        class: "ss-protection-token ss-protection-token--" + order,
         id
-      }, this.el);
+      }, this.el); // prettier-ignore
+
       const tooltip = dojo.string.substitute(_("Protection token put by ${player_name}.${newline}It will be removed when a damage is received on this room, or at the <b>start</b> of ${player_name}'s turn"), {
         player_name: player.name,
         newline: '<br/>'
@@ -1793,7 +1794,7 @@ class SSPlayer {
   }
 
   assertBoardEl() {
-    let boardEl = $first(`.ss-players-board--id-${this.id}`);
+    let boardEl = $first(".ss-players-board--id-" + this.id);
 
     if (boardEl) {
       this.boardEl = boardEl;
@@ -1802,24 +1803,24 @@ class SSPlayer {
 
     const playersHandsEl = $first('.ss-players-hands');
     boardEl = dojo.create('div', {
-      class: `ss-player-board ss-players-board--id-${this.id}`
+      class: "ss-player-board ss-players-board--id-" + this.id
     }, playersHandsEl);
     this.boardEl = boardEl;
-    const handName = this.isCurrent() ? _('Your hand') : _('Hand of') + ` ${this.name}`;
+    const handName = this.isCurrent() ? _('Your hand') : _('Hand of') + (" " + this.name);
     const nameEl = dojo.create('div', {
       class: 'ss-player-board__name ss-section-title',
-      innerHTML: `<span><span class="ss-player-meeple-icon ss-player-meeple-icon--order-${this.order}"></span>${handName}</span>`
+      innerHTML: "<span><span class=\"ss-player-meeple-icon ss-player-meeple-icon--order-" + this.order + "\"></span>" + handName + "</span>"
     }, boardEl);
     this.handEl = dojo.create('div', {
       class: 'ss-player-hand',
       style: {
-        backgroundColor: `#${this.color}55`,
-        boxShadow: `#${this.color}55 0px 0px 4px 2px`
+        backgroundColor: "#" + this.color + "55",
+        boxShadow: "#" + this.color + "55 0px 0px 4px 2px"
       }
     }, this.boardEl);
     this.handDeckEl = dojo.create('div', {
       class: 'ss-player-hand__deck',
-      id: `ss-player-hand--${this.id}`
+      id: "ss-player-hand--" + this.id
     }, this.handEl);
     this.actionsTokensEl = dojo.create('div', {
       class: 'ss-player-board__action-tokens'
@@ -1829,12 +1830,13 @@ class SSPlayer {
     }, this.actionsTokensEl);
     this.actionsTokensNumberEl = dojo.create('div', {
       class: 'ss-player-board__action-tokens__number'
-    }, this.actionsTokensEl);
-    this.gameObject.addTooltipMarkdown(this.actionsTokensEl, _('Actions Tokens.${newline}At any time during their turn, this player can use one action token to gain one action.${newline}They can also use an action to gain a action token for later.' + '\n----\n' + '**Note** : there are only **8** action tokens available for all players.'), {}, 250);
+    }, this.actionsTokensEl); // prettier-ignore
+
+    this.gameObject.addTooltipMarkdown(this.actionsTokensEl, [_('Actions Tokens.${newline}At any time during their turn, this player can use one action token to gain one action.${newline}They can also use an action to gain a action token for later.'), '\n----\n', _('**Note** : there are only **8** action tokens available for all players.')].join(''), {}, 250);
   }
 
   assertMeepleEl() {
-    let meepleEl = $first(`.ss-player-meeple--id-${this.id}`);
+    let meepleEl = $first(".ss-player-meeple--id-" + this.id);
 
     if (meepleEl) {
       this.meepleEl = meepleEl;
@@ -1843,10 +1845,10 @@ class SSPlayer {
 
     const playersArea = $first('.ss-play-area');
     meepleEl = dojo.create('div', {
-      id: `ss-player-meeple--id-${this.id}`,
-      class: `ss-player-meeple ss-player-meeple--order-${this.order} ss-player-meeple--id-${this.id}`
+      id: "ss-player-meeple--id-" + this.id,
+      class: "ss-player-meeple ss-player-meeple--order-" + this.order + " ss-player-meeple--id-" + this.id
     }, playersArea);
-    this.gameObject.addTooltipHtml(meepleEl.id, _(`Player ${this.name}`), 250);
+    this.gameObject.addTooltipHtml(meepleEl.id, _('Player') + this.name, 250);
     this.meepleEl = meepleEl;
   }
 

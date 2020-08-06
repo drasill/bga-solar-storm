@@ -219,7 +219,7 @@ class SolarStorm extends Table {
 
 	private function drawDamageCard(string $from): void {
 		if (!in_array($from, ['top', 'bottom'])) {
-			throw new \Exception('Invalid position to draw damage card from');
+			throw new \Exception('Invalid position to draw damage card from'); // NOI18N
 		}
 
 		if ($this->damageCards->countCardInLocation('deck') == 0) {
@@ -1182,6 +1182,7 @@ class SolarStorm extends Table {
 	}
 
 	public function actionGetActionToken(): void {
+		self::checkAction('token');
 		$player = $this->ssPlayers->getActive();
 		$tokensLeft = 8 - $this->ssPlayers->countTotalActionTokens();
 		if ($tokensLeft <= 0) {
@@ -1197,6 +1198,7 @@ class SolarStorm extends Table {
 	}
 
 	public function actionUseToken(): void {
+		self::checkAction('useToken');
 		self::setGameStateValue('dontWannaUseActionsTokens', 0);
 		$player = $this->ssPlayers->getActive();
 		$tokens = $player->getActionsTokens();
@@ -1211,15 +1213,17 @@ class SolarStorm extends Table {
 	}
 
 	public function actionDontUseToken(): void {
+		self::checkAction('dontUseToken');
 		self::setGameStateValue('dontWannaUseActionsTokens', 1);
 		$player = $this->ssPlayers->getActive();
 		$this->gamestate->nextState('transActionDone');
 	}
 
 	public function actionPutProtectionTokens(array $positions): void {
+		self::checkAction('putProtectionTokens');
 		$tokensLeft = 4 - $this->rooms->countTotalProtectionTokens();
 		if (count($positions) > 2 || count($positions) > $tokensLeft) {
-			throw new \Exception('Invalid number of tokens');
+			throw new \Exception('Invalid number of tokens'); // NOI18N
 		}
 		$player = $this->ssPlayers->getActive();
 		$updatedRooms = [];
@@ -1248,6 +1252,7 @@ class SolarStorm extends Table {
 	}
 
 	public function actionRestartTurn(): void {
+		self::checkAction('restartTurn');
 		if (!self::getGameStateValue('canRestartTurn')) {
 			throw new BgaUserException(self::_('Cannot restart turn now'));
 		}
@@ -1363,7 +1368,7 @@ class SolarStorm extends Table {
 			if ($room->getDamageCount() > 0) {
 				$this->notifyAllPlayers(
 					'message',
-					'Medical Bay: ${player_name} takes no action token, as the room is damaged.',
+					clienttranslate('Medical Bay: ${player_name} takes no action token, as the room is damaged.'),
 					$player->getNotificationArgs()
 				);
 			} else {
@@ -1402,7 +1407,7 @@ class SolarStorm extends Table {
 		if (!empty($updatedRooms)) {
 			$this->notifyAllPlayers(
 				'updateRooms',
-				'Protection tokens from ${player_name} are removed.',
+				clienttranslate('Protection tokens from ${player_name} are removed.'),
 				[
 					'rooms' => $updatedRooms,
 				] + $player->getNotificationArgs()
@@ -1534,9 +1539,13 @@ class SolarStorm extends Table {
 			$room->save();
 			$updatedRooms[] = $room->toArray();
 		}
-		$this->notifyAllPlayers('updateRooms', 'cheater !', [
-			'rooms' => $updatedRooms,
-		]);
+		$this->notifyAllPlayers(
+			'updateRooms',
+			'cheater !', // NOI18N
+			[
+				'rooms' => $updatedRooms,
+			]
+		);
 	}
 
 	/**
@@ -1549,7 +1558,7 @@ class SolarStorm extends Table {
 		$room->save();
 		$this->notifyAllPlayers(
 			'updateRooms',
-			'toggle divert',
+			'toggle divert', // NOI18N
 			[
 				'rooms' => [$room->toArray()],
 				'roomName' => $room->getSlug(),
@@ -1597,9 +1606,13 @@ class SolarStorm extends Table {
 			$room->save();
 			$updatedRooms[] = $room->toArray();
 		}
-		$this->notifyAllPlayers('updateRooms', 'Deprotect All', [
-			'rooms' => $updatedRooms,
-		]);
+		$this->notifyAllPlayers(
+			'updateRooms',
+			'Deprotect All', // NOI18N
+			[
+				'rooms' => $updatedRooms,
+			]
+		);
 	}
 
 	/**
@@ -1626,9 +1639,13 @@ class SolarStorm extends Table {
 			$room->save();
 			$updatedRooms[] = $room->toArray();
 		}
-		$this->notifyAllPlayers('updateRooms', 'Damage all', [
-			'rooms' => $updatedRooms,
-		]);
+		$this->notifyAllPlayers(
+			'updateRooms',
+			'Damage all', // NOI18N
+			[
+				'rooms' => $updatedRooms,
+			]
+		);
 	}
 
 	/**
@@ -1641,7 +1658,7 @@ class SolarStorm extends Table {
 			$this->resourceCards->moveCard($card['id'], 'hand', $player->getId());
 			$this->notifyAllPlayers(
 				'playerPickResource',
-				'cheater finds a ${resourceType}',
+				'cheater finds a ${resourceType}', // NOI18N
 				[
 					'card' => $card,
 					'resourceType' => 'universal',
@@ -1660,7 +1677,7 @@ class SolarStorm extends Table {
 		$resourceCardsNbr = $this->getNbrResourceCardsInDeck();
 		$this->notifyAllPlayers(
 			'playerPickResource',
-			'cheater picks a ${resourceType}',
+			'cheater picks a ${resourceType}', // NOI18N
 			[
 				'card' => $card,
 				'resourceType' => $card['type'],
@@ -1745,7 +1762,7 @@ class SolarStorm extends Table {
 
 		$activePlayer = $this->ssPlayers->getActive();
 		$data += $activePlayer->getNotificationArgs();
-		$this->notifyAllPlayers('fullState', '${player_name} restarts the turn', $data);
+		$this->notifyAllPlayers('fullState', clienttranslate('${player_name} restarts the turn'), $data);
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////:

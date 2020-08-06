@@ -122,7 +122,7 @@ class SolarStormRoom extends APP_GameClass {
 	 */
 	public function removeOldestProtectionToken(): int {
 		if (!$this->isProtected()) {
-			throw new \Exception('Cannot remove protection token');
+			throw new \Exception('Cannot remove protection token'); // NOI18N
 		}
 		return array_shift($this->protection);
 	}
@@ -147,12 +147,12 @@ class SolarStormRoom extends APP_GameClass {
 			$this->damage[$dmgIndex] = true;
 			return;
 		}
-		throw new \Exception('Cannot damage this room more');
+		throw new \Exception('Cannot damage this room more'); // NOI18N
 	}
 
 	public function setDiverted(bool $diverted): void {
 		if ($this->slug === 'energy-core') {
-			throw new BgaVisibleSystemException('Cannot divert power in this room');
+			throw new BgaVisibleSystemException('Cannot divert power in this room'); // NOI18N
 		}
 		$this->diverted = $diverted;
 	}

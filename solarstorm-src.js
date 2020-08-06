@@ -106,20 +106,15 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			for (let card of Object.values(this.gamedatas.damageCardsDiscarded)) {
 				this.damageDeck.addToStock(card.type)
 			}
-			this.addTooltipMarkdown(
-				damageDeckEl,
-				_('Damage deck') +
-					'.\n----\n' +
-					_(
-						"At then **end of turn** of each player, a new card is revealed, indicating rooms which are damaged.${newline}The deck is ordered like this :${newline}+ 8 damage cards with 1 room${newline}+ 8 damage cards with 2 rooms${newline}+ 8 damage cards with 3 rooms.${newline}When the deck is empty, the ship' hull starts taking damage, and resources will be discarded from the deck, accelerating the end of the game !",
-					) +
-					'\n----\n' +
-					_(
-						'+ Note: at the start of the game, two damage cards are revealed from the bottom (applying 6 damages).${newline}+ Note 2: if a room has a *protection* token, instead of taking damage, the protection token is removed.',
-					),
-				{},
-				1000,
-			)
+			// prettier-ignore
+			const markdown = [
+				_('Damage deck'),
+				'.\n----\n',
+				_("At the **end of turn** of each player, a new card is revealed, indicating rooms which are damaged.${newline}The deck is ordered like this :${newline}+ 8 damage cards with 1 room${newline}+ 8 damage cards with 2 rooms${newline}+ 8 damage cards with 3 rooms.${newline}When the deck is empty, the ship' hull starts taking damage, and resources will be discarded from the deck, accelerating the end of the game !"),
+				'\n----\n',
+				_('+ Note: at the start of the game, two damage cards are revealed from the bottom (applying 6 damages).${newline}+ Note 2: if a room has a *protection* token, instead of taking damage, the protection token is removed.'),
+			]
+			this.addTooltipMarkdown(damageDeckEl, markdown.join(''), {}, 1000)
 
 			const reorderDamageDeckEl = $first('.ss-damage-reorder-deck')
 			this.reorderDamageDeck = this.createDamageStock(reorderDamageDeckEl)
@@ -139,13 +134,14 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			const reorderResourceDeckEl = $first('.ss-resource-reorder-deck')
 			this.reorderResourceDeck = this.createResourceStock(reorderResourceDeckEl)
 
+			// prettier-ignore
 			this.addTooltipMarkdown(
 				$first('.ss-resource-deck__deck'),
-				_('Resource deck') +
-					'.\n----\n' +
-					_(
-						'At the **end of their turn**, a player can pick either:${newline}+ 2 cards from this deck (*face down*),${newline}+ or 1 card among the 2 revealed.${newline}**Important :** When the resource deck is depleted, the game is instantly lost.${newline}${newline}At the start, there was a total of ${num} resources cards in this deck.',
-					),
+				[
+					_('Resource deck'),
+					'.\n----\n',
+					_('At the **end of their turn**, a player can pick either:${newline}+ 2 cards from this deck (*face down*),${newline}+ or 1 card among the 2 revealed.${newline}**Important :** When the resource deck is depleted, the game is instantly lost.${newline}${newline}At the start, there was a total of ${num} resources cards in this deck.')
+				].join(''),
 				{ num: this.gamedatas.resourceCardsNbrInitial },
 				1000,
 			)
@@ -360,13 +356,14 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			stock.setSelectionAppearance('class')
 			stock.onItemCreate = (el, id) => {
 				const type = this.resourceTypes.find(r => r.id === id)
+				// prettier-ignore
 				this.addTooltipMarkdown(
 					el,
-					_('Resource card of type: **${type}** ${detail}') +
-						'\n----\n' +
-						_(
-							'Used to **repair** or **divert** power in the rooms.${newline}Maximum 6 cards in the player hand (at the end of turn).',
-						),
+					[
+						_('Resource card of type: **${type}** ${detail}'),
+						'\n----\n',
+						_('Used to **repair** or **divert** power in the rooms.${newline}Maximum 6 cards in the player hand (at the end of turn).')
+					].join(''),
 					{ type: type.nametr, detail: id === 'universal' ? _('(can be used as any other resource)') : '' },
 					250,
 				)
@@ -389,13 +386,14 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			stock.addItemType('hull', 1, g_gamethemeurl + 'img/damages.jpg', 25)
 			stock.onItemCreate = (el, id) => {
 				if (id === 'hull') {
+					// prettier-ignore
 					this.addTooltipMarkdown(
 						el,
-						_('Hull Breach Card !') +
-							'\n----\n' +
-							_(
-								'This is the **last** card of the deck.${newline}At the end of a player turn, a die is rolled :${newline}+ 1 or 2: player must discard 1 resource card${newline}+ 3 or 4: player must discard 2 resource cards${newline}+ 5 or 6: player must discard 3 resource cards',
-							),
+						[
+							_('Hull Breach Card !'),
+							'\n----\n',
+							_('This is the **last** card of the deck.${newline}At the end of a player turn, a die is rolled :${newline}+ 1 or 2: player must discard 1 resource card${newline}+ 3 or 4: player must discard 2 resource cards${newline}+ 5 or 6: player must discard 3 resource cards'),
+						].join(''),
 						{},
 						250,
 					)
@@ -586,7 +584,10 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				this.addActionButton('buttonAccept', options.btnText, () => {
 					const cards = player.stock.getSelectedItems()
 					if (cards.length !== options.count) {
-						gameui.showMessage(_(`You must select ${options.count} cards`), 'error')
+						gameui.showMessage(
+							dojo.string.substitute(_('You must select ${num} cards'), { num: options.count }),
+							'error',
+						)
 						return
 					}
 					cleanAll()
@@ -751,7 +752,10 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				})
 				this.addActionButton('buttonAccept', _('Accept'), () => {
 					if (selectedCards.length !== options.count) {
-						gameui.showMessage(_(`You must select ${options.count} cards`), 'error')
+						gameui.showMessage(
+							dojo.string.substitute(_('You must select ${num} cards'), { num: options.count }),
+							'error',
+						)
 						return
 					}
 					cleanAll()
@@ -808,7 +812,10 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				})
 				this.addActionButton('buttonAccept', _('Accept'), () => {
 					if (selectedCards.length !== options.count) {
-						gameui.showMessage(_(`You must select ${options.count} cards`), 'error')
+						gameui.showMessage(
+							dojo.string.substitute(_('You must select ${num} cards'), { num: options.count }),
+							'error',
+						)
 						return
 					}
 					cleanAll()
@@ -1473,12 +1480,10 @@ class SSRoom {
 			`<span class="ss-room-name" data-room="${this.slug}" style="color: ${this.color}">${this.name}</span>\n-----\n`,
 		)
 		if (this.slug !== 'energy-core') {
-			const divertText = _(
-				'**Resources needed to divert power**\nThis takes 1 action.\nYou must discard **all** the required Resource cards.\nNote: a diverted room can be fully repaired, in 1 action, with only 1 resource card !',
-			)
-			const repairText = _(
-				'**Resources needed to repair the room.**\nThis takes 1 action by repair slot.\nYou must discard the required Resource card.',
-			)
+			// prettier-ignore
+			const divertText = _('**Resources needed to divert power**\nThis takes 1 action.\nYou must discard **all** the required Resource cards.\nNote: a diverted room can be fully repaired, in 1 action, with only 1 resource card !')
+			// prettier-ignore
+			const repairText = _('**Resources needed to repair the room.**\nThis takes 1 action by repair slot.\nYou must discard the required Resource card.')
 			fullText.push(
 				`<div class="ss-room-tooltip">
 					<div>
@@ -1558,10 +1563,9 @@ class SSRoom {
 			}
 			const order = player.order
 			dojo.create('div', { class: `ss-protection-token ss-protection-token--${order}`, id }, this.el)
+			// prettier-ignore
 			const tooltip = dojo.string.substitute(
-				_(
-					"Protection token put by ${player_name}.${newline}It will be removed when a damage is received on this room, or at the <b>start</b> of ${player_name}'s turn",
-				),
+				_("Protection token put by ${player_name}.${newline}It will be removed when a damage is received on this room, or at the <b>start</b> of ${player_name}'s turn"),
 				{ player_name: player.name, newline: '<br/>' },
 			)
 			this.gameObject.addTooltipHtml(id, tooltip, 250)
@@ -1729,13 +1733,14 @@ class SSPlayer {
 			{ class: 'ss-player-board__action-tokens__number' },
 			this.actionsTokensEl,
 		)
+		// prettier-ignore
 		this.gameObject.addTooltipMarkdown(
 			this.actionsTokensEl,
-			_(
-				'Actions Tokens.${newline}At any time during their turn, this player can use one action token to gain one action.${newline}They can also use an action to gain a action token for later.' +
-					'\n----\n' +
-					'**Note** : there are only **8** action tokens available for all players.',
-			),
+			[
+				_('Actions Tokens.${newline}At any time during their turn, this player can use one action token to gain one action.${newline}They can also use an action to gain a action token for later.'),
+				'\n----\n',
+				_('**Note** : there are only **8** action tokens available for all players.'),
+			].join(''),
 			{},
 			250,
 		)
@@ -1756,7 +1761,7 @@ class SSPlayer {
 			},
 			playersArea,
 		)
-		this.gameObject.addTooltipHtml(meepleEl.id, _(`Player ${this.name}`), 250)
+		this.gameObject.addTooltipHtml(meepleEl.id, _('Player') + this.name, 250)
 		this.meepleEl = meepleEl
 	}
 

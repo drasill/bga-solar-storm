@@ -76,14 +76,14 @@ class SolarStormPlayer extends APP_GameClass {
 
 	public function setPosition(int $position): void {
 		if ($position < 0 || $position > 8) {
-			throw new \Exception('Invalid position');
+			throw new \Exception('Invalid position'); // NOI18N
 		}
 		$this->position = $position;
 	}
 
 	public function setActions(int $actions): void {
 		if ($actions < 0) {
-			throw new \Exception('Invalid actions number');
+			throw new \Exception('Invalid actions number'); // NOI18N
 		}
 		$this->actions = $actions;
 	}
@@ -94,7 +94,7 @@ class SolarStormPlayer extends APP_GameClass {
 
 	public function setActionsTokens(int $actionsTokens): void {
 		if ($actionsTokens < 0 || $actionsTokens > 8) {
-			throw new \Exception('Invalid actionsTokens');
+			throw new \Exception('Invalid actionsTokens'); // NOI18N
 		}
 		$this->actionsTokens = $actionsTokens;
 	}
