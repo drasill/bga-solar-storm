@@ -54,11 +54,23 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
           const room = this.rooms.getBySlug(e.target.getAttribute('data-room'));
           room.highlightHover(true);
         }
+
+        if (e.target && e.target.classList && e.target.classList.contains('ss-damage-card')) {
+          const rooms = e.target.getAttribute('data-rooms').split(',').forEach(slug => {
+            this.rooms.getBySlug(slug).highlightHover(true);
+          });
+        }
       });
       document.addEventListener('mouseout', e => {
         if (e.target && e.target.classList && e.target.classList.contains('ss-room-name')) {
           const room = this.rooms.getBySlug(e.target.getAttribute('data-room'));
           room.highlightHover(false);
+        }
+
+        if (e.target && e.target.classList && e.target.classList.contains('ss-damage-card')) {
+          const rooms = e.target.getAttribute('data-rooms').split(',').forEach(slug => {
+            this.rooms.getBySlug(slug).highlightHover(false);
+          });
         }
       });
     },
@@ -91,7 +103,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
         this.damageDeck.addToStock(card.type);
       }
 
-      this.addTooltipMarkdown(damageDeckEl, _("Damage deck.\n----\nAt then **end of turn** of each player, a new card is revealed, indicating rooms which are damaged.\nThe deck is ordered like this :\n+ 8 damage cards with 1 room\n+ 8 damage cards with 2 rooms\n+ 8 damage cards with 3 rooms.\nWhen the deck is empty, the ship' hull starts taking damage, and resources will be discarded from the deck, accelerating the end of the game !\n----\n+ Note: at the start of the game, two damage cards are revealed from the bottom (applying 6 damages).\n+ Note 2: if a room has a *protection* token, instead of taking damage, the protection token is removed."), {}, 1000);
+      this.addTooltipMarkdown(damageDeckEl, _('Damage deck') + '.\n----\n' + _("At then **end of turn** of each player, a new card is revealed, indicating rooms which are damaged.${newline}The deck is ordered like this :${newline}+ 8 damage cards with 1 room${newline}+ 8 damage cards with 2 rooms${newline}+ 8 damage cards with 3 rooms.${newline}When the deck is empty, the ship' hull starts taking damage, and resources will be discarded from the deck, accelerating the end of the game !") + '\n----\n' + _('+ Note: at the start of the game, two damage cards are revealed from the bottom (applying 6 damages).${newline}+ Note 2: if a room has a *protection* token, instead of taking damage, the protection token is removed.'), {}, 1000);
       const reorderDamageDeckEl = $first('.ss-damage-reorder-deck');
       this.reorderDamageDeck = this.createDamageStock(reorderDamageDeckEl);
     },
@@ -109,7 +121,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 
       const reorderResourceDeckEl = $first('.ss-resource-reorder-deck');
       this.reorderResourceDeck = this.createResourceStock(reorderResourceDeckEl);
-      this.addTooltipMarkdown($first('.ss-resource-deck__deck'), _('Resource deck.\n----\nAt the **end of their turn**, a player can pick either:\n+ 2 cards from this deck (*face down*),\n+ or 1 card among the 2 revealed.\n----**Important :** When the resource deck is depleted, the game is instantly lost.\n----At the start, there was a total of ${num} resources cards in this deck.'), {
+      this.addTooltipMarkdown($first('.ss-resource-deck__deck'), _('Resource deck') + '.\n----\n' + _('At the **end of their turn**, a player can pick either:${newline}+ 2 cards from this deck (*face down*),${newline}+ or 1 card among the 2 revealed.${newline}**Important :** When the resource deck is depleted, the game is instantly lost.${newline}${newline}At the start, there was a total of ${num} resources cards in this deck.'), {
         num: this.gamedatas.resourceCardsNbrInitial
       }, 1000);
       this.updateResourceCardsNbr(this.gamedatas.resourceCardsNbr);
@@ -122,7 +134,9 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
     ///////////////////////////////////////////////////
     //// Game & client states
     onEnteringState: function (stateName, args) {
-      console.log('Entering state: ' + stateName, args);
+      console.log('Entering state: ' + stateName, args); // Higlight active player
+
+      this.players.highlightActive();
 
       if (stateName === 'playerTurn') {
         // Display for all players
@@ -349,7 +363,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 
       stock.onItemCreate = (el, id) => {
         const type = this.resourceTypes.find(r => r.id === id);
-        this.addTooltipMarkdown(el, _('Resource card of type: **${type}** ${detail}\n----\nUsed to **repair** or **divert** power in the rooms.\nMaximum 6 cards in the player hand (at the end of turn).'), {
+        this.addTooltipMarkdown(el, _('Resource card of type: **${type}** ${detail}') + '\n----\n' + _('Used to **repair** or **divert** power in the rooms.${newline}Maximum 6 cards in the player hand (at the end of turn).'), {
           type: type.nametr,
           detail: id === 'universal' ? _('(can be used as any other resource)') : ''
         }, 250);
@@ -375,11 +389,13 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
       stock.addItemType('hull', 1, g_gamethemeurl + 'img/damages.jpg', 25);
 
       stock.onItemCreate = (el, id) => {
-        if (id !== 'hull') {
+        if (id === 'hull') {
+          this.addTooltipMarkdown(el, _('Hull Breach Card !') + '\n----\n' + _('This is the **last** card of the deck.${newline}At the end of a player turn, a die is rolled :${newline}+ 1 or 2: player must discard 1 resource card${newline}+ 3 or 4: player must discard 2 resource cards${newline}+ 5 or 6: player must discard 3 resource cards'), {}, 250);
           return;
         }
 
-        this.addTooltipMarkdown(el, _('Hull Breach Card !\n----\nThis is the **last** card of the deck.\nAt the end of a player turn, a die is rolled :\n+ 1 or 2: player must discard 1 resource card\n+ 3 or 4: player must discard 2 resource cards\n+ 5 or 6: player must discard 3 resource cards\n '), {}, 250);
+        const rooms = this.gamedatas.damageCardsInfos[id];
+        el.setAttribute('data-rooms', rooms.join(','));
       };
 
       return stock;
@@ -1504,11 +1520,24 @@ class SSRoom {
     fullText.push(`<span class="ss-room-name" data-room="${this.slug}" style="color: ${this.color}">${this.name}</span>\n-----\n`);
 
     if (this.slug !== 'energy-core') {
-      const divertText = _('**Resources needed to divert power**\nThis takes 1 action.\nYou must discard **all** the required Resource cards.');
+      const divertText = _('**Resources needed to divert power**\nThis takes 1 action.\nYou must discard **all** the required Resource cards.\nNote: a diverted room can be fully repaired, in 1 action, with only 1 resource card !');
 
       const repairText = _('**Resources needed to repair the room.**\nThis takes 1 action by repair slot.\nYou must discard the required Resource card.');
 
-      fullText.push(`<div class="ss-room-tooltip"><div class="ss-room--zoom-divert ss-room--${this.id}"></div><div>${divertText}</div><div>${repairText}</div><div class="ss-room--zoom-repair ss-room--${this.id}"></div></div>\n----\n`);
+      fullText.push(`<div class="ss-room-tooltip">
+					<div>
+						<div class="ss-room--zoom-divert ss-room--${this.id}"></div>
+						<div>⬇</div>
+						<div class="ss-diverted-token"></div>
+					</div>
+					<div>${divertText}</div>
+					<div>${repairText}</div>
+					<div>
+						<div class="ss-room--zoom-repair ss-room--${this.id}"></div>
+						<div>⬆</div>
+						<div class="ss-damage-cube"></div>
+					</div>
+				</div>\n----\n`);
       fullText.push(_('**Room action** (when the room is not damaged) :') + '\n');
     }
 
@@ -1662,6 +1691,12 @@ class SSPlayers {
     });
   }
 
+  highlightActive() {
+    this.players.forEach(player => {
+      player.highlightActive();
+    });
+  }
+
   highlightHands(ids) {
     this.players.forEach(player => {
       player.highlightHand(ids && ids.includes(player.id));
@@ -1770,7 +1805,7 @@ class SSPlayer {
     this.actionsTokensNumberEl = dojo.create('div', {
       class: 'ss-player-board__action-tokens__number'
     }, this.actionsTokensEl);
-    this.gameObject.addTooltipMarkdown(this.actionsTokensEl, _('Actions Tokens.\nAt any time during their turn, this player can use one action token to gain one action.\nThey can also use an action to gain a action token for later.\n----\n**Note** : there are only **8** action tokens available for all players.'), {}, 250);
+    this.gameObject.addTooltipMarkdown(this.actionsTokensEl, _('Actions Tokens.${newline}At any time during their turn, this player can use one action token to gain one action.${newline}They can also use an action to gain a action token for later.' + '\n----\n' + '**Note** : there are only **8** action tokens available for all players.'), {}, 250);
   }
 
   assertMeepleEl() {
@@ -1842,6 +1877,11 @@ class SSPlayer {
     this.gameObject.highlightEl(this.meepleEl, value);
   }
 
+  highlightActive() {
+    const isActive = this.gameObject.getActivePlayerId() == this.id;
+    this.gameObject.highlightEl(this.meepleEl, isActive, 'ss-player-meeple--active');
+  }
+
   setActionsTokens(value) {
     this.actionsTokens = value;
     this.actionsTokensNumberEl.innerHTML = '×' + value;
@@ -1861,8 +1901,6 @@ const markdownSubstitute = (() => {
   }; // Regular expressions for Markdown (a bit strict, but they work)
 
 
-  const codeBlockRegex = /((\n\t)(.*))+/g;
-  const inlineCodeRegex = /(`)(.*?)\1/g;
   const imageRegex = /!\[([^\[]+)\]\(([^\)]+)\)/g;
   const linkRegex = /\[([^\[]+)\]\(([^\)]+)\)/g;
   const headingRegex = /\n(#+\s*)(.*)/g;
@@ -1871,16 +1909,7 @@ const markdownSubstitute = (() => {
   const blockquoteRegex = /\n(&gt;|\>)(.*)/g;
   const horizontalRuleRegex = /\n((\-{3,})|(={3,}))/g;
   const unorderedListRegex = /(\n\s*(\-|\+)\s.*)+/g;
-  const orderedListRegex = /(\n\s*([0-9]+\.)\s.*)+/g;
-  const paragraphRegex = /\n+(?!<pre>)(?!<h)(?!<ul>)(?!<blockquote)(?!<hr)(?!\t)([^\n]+)\n/g; // Replacer functions for Markdown
-
-  const codeBlockReplacer = function (fullMatch) {
-    return '\n<pre>' + fullMatch + '</pre>';
-  };
-
-  const inlineCodeReplacer = function (fullMatch, tagStart, tagContents) {
-    return '<code>' + tagContents + '</code>';
-  };
+  const orderedListRegex = /(\n\s*([0-9]+\.)\s.*)+/g; // Replacer functions for Markdown
 
   const imageReplacer = function (fullMatch, tagTitle, tagURL) {
     return '<img src="' + tagURL + '" alt="' + tagTitle + '" />';
@@ -1924,15 +1953,9 @@ const markdownSubstitute = (() => {
       items += '<li>' + item.substring(item.indexOf('.') + 2) + '</li>';
     });
     return '\n<ol>' + items + '</ol>';
-  };
-
-  const paragraphReplacer = function (fullMatch, tagContents) {
-    return '<p>' + tagContents + '</p>';
   }; // Rules for Markdown parsing (use in order of appearance for best results)
 
 
-  const replaceCodeBlocks = replaceRegex(codeBlockRegex, codeBlockReplacer);
-  const replaceInlineCodes = replaceRegex(inlineCodeRegex, inlineCodeReplacer);
   const replaceImages = replaceRegex(imageRegex, imageReplacer);
   const replaceLinks = replaceRegex(linkRegex, linkReplacer);
   const replaceHeadings = replaceRegex(headingRegex, headingReplacer);
@@ -1941,33 +1964,19 @@ const markdownSubstitute = (() => {
   const replaceBlockquotes = replaceRegex(blockquoteRegex, blockquoteReplacer);
   const replaceHorizontalRules = replaceRegex(horizontalRuleRegex, horizontalRuleReplacer);
   const replaceUnorderedLists = replaceRegex(unorderedListRegex, unorderedListReplacer);
-  const replaceOrderedLists = replaceRegex(orderedListRegex, orderedListReplacer);
-  const replaceParagraphs = replaceRegex(paragraphRegex, paragraphReplacer); // Fix for tab-indexed code blocks
-
-  const codeBlockFixRegex = /\n(<pre>)((\n|.)*)(<\/pre>)/g;
-
-  const codeBlockFixer = function (fullMatch, tagStart, tagContents, lastMatch, tagEnd) {
-    let lines = '';
-    tagContents.split('\n').forEach(line => {
-      lines += line.substring(1) + '\n';
-    });
-    return tagStart + lines + tagEnd;
-  };
-
-  const fixCodeBlocks = replaceRegex(codeBlockFixRegex, codeBlockFixer); // Replacement rule order function for Markdown
+  const replaceOrderedLists = replaceRegex(orderedListRegex, orderedListReplacer); // Replacement rule order function for Markdown
   // Do not use as-is, prefer parseMarkdown as seen below
 
   const replaceMarkdown = function (str) {
-    return replaceParagraphs(replaceOrderedLists(replaceUnorderedLists(replaceHorizontalRules(replaceBlockquotes(replaceceStrikethrough(replaceBoldItalics(replaceHeadings(replaceLinks(replaceImages(replaceInlineCodes(replaceCodeBlocks(str))))))))))));
-  }; // Parser for Markdown (fixes code, adds empty lines around for parsing)
-  // Usage: parseMarkdown(strVar)
-
+    return replaceOrderedLists(replaceUnorderedLists(replaceHorizontalRules(replaceBlockquotes(replaceceStrikethrough(replaceBoldItalics(replaceHeadings(replaceLinks(replaceImages(str)))))))));
+  };
 
   const parseMarkdown = function (str) {
-    return fixCodeBlocks(replaceMarkdown('\n' + str + '\n')).trim();
+    return replaceMarkdown('\n' + str + '\n').trim();
   };
 
   return (str, values) => {
+    values.newline = '\n';
     return parseMarkdown(dojo.string.substitute(str, values));
   };
 })();
