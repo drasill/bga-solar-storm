@@ -13,14 +13,17 @@
 
 	<div class="ss-resource-reorder-dialog">
 		<div class="ss-resource-reorder-dialog__title"></div>
-		<div class="ss-resource-reorder-deck" id="ss-resource-reorder-deck">
-		</div>
+		<div class="ss-resource-reorder-deck" id="ss-resource-reorder-deck"></div>
 	</div>
 
 	<div class="ss-damage-reorder-dialog">
 		<div class="ss-damage-reorder-dialog__title"></div>
-		<div class="ss-damage-reorder-deck" id="ss-damage-reorder-deck">
-		</div>
+		<div class="ss-damage-reorder-deck" id="ss-damage-reorder-deck"></div>
+	</div>
+
+	<div class="ss-dice-result-dialog">
+		<div class="ss-dice-result-dialog__dice ss-dice"></div>
+		<div class="ss-dice-result-dialog__message"></div>
 	</div>
 
 	<div class="ss-play-area">

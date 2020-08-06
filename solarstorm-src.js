@@ -31,6 +31,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			this.resourceDeck = null
 			this.reorderResourceDeck = null
 			this.reorderDamageDeck = null
+			this.diceResultDialogTimeout = null
 		},
 
 		setup: function (gamedatas) {
@@ -55,9 +56,12 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 					room.highlightHover(true)
 				}
 				if (e.target && e.target.classList && e.target.classList.contains('ss-damage-card')) {
-					const rooms = e.target.getAttribute('data-rooms').split(',').forEach(slug => {
-						this.rooms.getBySlug(slug).highlightHover(true)
-					})
+					const rooms = e.target
+						.getAttribute('data-rooms')
+						.split(',')
+						.forEach(slug => {
+							this.rooms.getBySlug(slug).highlightHover(true)
+						})
 				}
 			})
 			document.addEventListener('mouseout', e => {
@@ -66,9 +70,12 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 					room.highlightHover(false)
 				}
 				if (e.target && e.target.classList && e.target.classList.contains('ss-damage-card')) {
-					const rooms = e.target.getAttribute('data-rooms').split(',').forEach(slug => {
-						this.rooms.getBySlug(slug).highlightHover(false)
-					})
+					const rooms = e.target
+						.getAttribute('data-rooms')
+						.split(',')
+						.forEach(slug => {
+							this.rooms.getBySlug(slug).highlightHover(false)
+						})
 				}
 			})
 		},
@@ -385,10 +392,10 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 					this.addTooltipMarkdown(
 						el,
 						_('Hull Breach Card !') +
-						'\n----\n' +
-						_(
-							'This is the **last** card of the deck.${newline}At the end of a player turn, a die is rolled :${newline}+ 1 or 2: player must discard 1 resource card${newline}+ 3 or 4: player must discard 2 resource cards${newline}+ 5 or 6: player must discard 3 resource cards',
-						),
+							'\n----\n' +
+							_(
+								'This is the **last** card of the deck.${newline}At the end of a player turn, a die is rolled :${newline}+ 1 or 2: player must discard 1 resource card${newline}+ 3 or 4: player must discard 2 resource cards${newline}+ 5 or 6: player must discard 3 resource cards',
+							),
 						{},
 						250,
 					)
@@ -870,6 +877,23 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			}
 		})(),
 
+		showDiceResult(result, message = null) {
+			const diceEl = $first('.ss-dice-result-dialog__dice')
+			diceEl.setAttribute('data-face', result)
+
+			const diceMessageEl = $first('.ss-dice-result-dialog__message')
+			diceMessageEl.innerHTML = message || ''
+
+			const dialogEl = $first('.ss-dice-result-dialog')
+			this.setVisibleEl(dialogEl, true)
+			if (this.diceResultDialogTimeout) {
+				clearTimeout(this.diceResultDialogTimeout)
+			}
+			this.diceResultDialogTimeout = setTimeout(() => {
+				this.setVisibleEl(dialogEl, false)
+			}, 5000)
+		},
+
 		///////////////////////////////////////////////////
 		//// Player's action
 
@@ -1177,6 +1201,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			dojo.subscribe('playerDiscardResource', this, 'notif_playerDiscardResource')
 			dojo.subscribe('playerShareResource', this, 'notif_playerShareResource')
 			dojo.subscribe('putBackResourcesCardInDeck', this, 'notif_putBackResourcesCardInDeck')
+			dojo.subscribe('playerRollsDice', this, 'notif_playerRollsDice')
 			dojo.subscribe('fullState', this, 'notif_fullState')
 		},
 
@@ -1262,6 +1287,12 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 					player.stock.addToStockWithId(resourceCard.type, resourceCard.id)
 				})
 			}
+		},
+
+		notif_playerRollsDice(notif) {
+			console.log('notif_playerRollsDice', notif)
+			const message = this.format_string_recursive(notif.log, notif.args)
+			this.showDiceResult(notif.args.die_result, message)
 		},
 
 		notif_fullState(notif) {

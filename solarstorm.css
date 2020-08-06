@@ -677,6 +677,56 @@
 	background-position: 80% 0%;
 }
 
+.ss-dice {
+	width: 50px;
+	height: 50px;
+	background-image: url(img/dice.png);
+	background-position: 0% 0%;
+	background-size: 600% 100%;
+	box-shadow: #00000095 1px 1px 5px;
+	border-radius: 6px;
+}
+.ss-dice[data-face='1'] {
+	background-position: 0% 0%;
+}
+.ss-dice[data-face='2'] {
+	background-position: 20% 0%;
+}
+.ss-dice[data-face='3'] {
+	background-position: 40% 0%;
+}
+.ss-dice[data-face='4'] {
+	background-position: 60% 0%;
+}
+.ss-dice[data-face='5'] {
+	background-position: 80% 0%;
+}
+.ss-dice[data-face='6'] {
+	background-position: 100% 0%;
+}
+
+.ss-dice-result-dialog {
+	height: 0;
+	background: #ffffffcc;
+	transition: all 1.3s ease-in-out;
+	overflow: hidden;
+	margin: 5px;
+	display: flex;
+	align-items: center;
+}
+.ss-dice-result-dialog.ss-visible {
+	height: 100px;
+}
+.ss-dice-result-dialog__dice {
+	margin: 20px;
+}
+.ss-dice-result-dialog__message {
+	margin: 10px;
+	margin-left: 10px;
+	flex: 1;
+	font-weight: bold;
+}
+
 /* Un-reset css for list & co */
 .ss-tooltip-markdown li ul,
 .ss-tooltip-markdown li ol {
@@ -721,10 +771,12 @@
 }
 
 @keyframes neon2 {
-  from {
-		filter: drop-shadow(1px 1px 4px rgba(255, 255, 255, 0.7)) drop-shadow(-1px -1px 4px rgba(255, 255, 255, 0.7)) drop-shadow(-1px 1px 4px rgba(255, 255, 255, 0.7)) drop-shadow(1px -1px 4px rgba(255, 255, 255, 0.7));
-  }
-  to {
-		filter: drop-shadow(1px 1px 1px rgba(255, 255, 255, 0.7)) drop-shadow(-1px -1px 1px rgba(255, 255, 255, 0.7)) drop-shadow(-1px 1px 1px rgba(255, 255, 255, 0.7)) drop-shadow(1px -1px 1px rgba(255, 255, 255, 0.7));
-  }
+	from {
+		filter: drop-shadow(1px 1px 4px rgba(255, 255, 255, 0.7)) drop-shadow(-1px -1px 4px rgba(255, 255, 255, 0.7))
+			drop-shadow(-1px 1px 4px rgba(255, 255, 255, 0.7)) drop-shadow(1px -1px 4px rgba(255, 255, 255, 0.7));
+	}
+	to {
+		filter: drop-shadow(1px 1px 1px rgba(255, 255, 255, 0.7)) drop-shadow(-1px -1px 1px rgba(255, 255, 255, 0.7))
+			drop-shadow(-1px 1px 1px rgba(255, 255, 255, 0.7)) drop-shadow(1px -1px 1px rgba(255, 255, 255, 0.7));
+	}
 }

@@ -683,14 +683,6 @@ class SolarStorm extends Table {
 
 		$dice = bga_rand(1, 6);
 
-		$this->notifyAllPlayers(
-			'playerRollsDice',
-			clienttranslate('${player_name} rolls the dice : ${die_result}'),
-			[
-				'die_result' => $dice,
-			] + $player->getNotificationArgs()
-		);
-
 		$numCardsToPick = 0;
 		if ($dice === 6) {
 			$numCardsToPick = 2;
@@ -698,25 +690,29 @@ class SolarStorm extends Table {
 			$numCardsToPick = 1;
 		}
 
+		$message = clienttranslate('${player_name} scavenges, rolls the die (${die_result})') . ', ';
+		if ($numCardsToPick === 0) {
+			$message .= clienttranslate('and finds nothing !') . ' 😒';
+		} else {
+			$message .= clienttranslate('and finds ${num} resource card(s) !');
+		}
+
+		$this->notifyAllPlayers(
+			'playerRollsDice',
+			$message,
+			[
+				'die_result' => $dice,
+				'num' => $numCardsToPick,
+			] + $player->getNotificationArgs()
+		);
+
 		// Sadness
 		if ($numCardsToPick === 0) {
-			$this->notifyAllPlayers(
-				'message',
-				clienttranslate('${player_name} finds nothing while scavenging'),
-				$player->getNotificationArgs()
-			);
 			$this->gamestate->nextState('transActionScavengePickNothing');
 			return;
 		}
 
 		// Let user pick card(s)
-		$this->notifyAllPlayers(
-			'message',
-			clienttranslate('${player_name} can pick ${num} resource card(s)'),
-			[
-				'num' => $numCardsToPick,
-			] + $player->getNotificationArgs()
-		);
 		self::setGameStateValue('scavengeNumberOfCards', $numCardsToPick);
 		$this->gamestate->nextState('transActionScavengePickCards');
 	}
