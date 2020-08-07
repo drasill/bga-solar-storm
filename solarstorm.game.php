@@ -575,6 +575,10 @@ class SolarStorm extends Table {
 				if ($this->resourceCards->countCardInLocation('hand', $player->getId()) < 3) {
 					throw new BgaUserException(self::_('You need 3 resource cards'));
 				}
+				$room = $this->rooms->getRoomByPosition($player->getPosition());
+				if ($room->getDamageCount() > 0) {
+					throw new BgaUserException(self::_('This room is damaged and can\'t have its power diverted'));
+				}
 				$this->gamestate->nextState('transPlayerDivert');
 				break;
 			case 'token':
@@ -682,6 +686,7 @@ class SolarStorm extends Table {
 		$player->save();
 
 		$dice = bga_rand(1, 6);
+		self::setGameStateValue('canRestartTurn', 0);
 
 		$numCardsToPick = 0;
 		if ($dice === 6) {
@@ -1730,38 +1735,13 @@ class SolarStorm extends Table {
 	//////////
 
 	private function saveCurrentState() {
-		$tableNames = ['damage_card', 'resource_card', 'player_data', 'rooms', 'stats'];
-		foreach ($tableNames as $tableName) {
-			$tableNameSave = $tableName . '_save';
-			self::DbQuery("DROP TABLE IF EXISTS $tableNameSave");
-			self::DbQuery("CREATE TABLE $tableNameSave SELECT * FROM $tableName");
-		}
+		$this->undoSavepoint();
 	}
 
 	private function loadCurrentState() {
-		$tableNames = ['damage_card', 'resource_card', 'player_data', 'rooms', 'stats'];
-		foreach ($tableNames as $tableName) {
-			$tableNameSave = $tableName . '_save';
-			self::DbQuery("DROP TABLE IF EXISTS $tableName");
-			self::DbQuery("CREATE TABLE $tableName SELECT * FROM $tableNameSave");
-		}
+		$this->undoRestorePoint();
 		$this->rooms = new SolarStormRooms($this);
 		$this->ssPlayers = new SolarStormPlayers($this);
-		self::setGameStateValue('hasPickedActionToken', 0);
-
-		$data = [];
-		foreach ($this->rooms->getRooms() as $room) {
-			$data['rooms'][] = $room->toArray();
-		}
-		foreach ($this->ssPlayers->getPlayers() as $player) {
-			$data['players'][] = $player->toArray() + [
-				'resourceCards' => array_values($this->resourceCards->getCardsInLocation('hand', $player->getId())),
-			];
-		}
-
-		$activePlayer = $this->ssPlayers->getActive();
-		$data += $activePlayer->getNotificationArgs();
-		$this->notifyAllPlayers('fullState', clienttranslate('${player_name} restarts the turn'), $data);
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////:
