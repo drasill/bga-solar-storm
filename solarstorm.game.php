@@ -373,7 +373,7 @@ class SolarStorm extends Table {
 		$progress = (int) ((($total - $left) / $total) * 100);
 		if (self::getGameStateValue('hideResourcesLeft')) {
 			// Ceil value to 25 (https://forum.boardgamearena.com/viewtopic.php?f=12&t=16978&p=64909#p64909)
-			// $progress -= $progress % 25;
+			$progress -= $progress % 25;
 		}
 		return $progress;
 	}
