@@ -43,6 +43,9 @@
      inkscape:label="Layer 1"
      id="layer1">
     <g
+       inkscape:export-ydpi="96"
+       inkscape:export-xdpi="96"
+       inkscape:export-filename="/home/tof/src/solarstorm/img/dice.png"
        transform="matrix(0.65359477,0,0,0.65359477,14.337712,-14.992115)"
        id="g1084">
       <use
@@ -96,6 +99,9 @@
       </g>
     </g>
     <g
+       inkscape:export-ydpi="96"
+       inkscape:export-xdpi="96"
+       inkscape:export-filename="/home/tof/src/solarstorm/img/dice.png"
        transform="matrix(0.65359477,0,0,0.65359477,14.337712,-14.992115)"
        id="g1093">
       <use
@@ -143,6 +149,9 @@
       </g>
     </g>
     <g
+       inkscape:export-ydpi="96"
+       inkscape:export-xdpi="96"
+       inkscape:export-filename="/home/tof/src/solarstorm/img/dice.png"
        transform="matrix(0.65359477,0,0,0.65359477,14.337712,-14.992115)"
        id="g1101">
       <use
@@ -184,6 +193,9 @@
       </g>
     </g>
     <g
+       inkscape:export-ydpi="96"
+       inkscape:export-xdpi="96"
+       inkscape:export-filename="/home/tof/src/solarstorm/img/dice.png"
        transform="matrix(0.65359477,0,0,0.65359477,14.337712,-14.992115)"
        id="g1108">
       <use
@@ -219,6 +231,9 @@
       </g>
     </g>
     <g
+       inkscape:export-ydpi="96"
+       inkscape:export-xdpi="96"
+       inkscape:export-filename="/home/tof/src/solarstorm/img/dice.png"
        transform="matrix(0.65359477,0,0,0.65359477,14.337712,-14.992115)"
        id="g1114">
       <use
@@ -248,6 +263,9 @@
       </g>
     </g>
     <g
+       inkscape:export-ydpi="96"
+       inkscape:export-xdpi="96"
+       inkscape:export-filename="/home/tof/src/solarstorm/img/dice.png"
        transform="matrix(0.65359477,0,0,0.65359477,14.337712,-14.992115)"
        id="g1118">
       <rect
@@ -281,7 +299,7 @@
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
         <cc:license
-           rdf:resource="http://creativecommons.org/licenses/publicdomain/" />
+           rdf:resource="http://creativecommons.org/publicdomain/zero/1.0/" />
         <dc:publisher>
           <cc:Agent
              rdf:about="http://openclipart.org/">

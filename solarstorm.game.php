@@ -1181,8 +1181,7 @@ class SolarStorm extends Table {
 		$this->gamestate->nextState('transActionDone');
 	}
 
-	public function actionGetActionToken(): void {
-		self::checkAction('token');
+	private function actionGetActionToken(): void {
 		$player = $this->ssPlayers->getActive();
 		$tokensLeft = 8 - $this->ssPlayers->countTotalActionTokens();
 		if ($tokensLeft <= 0) {
