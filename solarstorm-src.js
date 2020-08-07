@@ -24,6 +24,9 @@ function $first(selector) {
 define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/stock'], function (dojo, declare) {
 	return declare('bgagame.solarstorm', ebg.core.gamegui, {
 		constructor: function () {
+			// Marker : setup can be called more than once (undo method)
+			this.initialized = false
+
 			this.rooms = new SSRooms()
 			this.players = new SSPlayers(this)
 			this.resourceTypes = []
@@ -41,46 +44,51 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			this.initializeDamageDeck()
 			this.initializeResourceDeck()
 			this.setupNotifications()
+			this.initialized = true
 		},
 
 		initializePlayArea() {
 			// Initialize rooms
+			this.rooms.removeAll()
 			this.gamedatas.rooms.forEach(roomData => {
 				const room = new SSRoom(this, roomData)
 				this.rooms.addRoom(room)
 			})
 
-			document.addEventListener('mouseover', e => {
-				if (e.target && e.target.classList && e.target.classList.contains('ss-room-name')) {
-					const room = this.rooms.getBySlug(e.target.getAttribute('data-room'))
-					room.highlightHover(true)
-				}
-				if (e.target && e.target.classList && e.target.classList.contains('ss-damage-card')) {
-					const rooms = e.target
-						.getAttribute('data-rooms')
-						.split(',')
-						.forEach(slug => {
-							this.rooms.getBySlug(slug).highlightHover(true)
-						})
-				}
-			})
-			document.addEventListener('mouseout', e => {
-				if (e.target && e.target.classList && e.target.classList.contains('ss-room-name')) {
-					const room = this.rooms.getBySlug(e.target.getAttribute('data-room'))
-					room.highlightHover(false)
-				}
-				if (e.target && e.target.classList && e.target.classList.contains('ss-damage-card')) {
-					const rooms = e.target
-						.getAttribute('data-rooms')
-						.split(',')
-						.forEach(slug => {
-							this.rooms.getBySlug(slug).highlightHover(false)
-						})
-				}
-			})
+			if (!this.initialized) {
+				document.addEventListener('mouseover', e => {
+					if (e.target && e.target.classList && e.target.classList.contains('ss-room-name')) {
+						const room = this.rooms.getBySlug(e.target.getAttribute('data-room'))
+						room.highlightHover(true)
+					}
+					if (e.target && e.target.classList && e.target.classList.contains('ss-damage-card')) {
+						const rooms = e.target
+							.getAttribute('data-rooms')
+							.split(',')
+							.forEach(slug => {
+								this.rooms.getBySlug(slug).highlightHover(true)
+							})
+					}
+				})
+				document.addEventListener('mouseout', e => {
+					if (e.target && e.target.classList && e.target.classList.contains('ss-room-name')) {
+						const room = this.rooms.getBySlug(e.target.getAttribute('data-room'))
+						room.highlightHover(false)
+					}
+					if (e.target && e.target.classList && e.target.classList.contains('ss-damage-card')) {
+						const rooms = e.target
+							.getAttribute('data-rooms')
+							.split(',')
+							.forEach(slug => {
+								this.rooms.getBySlug(slug).highlightHover(false)
+							})
+					}
+				})
+			}
 		},
 
 		initializePlayersArea() {
+			this.players.removeAll()
 			this.gamedatas.playerorder.forEach(id => {
 				id = parseInt(id, 10)
 				const data = this.gamedatas.ssPlayers.find(_ => _.id === id)
@@ -1426,6 +1434,11 @@ class SSRooms {
 			room.highlight(positions && positions.includes(room.position))
 		})
 	}
+
+	removeAll() {
+		// TODO clear events & co
+		this.rooms = []
+	}
 }
 
 class SSRoom {
@@ -1656,6 +1669,11 @@ class SSPlayers {
 			player.highlightMeeple(ids === 'all' || (ids && ids.includes(player.id)))
 		})
 	}
+
+	removeAll() {
+		// TODO clear events & co
+		this.players = []
+	}
 }
 
 class SSPlayer {
@@ -1768,6 +1786,7 @@ class SSPlayer {
 	createStock() {
 		this.stock = new ebg.stock()
 		this.stock = this.gameObject.createResourceStock(this.handDeckEl)
+		this.stock.setSelectionMode(0)
 		this.stock.setOverlap(30, 0)
 		this.gameObject.resourceTypes.forEach((type, index) => {
 			this.stock.addItemType(type.id, index, g_gamethemeurl + 'img/resources.jpg', index)
