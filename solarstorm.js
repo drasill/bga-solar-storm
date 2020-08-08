@@ -85,7 +85,14 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 
     initializePlayersArea() {
       this.players.removeAll();
-      this.gamedatas.playerorder.forEach(id => {
+      let playerIds = this.gamedatas.playerorder.map(id => parseInt(id, 10));
+
+      if (!playerIds.includes(this.getCurrentPlayerId())) {
+        // Observer mode, don't use "playerorder"
+        playerIds = this.gamedatas.ssPlayers.map(p => p.id);
+      }
+
+      playerIds.forEach(id => {
         id = parseInt(id, 10);
         const data = this.gamedatas.ssPlayers.find(_ => _.id === id);
         const player = new SSPlayer(this, id, data.name, data.color, data.order, data.position, data.actionsTokens);
