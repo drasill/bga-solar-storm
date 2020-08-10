@@ -56,18 +56,22 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			})
 
 			if (!this.initialized) {
+				const hoverRoomsForDamageCard = (el, value) => {
+					const dataRooms = el.getAttribute('data-rooms')
+					if (!dataRooms) {
+						return
+					}
+					const rooms = dataRooms.split(',').forEach(slug => {
+						this.rooms.getBySlug(slug).highlightHover(value)
+					})
+				}
 				document.addEventListener('mouseover', e => {
 					if (e.target && e.target.classList && e.target.classList.contains('ss-room-name')) {
 						const room = this.rooms.getBySlug(e.target.getAttribute('data-room'))
 						room.highlightHover(true)
 					}
 					if (e.target && e.target.classList && e.target.classList.contains('ss-damage-card')) {
-						const rooms = e.target
-							.getAttribute('data-rooms')
-							.split(',')
-							.forEach(slug => {
-								this.rooms.getBySlug(slug).highlightHover(true)
-							})
+						hoverRoomsForDamageCard(e.target, true)
 					}
 				})
 				document.addEventListener('mouseout', e => {
@@ -76,12 +80,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 						room.highlightHover(false)
 					}
 					if (e.target && e.target.classList && e.target.classList.contains('ss-damage-card')) {
-						const rooms = e.target
-							.getAttribute('data-rooms')
-							.split(',')
-							.forEach(slug => {
-								this.rooms.getBySlug(slug).highlightHover(false)
-							})
+						hoverRoomsForDamageCard(e.target, false)
 					}
 				})
 			}
@@ -202,9 +201,6 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 					break
 				case 'playerDiscardResources':
 					this.doPlayerActionDiscardResource(args.args.numCardsToDiscard, 'excess')
-					break
-				case 'playerDiscardResourcesHull':
-					this.doPlayerActionDiscardResource(args.args.numCardsToDiscard, 'hull-breach')
 					break
 				case 'playerRepair':
 					this.doPlayerActionRepair()
@@ -956,9 +952,6 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 
 		async doPlayerActionDiscardResource(numCardsToDiscard, reason = null) {
 			let message = _('You must discard ${num} cards(s)')
-			if (reason === 'hull-breach') {
-				message = _('Hull Breach !') + ' ' + message
-			}
 			this.gamedatas.gamestate.descriptionmyturn = dojo.string.substitute(message, {
 				num: numCardsToDiscard,
 			})
@@ -1224,6 +1217,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			dojo.subscribe('playerShareResource', this, 'notif_playerShareResource')
 			dojo.subscribe('putBackResourcesCardInDeck', this, 'notif_putBackResourcesCardInDeck')
 			dojo.subscribe('playerRollsDice', this, 'notif_playerRollsDice')
+			dojo.subscribe('hullBreachDiscard', this, 'notif_hullBreachDiscard')
 			dojo.subscribe('fullState', this, 'notif_fullState')
 		},
 
@@ -1314,7 +1308,16 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 		notif_playerRollsDice(notif) {
 			console.log('notif_playerRollsDice', notif)
 			const message = this.format_string_recursive(notif.log, notif.args)
-			this.showDiceResult(notif.args.die_result, message)
+			this.showDiceResult(notif.args.dieResult, message)
+		},
+
+		notif_hullBreachDiscard(notif) {
+			console.log('notif_hullBreachDiscard', notif)
+			const message = this.format_string_recursive(notif.log, notif.args)
+			this.showDiceResult(notif.args.dieResult, message)
+			if (notif.args.resourceCardsNbr) {
+				this.updateResourceCardsNbr(notif.args.resourceCardsNbr)
+			}
 		},
 
 		notif_fullState(notif) {
@@ -1407,6 +1410,16 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 							)
 						})
 						args.roomNames = str.join(', ')
+					}
+
+					// Representation of a die result
+					if (args.die_result !== undefined) {
+						args.die_result = dojo.string.substitute(
+							'<span class="ss-dice ss-dice--small" data-face="${die_result}"></span>',
+							{
+								die_result: args.die_result,
+							},
+						)
 					}
 				}
 			} catch (e) {
@@ -1501,9 +1514,9 @@ class SSRoom {
 		)
 		if (this.slug !== 'energy-core') {
 			// prettier-ignore
-			const divertText = _('**Resources needed to divert power**\nThis takes 1 action.\nYou must discard **all** the required Resource cards.\nNote: a diverted room can be fully repaired, in 1 action, with only 1 resource card !')
+			const divertText = _('**Resources needed to divert power**${newline}This takes 1 action.${newline}You must discard **all** the required Resource cards.${newline}Note: a diverted room can be fully repaired, in 1 action, with only 1 resource card !')
 			// prettier-ignore
-			const repairText = _('**Resources needed to repair the room.**\nThis takes 1 action by repair slot.\nYou must discard the required Resource card.')
+			const repairText = _('**Resources needed to repair the room.**${newline}This takes 1 action by repair slot.${newline}You must discard the required Resource card.')
 			fullText.push(
 				`<div class="ss-room-tooltip">
 					<div>
@@ -1518,7 +1531,7 @@ class SSRoom {
 						<div>⬆</div>
 						<div class="ss-damage-cube"></div>
 					</div>
-				</div>\n----\n`,
+				</div>`.replace(/\n\i*/g, '') + "\n----\n",
 			)
 			fullText.push(_('**Room action** (when the room is not damaged) :') + '\n')
 		}
@@ -1858,6 +1871,7 @@ class SSPlayer {
 }
 
 const markdownSubstitute = (() => {
+	// https://github.com/Chalarangelo/parse-md-js
 	/***   Regex Markdown Parser by chalarangelo   ***/
 	// Replaces 'regex' with 'replacement' in 'str'
 	// Curry function, usage: replaceRegex(regexVar, replacementVar) (strVar)
@@ -1867,6 +1881,8 @@ const markdownSubstitute = (() => {
 		}
 	}
 	// Regular expressions for Markdown (a bit strict, but they work)
+	const codeBlockRegex = /((\n\t)(.*))+/g
+	const inlineCodeRegex = /(`)(.*?)\1/g
 	const imageRegex = /!\[([^\[]+)\]\(([^\)]+)\)/g
 	const linkRegex = /\[([^\[]+)\]\(([^\)]+)\)/g
 	const headingRegex = /\n(#+\s*)(.*)/g
@@ -1876,7 +1892,14 @@ const markdownSubstitute = (() => {
 	const horizontalRuleRegex = /\n((\-{3,})|(={3,}))/g
 	const unorderedListRegex = /(\n\s*(\-|\+)\s.*)+/g
 	const orderedListRegex = /(\n\s*([0-9]+\.)\s.*)+/g
+	const paragraphRegex = /\n+(?!<pre>)(?!<h)(?!<ul>)(?!<blockquote)(?!<hr)(?!\t)([^\n]+)\n/g
 	// Replacer functions for Markdown
+	const codeBlockReplacer = function (fullMatch) {
+		return '\n<pre>' + fullMatch + '</pre>'
+	}
+	const inlineCodeReplacer = function (fullMatch, tagStart, tagContents) {
+		return '<code>' + tagContents + '</code>'
+	}
 	const imageReplacer = function (fullMatch, tagTitle, tagURL) {
 		return '<img src="' + tagURL + '" alt="' + tagTitle + '" />'
 	}
@@ -1926,7 +1949,12 @@ const markdownSubstitute = (() => {
 			})
 		return '\n<ol>' + items + '</ol>'
 	}
+	const paragraphReplacer = function (fullMatch, tagContents) {
+		return '<p>' + tagContents + '</p>'
+	}
 	// Rules for Markdown parsing (use in order of appearance for best results)
+	const replaceCodeBlocks = replaceRegex(codeBlockRegex, codeBlockReplacer)
+	const replaceInlineCodes = replaceRegex(inlineCodeRegex, inlineCodeReplacer)
 	const replaceImages = replaceRegex(imageRegex, imageReplacer)
 	const replaceLinks = replaceRegex(linkRegex, linkReplacer)
 	const replaceHeadings = replaceRegex(headingRegex, headingReplacer)
@@ -1936,21 +1964,40 @@ const markdownSubstitute = (() => {
 	const replaceHorizontalRules = replaceRegex(horizontalRuleRegex, horizontalRuleReplacer)
 	const replaceUnorderedLists = replaceRegex(unorderedListRegex, unorderedListReplacer)
 	const replaceOrderedLists = replaceRegex(orderedListRegex, orderedListReplacer)
+	const replaceParagraphs = replaceRegex(paragraphRegex, paragraphReplacer)
+	// Fix for tab-indexed code blocks
+	const codeBlockFixRegex = /\n(<pre>)((\n|.)*)(<\/pre>)/g
+	const codeBlockFixer = function (fullMatch, tagStart, tagContents, lastMatch, tagEnd) {
+		let lines = ''
+		tagContents.split('\n').forEach(line => {
+			lines += line.substring(1) + '\n'
+		})
+		return tagStart + lines + tagEnd
+	}
+	const fixCodeBlocks = replaceRegex(codeBlockFixRegex, codeBlockFixer)
 	// Replacement rule order function for Markdown
 	// Do not use as-is, prefer parseMarkdown as seen below
 	const replaceMarkdown = function (str) {
-		return replaceOrderedLists(
-			replaceUnorderedLists(
-				replaceHorizontalRules(
-					replaceBlockquotes(
-						replaceceStrikethrough(replaceBoldItalics(replaceHeadings(replaceLinks(replaceImages(str))))),
+		return replaceParagraphs(
+			replaceOrderedLists(
+				replaceUnorderedLists(
+					replaceHorizontalRules(
+						replaceBlockquotes(
+							replaceceStrikethrough(
+								replaceBoldItalics(
+									replaceHeadings(replaceLinks(replaceImages(replaceInlineCodes(replaceCodeBlocks(str))))),
+								),
+							),
+						),
 					),
 				),
 			),
 		)
 	}
+	// Parser for Markdown (fixes code, adds empty lines around for parsing)
+	// Usage: parseMarkdown(strVar)
 	const parseMarkdown = function (str) {
-		return replaceMarkdown('\n' + str + '\n').trim()
+		return fixCodeBlocks(replaceMarkdown('\n' + str + '\n')).trim()
 	}
 
 	return (str, values) => {

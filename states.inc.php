@@ -36,7 +36,6 @@ if (!defined('ST_PLAYER_TURN')) {
 
 	define('ST_PLAYER_END_TURN', 40);
 	define('ST_PLAYER_DISCARD_RESOURCES', 41);
-	define('ST_PLAYER_DISCARD_RESOURCES_HULL', 42);
 	define('ST_PLAYER_NEXT_PLAYER', 43);
 	define('ST_PLAYER_RESTART_TURN', 44);
 
@@ -313,7 +312,6 @@ $machinestates = [
 		'updateGameProgression' => true,
 		'transitions' => [
 			'transPlayerDiscardResources' => ST_PLAYER_DISCARD_RESOURCES,
-			'transPlayerDiscardResourcesHull' => ST_PLAYER_DISCARD_RESOURCES_HULL,
 			'transPlayerNextPlayer' => ST_PLAYER_NEXT_PLAYER,
 			'transEndOfGame' => ST_END_OF_GAME,
 		],
@@ -327,21 +325,8 @@ $machinestates = [
 		'args' => 'argPlayerDiscardResources',
 		'possibleactions' => ['discardResources', 'restartTurn'],
 		'transitions' => [
-			'transPlayerDiscardResourcesHull' => ST_PLAYER_DISCARD_RESOURCES_HULL,
 			'transPlayerNextPlayer' => ST_PLAYER_NEXT_PLAYER,
 			'transPlayerRestartTurn' => ST_PLAYER_RESTART_TURN,
-		],
-	],
-
-	ST_PLAYER_DISCARD_RESOURCES_HULL => [
-		'name' => 'playerDiscardResourcesHull',
-		'description' => clienttranslate('End of turn: Hull Breach ! ${actplayer} must discard resources cards'),
-		'descriptionmyturn' => clienttranslate('End of turn: Hull Breach ! ${you} must discard resources cards'),
-		'type' => 'activeplayer',
-		'args' => 'argPlayerDiscardResourcesHull',
-		'possibleactions' => ['discardResources'],
-		'transitions' => [
-			'transPlayerNextPlayer' => ST_PLAYER_NEXT_PLAYER,
 		],
 	],
 

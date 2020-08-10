@@ -40,8 +40,6 @@ class SolarStorm extends Table {
 			'dontWannaUseActionsTokens' => 14,
 			// Initial resource deck size
 			'initialResourceDeckSize' => 15,
-			// HullBreach: number of cars to discards
-			'hullBreachNumberOfCards' => 16,
 			// Can Restart Turn
 			'canRestartTurn' => 17,
 			// Player has picked action token this turn
@@ -107,7 +105,6 @@ class SolarStorm extends Table {
 		self::setGameStateInitialValue('scavengeNumberOfCards', 0);
 		self::setGameStateInitialValue('dontWannaUseActionsTokens', 0);
 		self::setGameStateInitialValue('initialResourceDeckSize', 0);
-		self::setGameStateInitialValue('hullBreachNumberOfCards', 0);
 		self::setGameStateInitialValue('canRestartTurn', 0);
 		self::setGameStateInitialValue('hasPickedActionToken', 0);
 
@@ -499,13 +496,11 @@ class SolarStorm extends Table {
 		$this->incStat(1, 'power_diverted', self::getActivePlayerId());
 	}
 
-	public function checkHullBreach(): bool {
-		$n = $this->damageCards->countCardInLocation('deck');
-		if ($n > 0) {
-			return true;
+	public function checkHullBreach(): void {
+		if ($this->damageCards->countCardInLocation('deck') > 0) {
+			return;
 		}
 
-		$player = $this->ssPlayers->getActive();
 		$dice = bga_rand(1, 6);
 		$numCardsToDiscard = 1;
 		if ($dice >= 5) {
@@ -514,28 +509,24 @@ class SolarStorm extends Table {
 			$numCardsToDiscard = 2;
 		}
 
-		// When player doesn't have enough cards in hand : ignore or end of game ? FIXME
-		$numCardsInHand = (int) $this->resourceCards->countCardInLocation('hand', $player->getId());
-		$numCardsToDiscard = min($numCardsInHand, $numCardsToDiscard);
+		$this->resourceCards->pickCardsForLocation($numCardsToDiscard, 'deck', 'discard');
+
+		$resourceCardsNbr = $this->getNbrResourceCardsInDeck();
 		$this->notifyAllPlayers(
-			'message',
-			clienttranslate(
-				'Hull Breach ! Die result : ${die_result}. ${player_name} must discard ${num} resource card(s)'
-			),
+			'hullBreachDiscard',
+			clienttranslate('Hull Breach ! Die result : ${die_result}. ${num} resource card(s) discarded.'),
 			[
 				'die_result' => $dice,
+				'dieResult' => $dice,
 				'num' => $numCardsToDiscard,
-			] + $player->getNotificationArgs()
+				'resourceCardsNbr' => $resourceCardsNbr,
+			]
 		);
-		self::setGameStateValue('hullBreachNumberOfCards', $numCardsToDiscard);
 
-		// When player doesn't have enough cards in hand : ignore or end of game ? FIXME
-		if ($numCardsToDiscard === 0) {
-			return true;
+		if ($this->resourceCards->countCardInLocation('deck') == 0) {
+			$this->triggerEndOfGame('resources');
+			return;
 		}
-
-		$this->gamestate->nextState('transPlayerDiscardResourcesHull');
-		return false;
 	}
 
 	/**
@@ -707,6 +698,7 @@ class SolarStorm extends Table {
 			$message,
 			[
 				'die_result' => $dice,
+				'dieResult' => $dice,
 				'num' => $numCardsToPick,
 			] + $player->getNotificationArgs()
 		);
@@ -853,13 +845,6 @@ class SolarStorm extends Table {
 			] + $player->getNotificationArgs()
 		);
 
-		$stateName = $this->gamestate->state()['name'];
-		if ($stateName === 'playerDiscardResources') {
-			// Check if hull is breached
-			if (!$this->checkHullBreach()) {
-				return;
-			}
-		}
 		$this->gamestate->nextState('transPlayerNextPlayer');
 	}
 
@@ -1343,13 +1328,6 @@ class SolarStorm extends Table {
 		];
 	}
 
-	public function argPlayerDiscardResourcesHull(): array {
-		$n = (int) self::getGameStateValue('hullBreachNumberOfCards');
-		return [
-			'numCardsToDiscard' => $n,
-		];
-	}
-
 	//////////////////////////////////////////////////////////////////////////////
 	//////////// Game state actions
 	////////////
@@ -1469,9 +1447,7 @@ class SolarStorm extends Table {
 		}
 
 		// Check if hull is breached
-		if (!$this->checkHullBreach()) {
-			return;
-		}
+		$this->checkHullBreach();
 
 		$this->incStat(1, 'turns_number', self::getActivePlayerId());
 		$this->incStat(1, 'turns_number');
@@ -1517,9 +1493,20 @@ class SolarStorm extends Table {
 	/**
 	 * Leave one card in the resource deck, so any deck pick will end the game
 	 */
-	public function debugEmptyResourceDeck() {
+	public function debugEmptyResourceDeck($leave) {
+		if (!$leave) {
+			$leave = 1;
+		}
 		$cnt = $this->resourceCards->countCardInLocation('deck');
-		$this->resourceCards->pickCardsForLocation($cnt - 1, 'deck', 'discard');
+		if ($cnt <= $leave) {
+			throw new BgaUserException("Only $cnt cards now"); // NOI18N
+		}
+		$this->resourceCards->pickCardsForLocation($cnt - $leave, 'deck', 'discard');
+		$this->notifyAllPlayers(
+			'message',
+			"Leaving $leave cards in resource deck", // NOI18N
+			[]
+		);
 	}
 
 	/**
