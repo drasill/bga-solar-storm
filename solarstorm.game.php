@@ -1342,33 +1342,8 @@ class SolarStorm extends Table {
 		self::setGameStateValue('playerTurnsCount', $playerTurnsCount + 1);
 
 		$player = $this->ssPlayers->getActive();
-		$room = $this->rooms->getRoomByPosition($player->getPosition());
 
 		self::setGameStateValue('dontWannaUseActionsTokens', 0);
-
-		if ($room->getSlug() === 'medical-bay') {
-			if ($room->getDamageCount() > 0) {
-				$this->notifyAllPlayers(
-					'message',
-					clienttranslate('Medical Bay: ${player_name} takes no action token, as the room is damaged.'),
-					$player->getNotificationArgs()
-				);
-			} else {
-				$tokensLeft = 8 - $this->ssPlayers->countTotalActionTokens();
-				$tokensMax = min(2, $tokensLeft);
-				$tokens = $player->getActionsTokens();
-				$player->setActionsTokens($tokens + $tokensMax);
-				$player->save();
-				$this->incStat(1, 'action_room_medical_bay', self::getActivePlayerId());
-				$this->notifyPlayerData(
-					$player,
-					clienttranslate('Medical Bay: ${player_name} takes ${num} action token(s)'),
-					[
-						'num' => $tokensMax,
-					]
-				);
-			}
-		}
 
 		// Remove protection tokens from this player
 		$updatedRooms = [];
@@ -1397,6 +1372,7 @@ class SolarStorm extends Table {
 		}
 
 		$this->saveCurrentState();
+
 		self::setGameStateValue('canRestartTurn', 1);
 		self::setGameStateValue('hasPickedActionToken', 0);
 		$this->gamestate->nextState('transPlayerTurn');
@@ -1463,6 +1439,33 @@ class SolarStorm extends Table {
 
 		$playerId = self::activeNextPlayer();
 		self::giveExtraTime($playerId);
+
+		$player = $this->ssPlayers->getActive();
+		$currentRoom = $this->rooms->getRoomByPosition($player->getPosition());
+		if ($currentRoom->getSlug() === 'medical-bay') {
+			if ($currentRoom->getDamageCount() > 0) {
+				$this->notifyAllPlayers(
+					'message',
+					clienttranslate('Medical Bay: ${player_name} takes no action token, as the room is damaged.'),
+					$player->getNotificationArgs()
+				);
+			} else {
+				$tokensLeft = 8 - $this->ssPlayers->countTotalActionTokens();
+				$tokensMax = min(2, $tokensLeft);
+				$tokens = $player->getActionsTokens();
+				$player->setActionsTokens($tokens + $tokensMax);
+				$player->save();
+				$this->incStat(1, 'action_room_medical_bay', self::getActivePlayerId());
+				$this->notifyPlayerData(
+					$player,
+					clienttranslate('Medical Bay: ${player_name} takes ${num} action token(s)'),
+					[
+						'num' => $tokensMax,
+					]
+				);
+			}
+		}
+
 		$this->gamestate->nextState('transPlayerStartOfTurn');
 	}
 
