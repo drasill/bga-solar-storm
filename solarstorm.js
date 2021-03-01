@@ -1875,7 +1875,8 @@ class SSPlayer {
     }, this.actionsTokensEl); // prettier-ignore
 
     this.gameObject.addTooltipMarkdown(this.actionsTokensEl, [_('Actions Tokens.${newline}At any time during their turn, this player can use one action token to gain one action.${newline}They can also use an action to gain a action token for later.'), '\n----\n', _('**Note** : there are only **8** action tokens available for all players.')].join(''), {}, 250);
-  }
+  } // Assert meeple element (create it if necessary)
+
 
   assertMeepleEl() {
     let meepleEl = document.querySelector(".ss-player-meeple--id-" + this.id);
@@ -1885,11 +1886,11 @@ class SSPlayer {
       return;
     }
 
-    const playersArea = document.querySelector('.ss-play-area');
+    const roomsWrapperEl = document.querySelector('.ss-rooms-wrapper');
     meepleEl = dojo.create('div', {
       id: "ss-player-meeple--id-" + this.id,
       class: "ss-player-meeple ss-player-meeple--order-" + this.order + " ss-player-meeple--id-" + this.id
-    }, playersArea);
+    }, roomsWrapperEl);
     this.gameObject.addTooltipHtml(meepleEl.id, _('Player') + this.name, 250);
     this.meepleEl = meepleEl;
   }
