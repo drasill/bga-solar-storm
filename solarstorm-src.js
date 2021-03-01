@@ -1397,19 +1397,22 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 						)
 					}
 					// Representation of room names
-					if (args.roomNames !== undefined) {
-						const str = args.roomNames.map(roomName => {
-							const room = this.rooms.getBySlug(roomName)
-							return dojo.string.substitute(
-								'<span class="ss-room-name" data-room="${roomSlug}" style="color: ${roomColor}">${roomName}</span>',
-								{
-									roomName: room.name,
-									roomColor: room.color,
-									roomSlug: room.slug,
-								},
-							)
-						})
-						args.roomNames = str.join(', ')
+					for (let index = 0; index < 5; index++) {
+						const argName = 'roomNames' + (index > 0 ? (index + 1) : '')
+						if (args[argName] !== undefined) {
+							const str = args[argName].map(roomName => {
+								const room = this.rooms.getBySlug(roomName)
+								return dojo.string.substitute(
+									'<span class="ss-room-name" data-room="${roomSlug}" style="color: ${roomColor}">${roomName}</span>',
+									{
+										roomName: room.name,
+										roomColor: room.color,
+										roomSlug: room.slug,
+									},
+								)
+							})
+							args[argName] = str.join(', ')
+						}
 					}
 
 					// Representation of a die result

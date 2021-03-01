@@ -1151,12 +1151,14 @@ class SolarStorm extends Table {
 		self::checkAction('putBackDamageCardsInDeck');
 		$player = $this->ssPlayers->getActive();
 		$cardIds = array_reverse($cardIds);
+		$roomsSlugs = [];
 		foreach ($cardIds as $cardId) {
 			$card = $this->damageCards->getCard($cardId);
 			if ($card['location'] !== 'reorder') {
 				throw new BgaVisibleSystemException('Card not in reorder deck'); // NOI18N
 			}
 			$this->damageCards->insertCardOnExtremePosition($card['id'], 'deck', true);
+			$roomsSlugs[] = $this->damageCardsInfos[$card['type']];
 		}
 		if ($this->damageCards->countCardInLocation('reorder') != 0) {
 			throw new BgaVisibleSystemException('Reorder deck not empty'); // NOI18N
@@ -1168,6 +1170,25 @@ class SolarStorm extends Table {
 				'num_damages' => count($cardIds),
 			] + $player->getNotificationArgs()
 		);
+
+		$messageStrings = [];
+		$roomsSlugs = array_reverse($roomsSlugs);
+		foreach ($roomsSlugs as $index => $roomsSlug) {
+			$indexStr = $index > 0 ? $index + 1 : '';
+			$messageStrings[] = "\${roomNames$indexStr}";
+			$notifData["roomNames$indexStr"] = $roomsSlug;
+		}
+		$messageString = join(', ' . clienttranslate('then') . ' ', $messageStrings);
+		$this->notifyAllPlayers(
+			'message',
+			clienttranslate('Next damages cards will be : ') . $messageString,
+			[
+				'num_damages' => count($cardIds),
+			] +
+				$notifData +
+				$player->getNotificationArgs()
+		);
+
 		$this->gamestate->nextState('transActionDone');
 	}
 
