@@ -1393,7 +1393,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 					}
 					// Representation of room names
 					for (let index = 0; index < 5; index++) {
-						const argName = 'roomNames' + (index > 0 ? (index + 1) : '')
+						const argName = 'roomNames' + (index > 0 ? index + 1 : '')
 						if (args[argName] !== undefined) {
 							const str = args[argName].map(roomName => {
 								const room = this.rooms.getBySlug(roomName)
