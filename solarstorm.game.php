@@ -1127,12 +1127,14 @@ class SolarStorm extends Table {
 		self::checkAction('putBackResourceCardsInDeck');
 		$player = $this->ssPlayers->getActive();
 		$cardIds = array_reverse($cardIds);
+		$reorderedCards = [];
 		foreach ($cardIds as $cardId) {
 			$card = $this->resourceCards->getCard($cardId);
 			if ($card['location'] !== 'reorder') {
 				throw new BgaVisibleSystemException('Card not in reorder deck'); // NOI18N
 			}
 			$this->resourceCards->insertCardOnExtremePosition($card['id'], 'deck', true);
+			$reorderedCards[] = $card;
 		}
 		if ($this->resourceCards->countCardInLocation('reorder') != 0) {
 			throw new BgaVisibleSystemException('Reorder deck not empty'); // NOI18N
@@ -1142,6 +1144,17 @@ class SolarStorm extends Table {
 			clienttranslate('${player_name} has reordered ${num_resources} resources on the top of the deck'),
 			[
 				'num_resources' => count($cardIds),
+			] + $player->getNotificationArgs()
+		);
+
+		$messageStrings = [];
+		$reorderedCards = array_reverse($reorderedCards);
+		$this->notifyAllPlayers(
+			'message',
+			clienttranslate('Next resources cards will be : ${resourceTypes}'),
+			[
+				'num_damages' => count($cardIds),
+				'resourceTypes' => array_column($reorderedCards, 'type'),
 			] + $player->getNotificationArgs()
 		);
 		$this->gamestate->nextState('transActionDone');
