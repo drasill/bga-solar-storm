@@ -405,6 +405,9 @@
 	background-image: url('img/resources.jpg');
 	background-position: 100% 0;
 	margin-right: 5px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 }
 .ss-resource-deck__deck.ss-highlight {
 	outline: 2px solid blue;
@@ -420,11 +423,6 @@
 	background: #000407;
 	border-radius: 50%;
 	height: 30px;
-	top: 52%;
-	position: absolute;
-	left: 50%;
-	margin-left: -15px;
-	margin-top: -15px;
 	line-height: 30px;
 }
 
