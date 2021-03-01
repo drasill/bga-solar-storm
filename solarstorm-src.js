@@ -16,11 +16,6 @@
  *
  */
 
-// Utility : first element matching selector
-function $first(selector) {
-	return document.querySelectorAll(selector)[0]
-}
-
 define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/stock'], function (dojo, declare) {
 	return declare('bgagame.solarstorm', ebg.core.gamegui, {
 		constructor: function () {
@@ -111,9 +106,9 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 		},
 
 		initializeDamageDeck() {
-			$first('.ss-damage-deck__title').innerHTML = '<span>' + _('Damage cards') + '</span>'
+			document.querySelector('.ss-damage-deck__title').innerHTML = '<span>' + _('Damage cards') + '</span>'
 
-			const damageDeckEl = $first('.ss-damage-deck')
+			const damageDeckEl = document.querySelector('.ss-damage-deck')
 			this.damageDeck = this.createDamageStock(damageDeckEl)
 			this.damageDeck.setOverlap(0.01)
 			this.damageDeck.setSelectionMode(0)
@@ -130,14 +125,14 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			]
 			this.addTooltipMarkdown(damageDeckEl, markdown.join(''), {}, 1000)
 
-			const reorderDamageDeckEl = $first('.ss-damage-reorder-deck')
+			const reorderDamageDeckEl = document.querySelector('.ss-damage-reorder-deck')
 			this.reorderDamageDeck = this.createDamageStock(reorderDamageDeckEl)
 		},
 
 		initializeResourceDeck() {
-			$first('.ss-resource-deck__title').innerHTML = '<span>' + _('Resource cards') + '</span>'
+			document.querySelector('.ss-resource-deck__title').innerHTML = '<span>' + _('Resource cards') + '</span>'
 
-			const resourceDeckEl = $first('.ss-resource-deck__table')
+			const resourceDeckEl = document.querySelector('.ss-resource-deck__table')
 			this.resourceDeck = this.createResourceStock(resourceDeckEl)
 			this.resourceDeck.setOverlap(50)
 			this.resourceDeck.setSelectionMode(0)
@@ -145,12 +140,12 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				this.resourceDeck.addToStockWithId(card.type, card.id)
 			}
 
-			const reorderResourceDeckEl = $first('.ss-resource-reorder-deck')
+			const reorderResourceDeckEl = document.querySelector('.ss-resource-reorder-deck')
 			this.reorderResourceDeck = this.createResourceStock(reorderResourceDeckEl)
 
 			// prettier-ignore
 			this.addTooltipMarkdown(
-				$first('.ss-resource-deck__deck'),
+				document.querySelector('.ss-resource-deck__deck'),
 				[
 					_('Resource deck'),
 					'.\n----\n',
@@ -418,14 +413,14 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 
 		highlightEl(el, value, cls = 'ss-highlight') {
 			if (typeof el === 'string') {
-				el = $first(el)
+				el = document.querySelector(el)
 			}
 			el.classList[value ? 'add' : 'remove'](cls)
 		},
 
 		setVisibleEl(el, value) {
 			if (typeof el === 'string') {
-				el = $first(el)
+				el = document.querySelector(el)
 			}
 			el.classList[value ? 'add' : 'remove']('ss-visible')
 		},
@@ -491,7 +486,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				}
 				if (options.deck) {
 					handles.push(
-						dojo.connect($first('.ss-resource-deck__source'), 'onclick', () => {
+						dojo.connect(document.querySelector('.ss-resource-deck__source'), 'onclick', () => {
 							cleanAll()
 							resolve({ id: 9999 })
 						}),
@@ -689,7 +684,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 
 			return new Promise((resolve, reject) => {
 				const handles = []
-				const dialogEl = $first('.ss-resource-reorder-dialog')
+				const dialogEl = document.querySelector('.ss-resource-reorder-dialog')
 				const cleanAll = () => {
 					handles.forEach(handle => dojo.disconnect(handle))
 					this.setVisibleEl(dialogEl, false)
@@ -706,7 +701,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				this.reorderResourceDeck.unselectAll()
 				this.reorderResourceDeck.removeAll()
 
-				$first('.ss-resource-reorder-dialog__title').innerHTML = options.title
+				document.querySelector('.ss-resource-reorder-dialog__title').innerHTML = options.title
 				this.setVisibleEl(dialogEl, true)
 				for (let card of Object.values(cards)) {
 					this.reorderResourceDeck.addToStockWithId(card.type, card.id)
@@ -729,7 +724,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			return new Promise((resolve, reject) => {
 				let selectedCards = []
 				const handles = []
-				const dialogEl = $first('.ss-resource-reorder-dialog')
+				const dialogEl = document.querySelector('.ss-resource-reorder-dialog')
 				const cleanAll = () => {
 					handles.forEach(handle => dojo.disconnect(handle))
 					this.setVisibleEl(dialogEl, false)
@@ -748,7 +743,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				this.reorderResourceDeck.unselectAll()
 				this.reorderResourceDeck.removeAll()
 
-				$first('.ss-resource-reorder-dialog__title').innerHTML = options.title
+				document.querySelector('.ss-resource-reorder-dialog__title').innerHTML = options.title
 				this.setVisibleEl(dialogEl, true)
 				for (let card of Object.values(cards)) {
 					this.reorderResourceDeck.addToStockWithId(card.type, card.id)
@@ -789,7 +784,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			return new Promise((resolve, reject) => {
 				let selectedCards = []
 				const handles = []
-				const dialogEl = $first('.ss-damage-reorder-dialog')
+				const dialogEl = document.querySelector('.ss-damage-reorder-dialog')
 				const cleanAll = () => {
 					handles.forEach(handle => dojo.disconnect(handle))
 					this.setVisibleEl(dialogEl, false)
@@ -808,7 +803,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 				this.reorderDamageDeck.unselectAll()
 				this.reorderDamageDeck.removeAll()
 
-				$first('.ss-damage-reorder-dialog__title').innerHTML = options.title
+				document.querySelector('.ss-damage-reorder-dialog__title').innerHTML = options.title
 				this.setVisibleEl(dialogEl, true)
 				for (let card of Object.values(cards)) {
 					this.reorderDamageDeck.addToStockWithId(card.type, card.id)
@@ -873,7 +868,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 		},
 
 		updateResourceCardsNbr(num) {
-			$first('.ss-resource-deck__deck__number').innerHTML = num
+			document.querySelector('.ss-resource-deck__deck__number').innerHTML = num
 		},
 
 		addTooltipMarkdown(el, text, args = {}, delay = 250) {
@@ -896,13 +891,13 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 		})(),
 
 		showDiceResult(result, message = null) {
-			const diceEl = $first('.ss-dice-result-dialog__dice')
+			const diceEl = document.querySelector('.ss-dice-result-dialog__dice')
 			diceEl.setAttribute('data-face', result)
 
-			const diceMessageEl = $first('.ss-dice-result-dialog__message')
+			const diceMessageEl = document.querySelector('.ss-dice-result-dialog__message')
 			diceMessageEl.innerHTML = message || ''
 
-			const dialogEl = $first('.ss-dice-result-dialog')
+			const dialogEl = document.querySelector('.ss-dice-result-dialog')
 			this.setVisibleEl(dialogEl, true)
 			if (this.diceResultDialogTimeout) {
 				clearTimeout(this.diceResultDialogTimeout)
@@ -1289,7 +1284,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 		notif_putBackResourcesCardInDeck(notif) {
 			console.log('notif_putBackResourcesCardInDeck', notif)
 			const card = notif.args.card
-			this.reorderResourceDeck.removeFromStockById(card.id, $first('.ss-resource-deck__deck'))
+			this.reorderResourceDeck.removeFromStockById(card.id, document.querySelector('.ss-resource-deck__deck'))
 		},
 
 		notif_updatePlayerData(notif) {
@@ -1497,12 +1492,12 @@ class SSRoom {
 	}
 
 	assertEl() {
-		let el = $first(`.ss-room-card--${this.id}`)
+		let el = document.querySelector(`.ss-room-card--${this.id}`)
 		if (el) {
 			this.el = el
 			return
 		}
-		const roomsEl = $first('.ss-rooms')
+		const roomsEl = document.querySelector('.ss-rooms')
 		el = dojo.create(
 			'div',
 			{
@@ -1534,7 +1529,7 @@ class SSRoom {
 						<div>⬆</div>
 						<div class="ss-damage-cube"></div>
 					</div>
-				</div>`.replace(/\n\i*/g, '') + "\n----\n",
+				</div>`.replace(/\n\i*/g, '') + '\n----\n',
 			)
 			fullText.push(_('**Room action** (when the room is not damaged) :') + '\n')
 		}
@@ -1737,12 +1732,12 @@ class SSPlayer {
 	}
 
 	assertBoardEl() {
-		let boardEl = $first(`.ss-players-board--id-${this.id}`)
+		let boardEl = document.querySelector(`.ss-players-board--id-${this.id}`)
 		if (boardEl) {
 			this.boardEl = boardEl
 			return
 		}
-		const playersHandsEl = $first('.ss-players-hands')
+		const playersHandsEl = document.querySelector('.ss-players-hands')
 		boardEl = dojo.create('div', { class: `ss-player-board ss-players-board--id-${this.id}` }, playersHandsEl)
 		this.boardEl = boardEl
 		const handName = this.isCurrent() ? _('Your hand') : _('Hand of') + ` ${this.name}`
@@ -1788,12 +1783,12 @@ class SSPlayer {
 	}
 
 	assertMeepleEl() {
-		let meepleEl = $first(`.ss-player-meeple--id-${this.id}`)
+		let meepleEl = document.querySelector(`.ss-player-meeple--id-${this.id}`)
 		if (meepleEl) {
 			this.meepleEl = meepleEl
 			return
 		}
-		const playersArea = $first('.ss-play-area')
+		const playersArea = document.querySelector('.ss-play-area')
 		meepleEl = dojo.create(
 			'div',
 			{
