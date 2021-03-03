@@ -1722,6 +1722,7 @@ class SSPlayer {
 	position = null
 	actionsTokens = 0
 	boardEl = null
+	nameEl = null
 	handEl = null
 	handDeckEl = null
 	meepleEl = null
@@ -1759,7 +1760,7 @@ class SSPlayer {
 		boardEl = dojo.create('div', { class: `ss-player-board ss-players-board--id-${this.id}` }, playersHandsEl)
 		this.boardEl = boardEl
 		const handName = this.isCurrent() ? _('Your hand') : _('Hand of') + ` ${this.name}`
-		const nameEl = dojo.create(
+		this.nameEl = dojo.create(
 			'div',
 			{
 				class: 'ss-player-board__name ss-section-title',
@@ -1878,6 +1879,8 @@ class SSPlayer {
 	highlightActive() {
 		const isActive = this.gameObject.getActivePlayerId() == this.id
 		this.gameObject.highlightEl(this.meepleEl, isActive, 'ss-player-meeple--active')
+		const smallMeepleEl = this.nameEl.querySelector('.ss-player-meeple-icon')
+		this.gameObject.highlightEl(smallMeepleEl, isActive, 'ss-player-meeple-icon--active')
 	}
 
 	setActionsTokens(value) {

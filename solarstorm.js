@@ -1825,6 +1825,8 @@ class SSPlayer {
 
     _defineProperty(this, "boardEl", null);
 
+    _defineProperty(this, "nameEl", null);
+
     _defineProperty(this, "handEl", null);
 
     _defineProperty(this, "handDeckEl", null);
@@ -1869,7 +1871,7 @@ class SSPlayer {
     }, playersHandsEl);
     this.boardEl = boardEl;
     const handName = this.isCurrent() ? _('Your hand') : _('Hand of') + (" " + this.name);
-    const nameEl = dojo.create('div', {
+    this.nameEl = dojo.create('div', {
       class: 'ss-player-board__name ss-section-title',
       innerHTML: "<span><span class=\"ss-player-meeple-icon ss-player-meeple-icon--order-" + this.order + "\"></span>" + handName + "</span>"
     }, boardEl);
@@ -1971,6 +1973,8 @@ class SSPlayer {
   highlightActive() {
     const isActive = this.gameObject.getActivePlayerId() == this.id;
     this.gameObject.highlightEl(this.meepleEl, isActive, 'ss-player-meeple--active');
+    const smallMeepleEl = this.nameEl.querySelector('.ss-player-meeple-icon');
+    this.gameObject.highlightEl(smallMeepleEl, isActive, 'ss-player-meeple-icon--active');
   }
 
   setActionsTokens(value) {

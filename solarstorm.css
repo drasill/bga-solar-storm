@@ -490,8 +490,9 @@
 		drop-shadow(-1px 1px 1px rgba(255, 255, 255, 0.7)) drop-shadow(1px -1px 1px rgba(255, 255, 255, 0.7));
 }
 
+.ss-player-meeple-icon--active,
 .ss-player-meeple--active {
-	animation: neon2 1.5s ease-in-out infinite alternate;
+	animation: neon2 1.5s ease-in-out infinite alternate, ss-shake-slow 6.0s 0s ease-in-out infinite both;
 }
 
 .ss-player-meeple:hover {
@@ -774,6 +775,29 @@ span.ss-dice {
 	40%,
 	60% {
 		transform: translate3d(4px, 0, 0) rotate3d(1, 1, 1, 0.4deg);
+	}
+}
+
+@keyframes ss-shake-slow {
+	10%,
+	90% {
+		transform: translate3d(-0px, 0, 0) rotate3d(1, 1, 1, -0.0deg);
+	}
+
+	20%,
+	80% {
+		transform: translate3d(1px, 0, 0) rotate3d(1, 1, 1, 0.1deg);
+	}
+
+	30%,
+	50%,
+	70% {
+		transform: translate3d(-1px, 0, 0) rotate3d(1, 1, 1, -0.1deg);
+	}
+
+	40%,
+	60% {
+		transform: translate3d(1px, 0, 0) rotate3d(1, 1, 1, 0.1deg);
 	}
 }
 
