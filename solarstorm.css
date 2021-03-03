@@ -493,6 +493,7 @@
 .ss-player-meeple-icon--active,
 .ss-player-meeple--active {
 	animation: neon2 1.5s ease-in-out infinite alternate, ss-shake-slow 6.0s 0s ease-in-out infinite both;
+	z-index: 1;
 }
 
 .ss-player-meeple:hover {

@@ -322,6 +322,52 @@ class SolarStorm extends Table {
 		}
 	}
 
+	/**
+	 * Try auto-repairing room of active player if they have a matching resource.
+	 * Return true if repairing could be done.
+	 */
+	private function tryAutoRepair(): bool {
+		$player = $this->ssPlayers->getActive();
+		$room = $this->rooms->getRoomByPosition($player->getPosition());
+		// Don't try auto-repairing if room is diverted
+		if ($room->isDiverted()) {
+			return false;
+		}
+
+		// Get cards in player hand
+		$cards = $this->resourceCards->getCardsInLocation('hand', $player->getId());
+		$cardsTypes = array_column($cards, 'type', 'id');
+		// Get repair needed on player position
+		$resources = $room->getResources();
+		$damages = $room->getDamage();
+		$possibleRepairs = [];
+		foreach ($resources as $resourceIndex => $resource) {
+			if (!$damages[$resourceIndex]) {
+				// undamaged
+				continue;
+			}
+			$cardInHand = array_search($resource, $cardsTypes);
+			if ($cardInHand === false) {
+				// resource not in hand
+				continue;
+			}
+			$possibleRepairs[] = [
+				'index' => $resourceIndex,
+				'cardId' => $cardInHand,
+				'resource' => $resource,
+			];
+		}
+
+		// None or Multiple possible repairs
+		if (count($possibleRepairs) !== 1) {
+			return false;
+		}
+
+		$repair = $possibleRepairs[0];
+		$this->actionSelectResourceForRepair($repair['cardId'], null, null, true);
+		return true;
+	}
+
 	protected function getAllDatas() {
 		$result = [];
 
@@ -559,6 +605,10 @@ class SolarStorm extends Table {
 			case 'repair':
 				if ($this->resourceCards->countCardInLocation('hand', $player->getId()) <= 0) {
 					throw new BgaUserException(self::_('You have no resource card'));
+				}
+				// Check if repairing can be done automatically
+				if ($this->tryAutoRepair()) {
+					break;
 				}
 				$this->gamestate->nextState('transPlayerRepair');
 				break;
@@ -1001,8 +1051,15 @@ class SolarStorm extends Table {
 		$this->gamestate->nextState('transActionDone');
 	}
 
-	public function actionSelectResourceForRepair(int $cardId, ?string $typeId = null, ?int $position = null): void {
-		self::checkAction('selectResourceForRepair');
+	public function actionSelectResourceForRepair(
+		int $cardId,
+		?string $typeId = null,
+		?int $position = null,
+		bool $noCheck = false
+	): void {
+		if (!$noCheck) {
+			self::checkAction('selectResourceForRepair');
+		}
 		$card = $this->resourceCards->getCard($cardId);
 		$player = $this->ssPlayers->getActive();
 		if ($card['location'] !== 'hand' || $card['location_arg'] != $player->getId()) {
