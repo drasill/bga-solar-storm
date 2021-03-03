@@ -162,11 +162,31 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 
       if (stateName === 'playerTurn') {
         // Display for all players
-        const leftStr = dojo.string.substitute(_('(${n} left)'), {
+        let leftStr = dojo.string.substitute(_('${n} left'), {
           n: args.args.actions
         });
-        this.gamedatas.gamestate.descriptionmyturn += ' ' + leftStr;
-        this.gamedatas.gamestate.description += ' ' + leftStr;
+        const player = this.players.getActive();
+
+        if (player.actionsTokens > 0 && args.args.canUseActionTokens) {
+          const tokens = _('token(s)');
+
+          leftStr += " <small> + " + player.actionsTokens + " " + tokens + "</small>";
+        }
+
+        this.gamedatas.gamestate.descriptionmyturn += " (" + leftStr + ")";
+        this.gamedatas.gamestate.description += " (" + leftStr + ")";
+        this.updatePageTitle();
+        return;
+      }
+
+      if (stateName === 'playerAskActionTokensPlay') {
+        // Display for all players
+        const player = this.players.getActive();
+        let leftStr = dojo.string.substitute(_('${n} left'), {
+          n: player.actionsTokens
+        });
+        this.gamedatas.gamestate.descriptionmyturn += " (" + leftStr + ")";
+        this.gamedatas.gamestate.description += " (" + leftStr + ")";
         this.updatePageTitle();
         return;
       } // Now, only for active player
