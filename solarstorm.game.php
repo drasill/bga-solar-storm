@@ -1436,6 +1436,11 @@ class SolarStorm extends Table {
 
 			$this->gamestate->nextState('transPlayerPickResourcesCards');
 		} else {
+			// Initialize new save point
+			if (!self::getGameStateValue('canRestartTurn')) {
+				$this->saveCurrentState();
+				self::setGameStateValue('canRestartTurn', 1);
+			}
 			$this->gamestate->nextState('transPlayerTurn');
 		}
 	}
