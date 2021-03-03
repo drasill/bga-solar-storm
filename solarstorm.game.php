@@ -334,6 +334,25 @@ class SolarStorm extends Table {
 			return false;
 		}
 
+		$possibleRepairs = $this->getPossibleRepairs($player, $room, false);
+		// None or Multiple possible repairs
+		if (count($possibleRepairs) !== 1) {
+			return false;
+		}
+
+		$repair = $possibleRepairs[0];
+		$this->actionSelectResourceForRepair($repair['card']['id'], null, null, true);
+		return true;
+	}
+
+	/**
+	 * Returns the list of possible repairs a player can do on a room
+	 */
+	private function getPossibleRepairs(
+		SolarStormPlayer $player,
+		SolarStormRoom $room,
+		bool $doCheckUniversal = true
+	): array {
 		// Get cards in player hand
 		$cards = $this->resourceCards->getCardsInLocation('hand', $player->getId());
 		$cardsTypes = array_column($cards, 'type', 'id');
@@ -341,31 +360,28 @@ class SolarStorm extends Table {
 		$resources = $room->getResources();
 		$damages = $room->getDamage();
 		$possibleRepairs = [];
+		$universalCardId = array_search('universal', $cardsTypes);
 		foreach ($resources as $resourceIndex => $resource) {
 			if (!$damages[$resourceIndex]) {
 				// undamaged
 				continue;
 			}
-			$cardInHand = array_search($resource, $cardsTypes);
-			if ($cardInHand === false) {
+			$cardIdInHand = array_search($resource, $cardsTypes);
+			if ($cardIdInHand === false) {
 				// resource not in hand
-				continue;
+				if ($doCheckUniversal && $universalCardId !== false) {
+					$cardIdInHand = $universalCardId;
+				} else {
+					continue;
+				}
 			}
 			$possibleRepairs[] = [
 				'index' => $resourceIndex,
-				'cardId' => $cardInHand,
+				'card' => $cards[$cardIdInHand],
 				'resource' => $resource,
 			];
 		}
-
-		// None or Multiple possible repairs
-		if (count($possibleRepairs) !== 1) {
-			return false;
-		}
-
-		$repair = $possibleRepairs[0];
-		$this->actionSelectResourceForRepair($repair['cardId'], null, null, true);
-		return true;
+		return $possibleRepairs;
 	}
 
 	protected function getAllDatas() {
@@ -605,6 +621,11 @@ class SolarStorm extends Table {
 			case 'repair':
 				if ($this->resourceCards->countCardInLocation('hand', $player->getId()) <= 0) {
 					throw new BgaUserException(self::_('You have no resource card'));
+				}
+				$room = $this->rooms->getRoomByPosition($player->getPosition());
+				$possibleRepairs = $this->getPossibleRepairs($player, $room);
+				if (empty($possibleRepairs)) {
+					throw new BgaUserException(self::_('You have no resource card needed to repair this room'));
 				}
 				// Check if repairing can be done automatically
 				if ($this->tryAutoRepair()) {
@@ -1361,6 +1382,15 @@ class SolarStorm extends Table {
 		];
 	}
 
+	public function argPlayerRepair(): array {
+		$player = $this->ssPlayers->getActive();
+		$room = $this->rooms->getRoomByPosition($player->getPosition());
+		$possibleRepairs = $this->getPossibleRepairs($player, $room);
+		return [
+			'possibleRepairs' => $possibleRepairs,
+		];
+	}
+
 	public function argPlayerScavengePickCards(): array {
 		return [
 			'canRestartTurn' => (bool) self::getGameStateValue('canRestartTurn'),
@@ -1712,6 +1742,26 @@ class SolarStorm extends Table {
 		$this->drawDamageCard('top');
 	}
 
+	/**
+	 * Damage current room once
+	 * @param int $repair
+	 */
+	public function debugDamage() {
+		$player = $this->ssPlayers->getActive();
+		$room = $this->rooms->getRoomByPosition($player->getPosition());
+		if ($room->getSlug() === 'energy-core') {
+			return;
+		}
+		$room->doDamage();
+		$room->save();
+		$this->notifyAllPlayers(
+			'updateRooms',
+			'Damage room', // NOI18N
+			[
+				'rooms' => [$room->toArray()],
+			]
+		);
+	}
 	/**
 	 * Damage all rooms 100%
 	 */

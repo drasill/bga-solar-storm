@@ -145,6 +145,7 @@ $machinestates = [
 		'description' => clienttranslate('Repair: ${actplayer} must select a resource'),
 		'descriptionmyturn' => clienttranslate('Repair: ${you} must select a resource'),
 		'type' => 'activeplayer',
+		'args' => 'argPlayerRepair',
 		'possibleactions' => ['selectResourceForRepair', 'cancel'],
 		'transitions' => [
 			'transActionDone' => ST_PLAYER_ACTION_DONE,
