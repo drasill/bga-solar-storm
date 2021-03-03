@@ -356,6 +356,25 @@
 	filter: drop-shadow(3px 3px 6px rgba(0, 0, 255, 0.7)) drop-shadow(-3px -3px 6px rgba(0, 0, 255, 0.7));
 }
 
+.ss-resource-card--disable {
+	filter: brightness(0.8);
+}
+.ss-resource-card--disable:after {
+	content: ' ';
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: repeating-linear-gradient(
+		45deg,
+		rgba(255, 0, 0, 0.2),
+		rgba(255, 0, 0, 0.2) 6px,
+		rgba(255, 0, 0, 0.8) 11px,
+		rgba(255, 0, 0, 0.8) 12px
+	);
+}
+
 .ss-resource-card-icon {
 	display: inline-block;
 	width: 14px;
@@ -492,7 +511,7 @@
 
 .ss-player-meeple-icon--active,
 .ss-player-meeple--active {
-	animation: neon2 1.5s ease-in-out infinite alternate, ss-shake-slow 6.0s 0s ease-in-out infinite both;
+	animation: neon2 1.5s ease-in-out infinite alternate, ss-shake-slow 6s 0s ease-in-out infinite both;
 	z-index: 1;
 }
 
@@ -782,7 +801,7 @@ span.ss-dice {
 @keyframes ss-shake-slow {
 	10%,
 	90% {
-		transform: translate3d(-0px, 0, 0) rotate3d(1, 1, 1, -0.0deg);
+		transform: translate3d(-0px, 0, 0) rotate3d(1, 1, 1, -0deg);
 	}
 
 	20%,

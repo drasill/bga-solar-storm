@@ -334,13 +334,18 @@ class SolarStorm extends Table {
 			return false;
 		}
 
-		$possibleRepairs = $this->getPossibleRepairs($player, $room, false);
+		$possibleRepairs = $this->getPossibleRepairs($player, $room);
 		// None or Multiple possible repairs
 		if (count($possibleRepairs) !== 1) {
 			return false;
 		}
 
 		$repair = $possibleRepairs[0];
+		// The only possible repair is of type "universal"
+		if ($repair['card']['type'] === 'universal') {
+			return false;
+		}
+
 		$this->actionSelectResourceForRepair($repair['card']['id'], null, null, true);
 		return true;
 	}

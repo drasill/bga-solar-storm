@@ -210,7 +210,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
           break;
 
         case 'playerRepair':
-          this.doPlayerActionRepair();
+          this.doPlayerActionRepair(args.args.possibleRepairs);
           break;
 
         case 'playerDivert':
@@ -406,6 +406,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
           type: type.nametr,
           detail: id === 'universal' ? _('(can be used as any other resource)') : ''
         }, 250);
+        el.setAttribute('data-type', type.id);
       };
 
       this.resourceTypes.forEach((type, index) => {
@@ -534,10 +535,11 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
     waitForPlayerResource(players, options = {}) {
       // Default options
       options = Object.assign({
-        cancel: false
+        cancel: false,
+        resourceTypes: null
       }, options);
       const ids = players.map(p => p.id);
-      this.players.highlightHands(ids);
+      this.players.highlightHands(ids, options.resourceTypes);
       return new Promise((resolve, reject) => {
         const handles = [];
 
@@ -1088,10 +1090,12 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
       }
     },
 
-    async doPlayerActionRepair() {
+    async doPlayerActionRepair(possibleRepairs) {
       try {
+        const resourceTypes = possibleRepairs ? possibleRepairs.map(r => r.card.type) : null;
         const card = await this.waitForPlayerResource([this.players.getActive()], {
-          cancel: true
+          cancel: true,
+          resourceTypes
         });
         let resourceTypeId = null;
 
@@ -1780,9 +1784,9 @@ class SSPlayers {
     });
   }
 
-  highlightHands(ids) {
+  highlightHands(ids, resourceTypes = null) {
     this.players.forEach(player => {
-      player.highlightHand(ids && ids.includes(player.id));
+      player.highlightHand(ids && ids.includes(player.id), resourceTypes);
     });
   }
 
@@ -1958,8 +1962,21 @@ class SSPlayer {
     }
   }
 
-  highlightHand(value) {
+  highlightHand(value, resourceTypes) {
     this.gameObject.highlightEl(this.handEl, value);
+    dojo.query('.ss-resource-card--disable', this.handEl).removeClass('ss-resource-card--disable');
+
+    if (value && resourceTypes) {
+      dojo.query('.ss-resource-card', this.handEl).forEach(el => {
+        var id = el.id.match(/^ss-player-hand--\d+_item_(\d+)$/)[1];
+        const type = el.getAttribute('data-type');
+        var possible = resourceTypes.includes(type);
+
+        if (!possible) {
+          el.classList.add('ss-resource-card--disable');
+        }
+      });
+    }
   }
 
   highlightBoard(value) {
