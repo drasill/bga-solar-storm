@@ -493,8 +493,13 @@
 	box-shadow: rgba(0, 0, 255, 0.7) 4px 4px 6px;
 }
 
+.ss-player-hand.ss-highlight .ss-resource-card {
+	filter: brightness(0.9);
+	transition: filter 0.2s;
+}
 .ss-player-hand.ss-highlight .ss-resource-card:hover {
-	box-shadow: rgba(255, 255, 255, 0.7) 4px 4px 6px;
+	box-shadow: rgba(0, 0, 0, 0.7) 0px 0px 6px;
+	filter: brightness(1.1);
 }
 
 .ss-player-meeple {
