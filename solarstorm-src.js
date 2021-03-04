@@ -443,14 +443,14 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 			if (typeof el === 'string') {
 				el = document.querySelector(el)
 			}
-			el.classList[value ? 'add' : 'remove'](cls)
+			el.classList.toggle(cls, value)
 		},
 
 		setVisibleEl(el, value) {
 			if (typeof el === 'string') {
 				el = document.querySelector(el)
 			}
-			el.classList[value ? 'add' : 'remove']('ss-visible')
+			el.classList.toggle('ss-visible', value)
 		},
 
 		connectStockCardClick(stock, callback) {
@@ -1578,7 +1578,7 @@ class SSRoom {
 			return
 		}
 		damage.forEach((dmg, index) => {
-			this.el.classList[dmg ? 'add' : 'remove'](`ss-room--damaged-${index}`)
+			this.el.classList.toggle(`ss-room--damaged-${index}`, dmg)
 		})
 		this.damage = damage
 	}
@@ -1653,7 +1653,7 @@ class SSRoom {
 
 	setDestroyed(destroyed) {
 		this.destroyed = destroyed
-		this.el.classList[destroyed ? 'add' : 'remove']('ss-room-destroyed')
+		this.el.classList.toggle('ss-room-destroyed', destroyed)
 	}
 }
 
