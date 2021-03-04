@@ -329,10 +329,6 @@ class SolarStorm extends Table {
 	private function tryAutoRepair(): bool {
 		$player = $this->ssPlayers->getActive();
 		$room = $this->rooms->getRoomByPosition($player->getPosition());
-		// Don't try auto-repairing if room is diverted
-		if ($room->isDiverted()) {
-			return false;
-		}
 
 		$possibleRepairs = $this->getPossibleRepairs($player, $room);
 		// None or Multiple possible repairs
@@ -477,13 +473,11 @@ class SolarStorm extends Table {
 			$actions[] = 'share';
 		}
 
-		// TODO check if core
 		// Can repair if there is damage, and some repairs are possible
 		if ($room->getDamageCount() > 0 && !empty($this->getPossibleRepairs($player, $room))) {
 			$actions[] = 'repair';
 		}
 
-		// TODO check if core
 		// Can divert if there is no damage, and cards are available
 		if ($room->getDamageCount() === 0 && !empty($this->getNeededCardsToDivert($player, $room))) {
 			$actions[] = 'divert';

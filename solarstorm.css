@@ -368,10 +368,10 @@
 	bottom: 0;
 	background: repeating-linear-gradient(
 		45deg,
-		rgba(255, 0, 0, 0.2),
-		rgba(255, 0, 0, 0.2) 6px,
-		rgba(255, 0, 0, 0.8) 11px,
-		rgba(255, 0, 0, 0.8) 12px
+		rgba(0, 0, 0, 0.2),
+		rgba(0, 0, 0, 0.2) 6px,
+		rgba(0, 0, 0, 0.8) 11px,
+		rgba(0, 0, 0, 0.8) 12px
 	);
 }
 
