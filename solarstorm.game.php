@@ -245,6 +245,7 @@ class SolarStorm extends Table {
 			$message,
 			[
 				'cards' => [$card],
+				'damageCardsNbr' => $this->damageCards->countCardInLocation('deck'),
 			] + $player->getNotificationArgs()
 		);
 

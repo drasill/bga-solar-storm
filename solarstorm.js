@@ -112,7 +112,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
     },
 
     initializeDamageDeck() {
-      document.querySelector('.ss-damage-deck__title').innerHTML = '<span>' + _('Damage cards') + '</span>';
+      this.updateDamageCardsLeft(this.gamedatas.damageCardsNbr);
       const damageDeckEl = document.querySelector('.ss-damage-deck');
       this.damageDeck = this.createDamageStock(damageDeckEl);
       this.damageDeck.setOverlap(0.01);
@@ -391,6 +391,15 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
       if (el) {
         el.remove();
       }
+    },
+
+    updateDamageCardsLeft(nbr) {
+      const text = _('Damage cards');
+
+      const leftStr = dojo.string.substitute(_('${n} left'), {
+        n: nbr
+      });
+      document.querySelector('.ss-damage-deck__title').innerHTML = "<span>" + text + " (" + leftStr + ")</span>";
     },
 
     ///////////////////////////////////////////////////
@@ -1342,6 +1351,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
       notif.args.cards.forEach(cardData => {
         this.damageDeck.addToStock(cardData.type);
       });
+      this.updateDamageCardsLeft(notif.args.damageCardsNbr);
     },
 
     notif_addResourcesCardsOnTable(notif) {
