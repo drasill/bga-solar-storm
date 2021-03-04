@@ -275,27 +275,14 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 
         switch (stateName) {
           case 'playerTurn':
-            this.addActionButton('buttonMove', _('Move'), evt => {
-              this.onPlayerChooseAction(evt, 'move');
-            });
-            this.addActionButton('buttonScavenge', _('Scavenge'), evt => {
-              this.onPlayerChooseAction(evt, 'scavenge');
-            });
-            this.addActionButton('buttonShare', _('Share'), evt => {
-              this.onPlayerChooseAction(evt, 'share');
-            });
-            this.addActionButton('buttonRepair', _('Repair'), evt => {
-              this.onPlayerChooseAction(evt, 'repair');
-            });
-            this.addActionButton('buttonRoom', _('Room action'), evt => {
-              this.onPlayerChooseAction(evt, 'room');
-            });
-            this.addActionButton('buttonDivert', _('Divert'), evt => {
-              this.onPlayerChooseAction(evt, 'divert');
-            });
-            this.addActionButton('buttonToken', _('Take action token'), evt => {
-              this.onPlayerChooseAction(evt, 'token');
-            });
+            const possibles = args.possibleActions;
+            this.addChooseActionButton('move', _('Move'), possibles.includes('move'));
+            this.addChooseActionButton('scavenge', _('Scavenge'), possibles.includes('scavenge'));
+            this.addChooseActionButton('share', _('Share'), possibles.includes('share'));
+            this.addChooseActionButton('repair', _('Repair'), possibles.includes('repair'));
+            this.addChooseActionButton('room', _('Room action'), possibles.includes('room'));
+            this.addChooseActionButton('divert', _('Divert'), possibles.includes('divert'));
+            this.addChooseActionButton('token', _('Take action token'), possibles.includes('token'));
 
             if (player.actionsTokens > 0 && args.canUseActionTokens) {
               this.addActionButton('buttonUseToken', _('Use action token'), evt => {
@@ -368,6 +355,22 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
     showActionCancelButton(callback) {
       this.removeActionCancelButton();
       this.addActionButton('actionCancelButton', _('Cancel'), callback, null, null, 'gray');
+    },
+
+    addChooseActionButton(action, text, possible, faIcon) {
+      if (!possible) {
+        return;
+      }
+
+      const buttonId = 'button-' + action;
+      const iconHtml = faIcon ? "<i class=\"fa fa-" + faIcon + "\"></i> " : '';
+      this.addActionButton(buttonId, iconHtml + text, evt => {
+        this.onPlayerChooseAction(evt, action);
+      }, null, null, possible ? 'blue' : 'gray');
+
+      if (!possible) {
+        $(buttonId).classList.add('ss-action-button--disabled');
+      }
     },
 
     removeActionCancelButton() {

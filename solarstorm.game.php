@@ -351,6 +351,30 @@ class SolarStorm extends Table {
 	}
 
 	/**
+	 * Try auto-diverting room of active player if they have a matching resource.
+	 * Return true if diverting could be done.
+	 */
+	private function tryAutoDivert(): bool {
+		$player = $this->ssPlayers->getActive();
+		$room = $this->rooms->getRoomByPosition($player->getPosition());
+		// Don't try auto-diverting if room is diverted
+		if ($room->isDiverted()) {
+			return false;
+		}
+
+		// Needed cards
+		$cards = $this->getNeededCardsToDivert($player, $room);
+		// No matching cards
+		if (empty($cards)) {
+			return false;
+		}
+
+		$cardIds = array_column($cards, 'id');
+		$this->actionSelectResourcesForDivert($cardIds, true);
+		return true;
+	}
+
+	/**
 	 * Returns the list of possible repairs a player can do on a room
 	 */
 	private function getPossibleRepairs(
@@ -361,7 +385,7 @@ class SolarStorm extends Table {
 		// Get cards in player hand
 		$cards = $this->resourceCards->getCardsInLocation('hand', $player->getId());
 		$cardsTypes = array_column($cards, 'type', 'id');
-		// Get repair needed on player position
+		// Get repair needed
 		$resources = $room->getResources();
 		$damages = $room->getDamage();
 		$possibleRepairs = [];
@@ -387,6 +411,93 @@ class SolarStorm extends Table {
 			];
 		}
 		return $possibleRepairs;
+	}
+
+	/**
+	 * Returns the list of cards of a player to divert a room
+	 */
+	private function getNeededCardsToDivert(SolarStormPlayer $player, SolarStormRoom $room): array {
+		// Already diverted
+		if ($room->isDiverted()) {
+			return [];
+		}
+		// Get cards in player hand
+		$availableCards = $this->resourceCards->getCardsInLocation('hand', $player->getId());
+
+		$neededCards = [];
+
+		// For each needed resource ...
+		foreach ($room->getDivertResources() as $needed) {
+			$resourceInfo = $this->resourceTypes[$needed];
+			// Find first matching resource
+			$card = current(
+				array_filter($availableCards, function ($card) use ($needed) {
+					return $card['type'] === $needed;
+				})
+			);
+			// Fallback on first universal resource
+			if (!$card) {
+				$card = current(
+					array_filter($availableCards, function ($card) {
+						return $card['type'] === 'universal';
+					})
+				);
+			}
+			if (!$card) {
+				return [];
+			}
+			unset($availableCards[$card['id']]);
+			$neededCards[] = $card;
+		}
+		return $neededCards;
+	}
+
+	/**
+	 * Returns a list of possible actions for active player
+	 */
+	private function getPossibleActions(): array {
+		$player = $this->ssPlayers->getActive();
+		$room = $this->rooms->getRoomByPosition($player->getPosition());
+
+		$actions = [];
+
+		// Can always move
+		$actions[] = 'move';
+
+		// Can scavenge if there are resources left
+		$left =
+			(int) $this->resourceCards->countCardInLocation('deck') + $this->resourceCards->countCardInLocation('table');
+		if ($left > 0) {
+			$actions[] = 'scavenge';
+		}
+
+		// Can share if not alone in the room
+		$ids = $this->getPlayersIdsInTheSameRoom(true);
+		if (!empty($ids)) {
+			$actions[] = 'share';
+		}
+
+		// TODO check if core
+		// Can repair if there is damage, and some repairs are possible
+		if ($room->getDamageCount() > 0 && !empty($this->getPossibleRepairs($player, $room))) {
+			$actions[] = 'repair';
+		}
+
+		// TODO check if core
+		// Can divert if there is no damage, and cards are available
+		if ($room->getDamageCount() === 0 && !empty($this->getNeededCardsToDivert($player, $room))) {
+			$actions[] = 'divert';
+		}
+
+		// Can always get action token
+		$actions[] = 'token';
+
+		// Can use room action if not damaged
+		if ($room->getDamageCount() === 0) {
+			$actions[] = 'room';
+		}
+
+		return $actions;
 	}
 
 	protected function getAllDatas() {
@@ -645,6 +756,10 @@ class SolarStorm extends Table {
 				$room = $this->rooms->getRoomByPosition($player->getPosition());
 				if ($room->getDamageCount() > 0) {
 					throw new BgaUserException(self::_('This room is damaged and can\'t have its power diverted'));
+				}
+				// Check if diverting can be done automatically
+				if ($this->tryAutoDivert()) {
+					break;
 				}
 				$this->gamestate->nextState('transPlayerDivert');
 				break;
@@ -1133,8 +1248,10 @@ class SolarStorm extends Table {
 		$this->gamestate->nextState('transActionDone');
 	}
 
-	public function actionSelectResourcesForDivert(array $cardIds): void {
-		self::checkAction('selectResourcesForDivert');
+	public function actionSelectResourcesForDivert(array $cardIds, bool $noCheck = false): void {
+		if (!$noCheck) {
+			self::checkAction('selectResourcesForDivert');
+		}
 		$player = $this->ssPlayers->getActive();
 
 		$cards = [];
@@ -1375,6 +1492,7 @@ class SolarStorm extends Table {
 			'canRestartTurn' => (bool) self::getGameStateValue('canRestartTurn'),
 			'canUseActionTokens' => !self::getGameStateValue('hasPickedActionToken'),
 			'actions' => $player->getActions(),
+			'possibleActions' => $this->getPossibleActions(),
 		];
 	}
 

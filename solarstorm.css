@@ -755,6 +755,14 @@ span.ss-dice {
 	font-weight: bold;
 }
 
+.ss-action-button--disabled {
+	cursor: not-allowed;
+	background: gray;
+}
+.ss-action-button--disabled:hover {
+	background: gray;
+}
+
 /* Un-reset css for list & co */
 .ss-tooltip-markdown li ul,
 .ss-tooltip-markdown li ol {
