@@ -487,8 +487,8 @@ class SolarStorm extends Table {
 		// Can always get action token
 		$actions[] = 'token';
 
-		// Can use room action if not damaged
-		if ($room->getDamageCount() === 0) {
+		// Can use room action if not damaged, and not "medical-bay"
+		if ($room->getDamageCount() === 0 && $room->getSlug() !== 'medical-bay') {
 			$actions[] = 'room';
 		}
 
