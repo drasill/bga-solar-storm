@@ -599,7 +599,9 @@
 
 .ss-resource-reorder-dialog.ss-visible {
 	overflow: visible;
-	height: 200px;
+	/* Prevents animation, but fixed height has bug on large discard deck */
+	/* height: 200px; */
+	height: auto;
 }
 
 .ss-damage-reorder-dialog {

@@ -142,6 +142,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
 
 			const reorderResourceDeckEl = document.querySelector('.ss-resource-reorder-deck')
 			this.reorderResourceDeck = this.createResourceStock(reorderResourceDeckEl)
+			this.reorderResourceDeck.setOverlap(30, 0)
 
 			// prettier-ignore
 			this.addTooltipMarkdown(

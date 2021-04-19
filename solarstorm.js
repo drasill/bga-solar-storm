@@ -141,7 +141,8 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
       }
 
       const reorderResourceDeckEl = document.querySelector('.ss-resource-reorder-deck');
-      this.reorderResourceDeck = this.createResourceStock(reorderResourceDeckEl); // prettier-ignore
+      this.reorderResourceDeck = this.createResourceStock(reorderResourceDeckEl);
+      this.reorderResourceDeck.setOverlap(30, 0); // prettier-ignore
 
       this.addTooltipMarkdown(document.querySelector('.ss-resource-deck__deck'), [_('Resource deck'), '.\n----\n', _('At the **end of their turn**, a player can pick either:${newline}+ 2 cards from this deck (*face down*),${newline}+ or 1 card among the 2 revealed.${newline}**Important :** When the resource deck is depleted, the game is instantly lost.${newline}${newline}At the start, there was a total of ${num} resources cards in this deck.')].join(''), {
         num: this.gamedatas.resourceCardsNbrInitial
