@@ -570,7 +570,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
         if (options.cancel) {
           this.showActionCancelButton(() => {
             cleanAll();
-            reject('CANCEL BTN');
+            reject('CANCEL_BTN');
           });
         }
 
@@ -606,7 +606,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
         if (options.cancel) {
           this.showActionCancelButton(() => {
             cleanAll();
-            reject('CANCEL BTN');
+            reject('CANCEL_BTN');
           });
         }
 
@@ -657,7 +657,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
         if (options.cancel) {
           this.showActionCancelButton(() => {
             cleanAll();
-            reject('CANCEL BTN');
+            reject('CANCEL_BTN');
           });
         }
       });
@@ -684,7 +684,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
         if (options.cancel) {
           this.showActionCancelButton(() => {
             cleanAll();
-            reject('CANCEL BTN');
+            reject('CANCEL_BTN');
             this.rooms.highlightPositions(null);
           });
         }
@@ -718,7 +718,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
         if (options.cancel) {
           this.showActionCancelButton(() => {
             cleanAll();
-            reject('CANCEL BTN');
+            reject('CANCEL_BTN');
           });
         }
 
@@ -750,7 +750,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
         if (options.cancel) {
           this.showActionCancelButton(() => {
             cleanAll();
-            reject('CANCEL BTN');
+            reject('CANCEL_BTN');
           });
         }
 
@@ -794,7 +794,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
         if (options.cancel) {
           this.showActionCancelButton(() => {
             cleanAll();
-            reject('CANCEL BTN');
+            reject('CANCEL_BTN');
           });
         }
 
@@ -856,7 +856,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
         if (options.cancel) {
           this.showActionCancelButton(() => {
             cleanAll();
-            reject('CANCEL BTN');
+            reject('CANCEL_BTN');
           });
         }
 
@@ -916,7 +916,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
         if (options.cancel) {
           this.showActionCancelButton(() => {
             cleanAll();
-            reject('CANCEL BTN');
+            reject('CANCEL_BTN');
           });
         }
       });
@@ -1190,6 +1190,11 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
           position: room.position
         });
       } catch (e) {
+        if (e !== 'CANCEL_BTN') {
+          console.error(e);
+          this.showMessage(e.message, 'error');
+        }
+
         await this.ajaxAction('cancel', {
           lock: true
         });
@@ -1329,6 +1334,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
       dojo.subscribe('playerRollsDice', this, 'notif_playerRollsDice');
       dojo.subscribe('hullBreachDiscard', this, 'notif_hullBreachDiscard');
       dojo.subscribe('fullState', this, 'notif_fullState');
+      dojo.subscribe('endOfGame', this, 'notif_endOfGame');
     },
 
     notif_updateRooms(notif) {
@@ -1452,6 +1458,14 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui', 'ebg/counter', 'ebg/st
         room.setDiverted(roomData.diverted);
         room.setDestroyed(roomData.destroyed);
         room.setProtection(roomData.protection);
+      });
+    },
+
+    notif_endOfGame(notif) {
+      console.log('notif_endOfGame', notif);
+      const value = notif.args.victory ? 1 : 0;
+      this.players.players.forEach(player => {
+        this.scoreCtrl[player.id].setValue(value);
       });
     },
 
@@ -1956,11 +1970,7 @@ class SSPlayer {
     this.meepleEl.style.display = 'block';
     const roomEl = this.gameObject.rooms.getByPosition(position).el;
     const duration = instant ? 0 : 750;
-    const roomPos = dojo.position(roomEl); // const index = this.gameObject.players
-    // .getAtPosition(position)
-    // .sort(p => p.order)
-    // .findIndex(p => p.id === this.id)
-
+    const roomPos = dojo.position(roomEl);
     const index = this.order;
     const offsetX = index * 30 + 20;
     const offsetY = roomPos.h * 0.2;
@@ -1970,7 +1980,7 @@ class SSPlayer {
       this.gameObject.players.getAtPosition(position).forEach(p => p.setRoomPosition(position, false, false));
 
       if (previousPosition !== position) {
-        this.gameObject.players.getAtPosition(previousPosition).forEach(p => p.setRoomPosition(previousPosition, false, false));
+        this.gameObject.players.getAtPosition(previousPosition).forEach(p => p.setRoomPosition(previousPosition || 0, false, false));
       }
     }
   }

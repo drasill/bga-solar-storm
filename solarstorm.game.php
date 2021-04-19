@@ -520,20 +520,24 @@ class SolarStorm extends Table {
 
 	private function triggerEndOfGame(string $reason): void {
 		$message = '';
+		$victory = false;
 		switch ($reason) {
 			case 'damage':
 				$message = clienttranslate('End of game ! All players lose, as a fully damaged room receives new damage.');
+				$victory = false;
 				break;
 			case 'resources':
 				$message = clienttranslate('End of game ! All players lose, as the resources deck is empty.');
+				$victory = false;
 				break;
 			case 'energy-core':
 				$message = clienttranslate('End of game ! All players win, congratulations !.');
+				$victory = true;
 				$sql = 'UPDATE player SET player_score = 1';
 				self::DbQuery($sql);
 				break;
 		}
-		$this->notifyAllPlayers('endOfGame', $message, []);
+		$this->notifyAllPlayers('endOfGame', $message, ['victory' => $victory]);
 		$this->gamestate->nextState('transEndOfGame');
 	}
 
@@ -1942,6 +1946,27 @@ class SolarStorm extends Table {
 				'resourceCardsNbr' => $resourceCardsNbr,
 			] + $player->getNotificationArgs()
 		);
+	}
+
+	public function debugLoadBugSQL() {
+		$studioPlayer = self::getCurrentPlayerId();
+		$players = self::getObjectListFromDb('SELECT player_id FROM player', true);
+
+		foreach ($players as $pId) {
+			$sql[] = "UPDATE player SET player_id=$studioPlayer WHERE player_id=$pId";
+			$sql[] = "UPDATE player_data SET player_id=$studioPlayer WHERE player_id=$pId";
+			$sql[] = "UPDATE global SET global_value=$studioPlayer WHERE global_value=$pId";
+			$sql[] = "UPDATE stats SET stats_player_id=$studioPlayer WHERE stats_player_id=$pId";
+
+			$sql[] = "UPDATE resource_card SET card_location_arg=$studioPlayer WHERE card_location_arg=$pId";
+			$sql[] = "UPDATE damage_card SET card_location_arg=$studioPlayer WHERE card_location_arg=$pId";
+			$studioPlayer++;
+		}
+
+		foreach ($sql as $q) {
+			self::DbQuery($q);
+		}
+		self::reloadPlayersBasicInfos();
 	}
 
 	//////////////////////////////////////////////////////////////////////////////

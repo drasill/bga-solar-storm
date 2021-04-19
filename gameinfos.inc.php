@@ -10,7 +10,7 @@
 
 */
 
-$gameinfos = array(
+$gameinfos = [
 	// Name of the game in English (will serve as the basis for translation)
 	'game_name' => 'Solar Storm',
 
@@ -36,7 +36,7 @@ $gameinfos = array(
 	'bgg_id' => 274037,
 
 	// Players configuration that can be played (ex: 2 to 4 players)
-	'players' => array(2, 3, 4),
+	'players' => [2, 3, 4],
 
 	// Suggest players to play with this number of players. Must be null if there is no such advice, or if there is only one possible player configuration.
 	'suggest_player_number' => null,
@@ -75,6 +75,67 @@ $gameinfos = array(
 	// Is this game cooperative (all players wins together or loose together)
 	'is_coop' => 1,
 
+	// ELO points equivalence based on difficulty.
+	// Ratios were defined as :
+	// NumPlayers :
+	//  1 player: x 1
+	//  2 players: x 1.5
+	//  3 players: x 1
+	//  4 players: x 1.5
+	// Difficulty : (option100, from 1 to 5)
+	//  1 Easy: x 1
+	//  2 Medium: x 2
+	//  3 Hard: x 3
+	//  4 Veteran: x 4
+	//  5 Realist: x 5
+	// Realistic mode (option 101, 0 or 1)
+	//  0 No : x 1
+	//  1 Yes : x 1.5
+	'coop_elo_mode' => [
+		'type' => 'points_references',
+		'references' => [
+			// Difficulty 1
+			['players_nbr' => 2, 'options' => [100 => 1, 101 => 0], 'elo' => [0 => 1000, 1 => 1400]],
+			['players_nbr' => 2, 'options' => [100 => 1, 101 => 1], 'elo' => [0 => 1000, 1 => 1470]],
+			['players_nbr' => 3, 'options' => [100 => 1, 101 => 0], 'elo' => [0 => 1000, 1 => 1350]],
+			['players_nbr' => 3, 'options' => [100 => 1, 101 => 1], 'elo' => [0 => 1000, 1 => 1400]],
+			['players_nbr' => 4, 'options' => [100 => 1, 101 => 0], 'elo' => [0 => 1000, 1 => 1400]],
+			['players_nbr' => 4, 'options' => [100 => 1, 101 => 1], 'elo' => [0 => 1000, 1 => 1470]],
+
+			// Difficulty 2
+			['players_nbr' => 2, 'options' => [100 => 2, 101 => 0], 'elo' => [0 => 1000, 1 => 1540]],
+			['players_nbr' => 2, 'options' => [100 => 2, 101 => 1], 'elo' => [0 => 1000, 1 => 1690]],
+			['players_nbr' => 3, 'options' => [100 => 2, 101 => 0], 'elo' => [0 => 1000, 1 => 1450]],
+			['players_nbr' => 3, 'options' => [100 => 2, 101 => 1], 'elo' => [0 => 1000, 1 => 1540]],
+			['players_nbr' => 4, 'options' => [100 => 2, 101 => 0], 'elo' => [0 => 1000, 1 => 1540]],
+			['players_nbr' => 4, 'options' => [100 => 2, 101 => 1], 'elo' => [0 => 1000, 1 => 1690]],
+
+			// Difficulty 3
+			['players_nbr' => 2, 'options' => [100 => 3, 101 => 0], 'elo' => [0 => 1000, 1 => 1690]],
+			['players_nbr' => 2, 'options' => [100 => 3, 101 => 1], 'elo' => [0 => 1000, 1 => 1910]],
+			['players_nbr' => 3, 'options' => [100 => 3, 101 => 0], 'elo' => [0 => 1000, 1 => 1540]],
+			['players_nbr' => 3, 'options' => [100 => 3, 101 => 1], 'elo' => [0 => 1000, 1 => 1690]],
+			['players_nbr' => 4, 'options' => [100 => 3, 101 => 0], 'elo' => [0 => 1000, 1 => 1690]],
+			['players_nbr' => 4, 'options' => [100 => 3, 101 => 1], 'elo' => [0 => 1000, 1 => 1910]],
+
+			// Difficulty 4
+			['players_nbr' => 2, 'options' => [100 => 4, 101 => 0], 'elo' => [0 => 1000, 1 => 1830]],
+			['players_nbr' => 2, 'options' => [100 => 4, 101 => 1], 'elo' => [0 => 1000, 1 => 2120]],
+			['players_nbr' => 3, 'options' => [100 => 4, 101 => 0], 'elo' => [0 => 1000, 1 => 1640]],
+			['players_nbr' => 3, 'options' => [100 => 4, 101 => 1], 'elo' => [0 => 1000, 1 => 1830]],
+			['players_nbr' => 4, 'options' => [100 => 4, 101 => 0], 'elo' => [0 => 1000, 1 => 1830]],
+			['players_nbr' => 4, 'options' => [100 => 4, 101 => 1], 'elo' => [0 => 1000, 1 => 2120]],
+
+			// Difficulty 5
+			['players_nbr' => 2, 'options' => [100 => 5, 101 => 0], 'elo' => [0 => 1000, 1 => 1980]],
+			['players_nbr' => 2, 'options' => [100 => 5, 101 => 1], 'elo' => [0 => 1000, 1 => 2340]],
+			['players_nbr' => 3, 'options' => [100 => 5, 101 => 0], 'elo' => [0 => 1000, 1 => 1740]],
+			['players_nbr' => 3, 'options' => [100 => 5, 101 => 1], 'elo' => [0 => 1000, 1 => 1980]],
+			['players_nbr' => 4, 'options' => [100 => 5, 101 => 0], 'elo' => [0 => 1000, 1 => 1980]],
+			['players_nbr' => 4, 'options' => [100 => 5, 101 => 1], 'elo' => [0 => 1000, 1 => 2340]],
+		],
+	],
+
 	// Complexity of the game, from 0 (extremely simple) to 5 (extremely complex)
 	'complexity' => 2,
 
@@ -99,7 +160,7 @@ $gameinfos = array(
 
 	// Game interface width range (pixels)
 	// Note: game interface = space on the left side, without the column on the right
-	'game_interface_width' => array(
+	'game_interface_width' => [
 		// Minimum width
 		//  default: 740
 		//  maximum possible value: 740 (ie: your game interface should fit with a 740px width (correspond to a 1024px screen)
@@ -111,7 +172,7 @@ $gameinfos = array(
 		//  maximum possible value: unlimited
 		//  minimum possible value: 740
 		'max' => null,
-	),
+	],
 
 	// Game presentation
 	// Short game presentation text that will appear on the game description page, structured as an array of paragraphs.
@@ -147,4 +208,4 @@ $gameinfos = array(
 	'turnControl' => 'simple',
 
 	////////
-);
+];
