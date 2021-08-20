@@ -1989,23 +1989,63 @@ class SolarStorm extends Table {
     */
 
 	function zombieTurn($state, $active_player) {
+		// Zombie in cooperative games cannot be too smart.
+		// Let's just go and stay in the Core room.
+
 		$statename = $state['name'];
 
-		if ($state['type'] === 'activeplayer') {
-			switch ($statename) {
-				default:
-					$this->gamestate->nextState('zombiePass');
-					break;
-			}
+		$player = $this->ssPlayers->getActive();
+		$position = $player->getPosition();
 
+		if ($statename === 'playerTurn') {
+			$this->actionChoose('move');
 			return;
 		}
 
-		if ($state['type'] === 'multipleactiveplayer') {
-			// Make sure player is in a non blocking status for role turn
-			$this->gamestate->setPlayerNonMultiactive($active_player, '');
+		if ($statename === 'playerMove') {
+			// Already on core, fake move to another room.
+			if ($position === 4) {
+				$player->setPosition(5);
+				$player->save();
+				$position = 5;
+			}
+			// Let's move toward core, or elsewhere if already on it.
+			$positionMap = [0 => 1, 1 => 4, 2 => 1, 3 => 4, 4 => 5, 5 => 4, 6 => 7, 7 => 4, 8 => 7];
+			$nextPosition = $positionMap[$position] ?? null;
 
+			if ($nextPosition !== null) {
+				$this->actionMove($nextPosition);
+				return;
+			}
+		}
+
+		if ($statename === 'pickResources') {
+			$cardsOnTable = $this->resourceCards->getCardsInLocation('table');
+			if (empty($cardsOnTable)) {
+				$cardId = 9999;
+			} else {
+				$cardId = reset($cardsOnTable)['id'];
+			}
+			$this->actionPickResource($cardId);
 			return;
+		}
+
+		if ($statename === 'playerDiscardResources') {
+			$numberOfCards = $this->argPlayerDiscardResources()['numCardsToDiscard'];
+			$cards = array_slice($this->resourceCards->getCardsInLocation('hand', $player->getId()), 0, $numberOfCards);
+			$cardIds = array_column($cards, 'id');
+			$this->actionDiscardResources($cardIds);
+			return;
+		}
+		if ($statename === 'playerAskActionTokensPlay') {
+			$this->actionDontUseToken();
+			return;
+		}
+
+		try {
+			$this->actionCancel();
+			return;
+		} catch (\Exception $e) {
 		}
 
 		throw new feException('Zombie mode not supported at this game state: ' . $statename);
